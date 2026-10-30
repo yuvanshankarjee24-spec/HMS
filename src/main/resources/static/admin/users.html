@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Directory - Smart Hostel Admin</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <div class="card-header" style="margin-bottom: 1.5rem;">
+          <div>
+            <h1 style="font-size: 1.75rem;">User Account Directory</h1>
+            <p style="color: var(--text-muted);">Manage students, wardens, staff, account lockouts and password credentials.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary btn-sm" onclick="UI.openModal('addStaffModal')">+ Add Staff</button>
+            <button class="btn btn-primary btn-sm" onclick="UI.openModal('addStudentModal')">+ Add Student</button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="card" style="padding: 1.25rem;">
+          <div class="filter-bar">
+            <div class="filter-item" style="flex: 1; min-width: 240px;">
+              <input type="text" id="searchInput" class="form-control" placeholder="Search by email, name or register number...">
+            </div>
+
+            <div class="filter-item">
+              <label class="form-label" style="margin-bottom: 0;">Role:</label>
+              <select id="roleFilter" class="form-control" style="width: 170px;">
+                <option value="">All Roles</option>
+                <option value="STUDENT">Students</option>
+                <option value="WARDEN">Wardens</option>
+                <option value="ADMIN">Admins</option>
+                <option value="SECURITY">Security</option>
+                <option value="CLEANING_WORKER">Cleaning</option>
+                <option value="MAINTENANCE_STAFF">Maintenance</option>
+                <option value="MESS_STAFF">Mess</option>
+                <option value="VENDING_MANAGER">Vending</option>
+              </select>
+            </div>
+
+            <button class="btn btn-secondary btn-sm" onclick="loadUsers(0)">Search</button>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Name / Email</th>
+                  <th>Identifier</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Password Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading users...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-bar">
+            <span id="pageInfoText" style="color: var(--text-muted); font-size: 0.875rem;">Page 1 of 1</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary btn-sm" id="btnPrevPage" disabled onclick="changePage(-1)">&larr; Previous</button>
+              <button class="btn btn-secondary btn-sm" id="btnNextPage" disabled onclick="changePage(1)">Next &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Student Modal -->
+  <div class="modal-overlay" id="addStudentModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Student Account</h3>
+        <button class="modal-close" onclick="UI.closeModal('addStudentModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addStudentForm">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="studFullName" class="form-control" required placeholder="e.g. Alex Kumar">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Register Number *</label>
+            <input type="text" id="studRegNo" class="form-control" required placeholder="e.g. REG202611">
+          </div>
+          <div class="form-group">
+            <label class="form-label">College Email *</label>
+            <input type="email" id="studEmail" class="form-control" required placeholder="e.g. alex.k@college.edu">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Phone *</label>
+            <input type="text" id="studPhone" class="form-control" required placeholder="e.g. +91 9876543210">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <input type="text" id="studDept" class="form-control" required placeholder="e.g. Computer Science">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Year of Study (1-5) *</label>
+            <input type="number" id="studYear" class="form-control" min="1" max="5" value="1" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('addStudentModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitAddStudent">Create Student</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Staff Modal -->
+  <div class="modal-overlay" id="addStaffModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Staff Account</h3>
+        <button class="modal-close" onclick="UI.closeModal('addStaffModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addStaffForm">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="staffFullName" class="form-control" required placeholder="e.g. Rajan Sharma">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Staff Email *</label>
+            <input type="email" id="staffEmail" class="form-control" required placeholder="e.g. rajan@hostel.edu">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="text" id="staffPhone" class="form-control" required placeholder="e.g. +91 9123456789">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designation *</label>
+            <input type="text" id="staffDesignation" class="form-control" required placeholder="e.g. Assistant Warden / Gate Guard">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role Category *</label>
+            <select id="staffRoleSelect" class="form-control" required>
+              <option value="WARDEN">Warden</option>
+              <option value="SECURITY">Security Guard</option>
+              <option value="CLEANING_WORKER">Cleaning Worker</option>
+              <option value="MAINTENANCE_STAFF">Maintenance Staff</option>
+              <option value="MESS_STAFF">Mess Staff</option>
+              <option value="VENDING_MANAGER">Vending Manager</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('addStaffModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitAddStaff">Create Staff</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    let currentPage = 0;
+    const pageSize = 10;
+    let totalPages = 1;
+
+    async function loadUsers(page = 0) {
+      currentPage = page;
+      const query = document.getElementById('searchInput').value.trim();
+      const role = document.getElementById('roleFilter').value;
+
+      let url = `/api/admin/users?page=${page}&size=${pageSize}`;
+      if (query) url += `&query=${encodeURIComponent(query)}`;
+      if (role) url += `&role=${encodeURIComponent(role)}`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load users');
+        const data = await res.json();
+        totalPages = data.totalPages || 1;
+        renderUsers(data.content);
+        updatePagination(data);
+      } catch (err) {
+        UI.showToast(err.message, 'error');
+      }
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">No users found.</td></tr>';
+        return;
+      }
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+
+        // User ID
+        const tdId = document.createElement('td');
+        tdId.setAttribute('data-label', 'User ID');
+        tdId.textContent = '#' + u.id;
+
+        // Name & Email
+        const tdName = document.createElement('td');
+        tdName.setAttribute('data-label', 'Name / Email');
+        const nameDiv = document.createElement('div');
+        nameDiv.style.fontWeight = '700';
+        nameDiv.textContent = u.name;
+        const emailDiv = document.createElement('div');
+        emailDiv.style.fontSize = '0.8rem';
+        emailDiv.style.color = 'var(--text-muted)';
+        emailDiv.textContent = u.email;
+        tdName.append(nameDiv, emailDiv);
+
+        // Identifier (Reg No or -)
+        const tdIden = document.createElement('td');
+        tdIden.setAttribute('data-label', 'Identifier');
+        tdIden.textContent = u.registerNumber || '—';
+
+        // Role Badge
+        const tdRole = document.createElement('td');
+        tdRole.setAttribute('data-label', 'Role');
+        const rBadge = document.createElement('span');
+        rBadge.className = `role-badge ${u.role}`;
+        rBadge.textContent = u.role.replace('_', ' ');
+        tdRole.appendChild(rBadge);
+
+        // Status Badge
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Status');
+        const sBadge = document.createElement('span');
+        sBadge.textContent = u.status;
+        if (u.status === 'ACTIVE') sBadge.className = 'status-badge badge-active';
+        else if (u.status === 'LOCKED') sBadge.className = 'status-badge badge-locked';
+        else sBadge.className = 'status-badge badge-disabled';
+        tdStatus.appendChild(sBadge);
+
+        // Password State
+        const tdPw = document.createElement('td');
+        tdPw.setAttribute('data-label', 'Password Status');
+        tdPw.textContent = u.mustChangePassword ? 'Must Change' : 'Active';
+        tdPw.style.fontSize = '0.825rem';
+        if (u.mustChangePassword) tdPw.style.color = '#d97706';
+
+        // Created Date
+        const tdCreated = document.createElement('td');
+        tdCreated.setAttribute('data-label', 'Created');
+        tdCreated.textContent = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-';
+
+        // Actions
+        const tdActions = document.createElement('td');
+        tdActions.setAttribute('data-label', 'Actions');
+        tdActions.style.display = 'flex';
+        tdActions.style.gap = '0.4rem';
+        tdActions.style.flexWrap = 'wrap';
+
+        // Status Toggle / Unlock
+        if (u.status === 'LOCKED') {
+          const btnUnlock = document.createElement('button');
+          btnUnlock.className = 'btn btn-success btn-sm';
+          btnUnlock.textContent = 'Unlock';
+          btnUnlock.onclick = () => updateUserStatus(u.id, 'ACTIVE');
+          tdActions.appendChild(btnUnlock);
+        } else if (u.status === 'ACTIVE') {
+          const btnDisable = document.createElement('button');
+          btnDisable.className = 'btn btn-secondary btn-sm';
+          btnDisable.textContent = 'Disable';
+          btnDisable.onclick = () => updateUserStatus(u.id, 'DISABLED');
+          tdActions.appendChild(btnDisable);
+        } else {
+          const btnEnable = document.createElement('button');
+          btnEnable.className = 'btn btn-success btn-sm';
+          btnEnable.textContent = 'Enable';
+          btnEnable.onclick = () => updateUserStatus(u.id, 'ACTIVE');
+          tdActions.appendChild(btnEnable);
+        }
+
+        // Reset Password Button
+        const btnReset = document.createElement('button');
+        btnReset.className = 'btn btn-secondary btn-sm';
+        btnReset.textContent = 'Reset PW';
+        btnReset.onclick = () => resetPassword(u.id, u.email);
+        tdActions.appendChild(btnReset);
+
+        tr.append(tdId, tdName, tdIden, tdRole, tdStatus, tdPw, tdCreated, tdActions);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updatePagination(data) {
+      document.getElementById('pageInfoText').textContent = `Page ${data.number + 1} of ${Math.max(1, data.totalPages)} (${data.totalElements} total users)`;
+      document.getElementById('btnPrevPage').disabled = data.first;
+      document.getElementById('btnNextPage').disabled = data.last;
+    }
+
+    function changePage(delta) {
+      loadUsers(currentPage + delta);
+    }
+
+    async function updateUserStatus(userId, newStatus) {
+      const confirmed = await UI.showConfirm({
+        title: 'Change User Status',
+        message: `Are you sure you want to change user #${userId} status to ${newStatus}?`
+      });
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to update status', 'error');
+          return;
+        }
+        UI.showToast(data.message, 'success');
+        loadUsers(currentPage);
+      } catch (e) {
+        UI.showToast('Network error updating user', 'error');
+      }
+    }
+
+    async function resetPassword(userId, email) {
+      const confirmed = await UI.showConfirm({
+        title: 'Reset Password',
+        message: `Generate a temporary password for user ${email}? They will be required to change it upon next login.`
+      });
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to reset password', 'error');
+          return;
+        }
+
+        await UI.showConfirm({
+          title: 'Temporary Password Issued',
+          message: `Temporary password for ${email}: \n\n${data.temporaryPassword}\n\nPlease share this securely with the user.`,
+          confirmText: 'Done',
+          cancelText: 'Close'
+        });
+
+        loadUsers(currentPage);
+      } catch (e) {
+        UI.showToast('Network error resetting password', 'error');
+      }
+    }
+
+    // Add Student Submit
+    document.getElementById('btnSubmitAddStudent').addEventListener('click', async () => {
+      const payload = {
+        fullName: document.getElementById('studFullName').value.trim(),
+        registerNumber: document.getElementById('studRegNo').value.trim(),
+        email: document.getElementById('studEmail').value.trim(),
+        phone: document.getElementById('studPhone').value.trim(),
+        department: document.getElementById('studDept').value.trim(),
+        year: parseInt(document.getElementById('studYear').value)
+      };
+
+      if (!payload.fullName || !payload.registerNumber || !payload.email || !payload.phone || !payload.department) {
+        UI.showToast('Please fill all required student fields', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to create student', 'error');
+          return;
+        }
+
+        UI.closeModal('addStudentModal');
+        document.getElementById('addStudentForm').reset();
+        await UI.showConfirm({
+          title: 'Student Created Successfully',
+          message: `Student account created for ${data.email}.\nTemporary Password: ${data.temporaryPassword}\n\nThe student must change this password on first login.`,
+          confirmText: 'Done',
+          cancelText: 'Close'
+        });
+        loadUsers(0);
+      } catch (e) {
+        UI.showToast('Error creating student account', 'error');
+      }
+    });
+
+    // Add Staff Submit
+    document.getElementById('btnSubmitAddStaff').addEventListener('click', async () => {
+      const payload = {
+        fullName: document.getElementById('staffFullName').value.trim(),
+        email: document.getElementById('staffEmail').value.trim(),
+        phone: document.getElementById('staffPhone').value.trim(),
+        designation: document.getElementById('staffDesignation').value.trim(),
+        role: document.getElementById('staffRoleSelect').value
+      };
+
+      if (!payload.fullName || !payload.email || !payload.phone || !payload.designation) {
+        UI.showToast('Please fill all required staff fields', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to create staff', 'error');
+          return;
+        }
+
+        UI.closeModal('addStaffModal');
+        document.getElementById('addStaffForm').reset();
+        await UI.showConfirm({
+          title: 'Staff Created Successfully',
+          message: `Staff account created for ${data.email} (${data.role}).\nTemporary Password: ${data.temporaryPassword}\n\nThe staff member must change this password on first login.`,
+          confirmText: 'Done',
+          cancelText: 'Close'
+        });
+        loadUsers(0);
+      } catch (e) {
+        UI.showToast('Error creating staff account', 'error');
+      }
+    });
+
+    (async () => {
+      const user = await Auth.requireAuth(['ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'users');
+
+      // Check hash anchors
+      if (window.location.hash === '#add-student') UI.openModal('addStudentModal');
+      else if (window.location.hash === '#add-staff') UI.openModal('addStaffModal');
+
+      loadUsers(0);
+    })();
+  </script>
+</body>
+</html>

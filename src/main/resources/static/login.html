@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Smart Hostel Management</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #a4ccfb 0%, #d8e9fd 40%, #8fc5ff 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      margin: 0;
+      color: #0b1f35;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    /* Left Side: Photo Collage */
+    .collage-container {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .main-circle-photo {
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      border: 8px solid #1e90ff;
+      box-shadow: 0 20px 45px rgba(14, 52, 94, 0.25);
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .main-circle-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .sub-card-photo {
+      position: absolute;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #fff;
+      border: 4px solid #ffffff;
+      box-shadow: 0 16px 35px rgba(11, 35, 65, 0.2);
+      z-index: 3;
+      transition: transform 0.3s ease;
+    }
+
+    .sub-card-photo:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+
+    .sub-card-1 {
+      width: 190px;
+      height: 135px;
+      top: 25px;
+      left: 10px;
+    }
+
+    .sub-card-2 {
+      width: 210px;
+      height: 145px;
+      bottom: 25px;
+      right: 15px;
+    }
+
+    .sub-card-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Right Side: Floating Login Card */
+    .login-card {
+      background: #f5f9ff;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+      border-radius: 26px;
+      padding: 2.75rem 2.5rem;
+      box-shadow: 0 25px 60px rgba(11, 41, 75, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      position: relative;
+    }
+
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo-icon-svg {
+      width: 44px;
+      height: 44px;
+      background: #1e90ff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .logo-text-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #0b1f35;
+      line-height: 1.1;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .logo-text-sub {
+      font-size: 0.75rem;
+      color: #536b85;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .login-heading {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #0b1f35;
+      margin-bottom: 0.35rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .login-subheading {
+      color: #536b85;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Pill-style Role Switcher */
+    .role-pills {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.4rem;
+      background: #e4edf8;
+      padding: 0.35rem;
+      border-radius: 9999px;
+      margin-bottom: 1.5rem;
+    }
+
+    .role-pill-btn {
+      border: none;
+      background: transparent;
+      padding: 0.55rem 0.25rem;
+      border-radius: 9999px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: #536b85;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .role-pill-btn.active {
+      background: #1e90ff;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+    }
+
+    /* Inputs */
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon-left {
+      position: absolute;
+      left: 1rem;
+      color: #7b94ad;
+      pointer-events: none;
+      display: flex;
+    }
+
+    .input-icon-right {
+      position: absolute;
+      right: 1rem;
+      color: #7b94ad;
+      cursor: pointer;
+      display: flex;
+      padding: 0.25rem;
+    }
+
+    .login-input {
+      width: 100%;
+      background: #edf3fa;
+      border: 1.5px solid transparent;
+      border-radius: 14px;
+      padding: 0.85rem 1rem 0.85rem 2.85rem;
+      font-size: 0.95rem;
+      color: #0b1f35;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .login-input.has-toggle {
+      padding-right: 2.85rem;
+    }
+
+    .login-input:focus {
+      background: #ffffff;
+      border-color: #1e90ff;
+      box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.2);
+    }
+
+    .forgot-link {
+      display: block;
+      text-align: right;
+      color: #1e90ff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn-signin {
+      width: 100%;
+      background: #1e90ff;
+      color: #ffffff;
+      border: none;
+      padding: 0.9rem;
+      border-radius: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(30, 144, 255, 0.35);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-signin:hover:not(:disabled) {
+      background: #1877d5;
+      transform: translateY(-1px);
+    }
+
+    .btn-signin:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .error-banner {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .demo-hint-box {
+      margin-top: 1.5rem;
+      background: #eaf3fe;
+      border: 1px dashed #b9d8fc;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      color: #3b5f88;
+      text-align: center;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 960px) {
+      .login-container {
+        grid-template-columns: 1fr;
+        justify-content: center;
+      }
+      .collage-container {
+        display: none;
+      }
+      .login-card {
+        max-width: 460px;
+        margin: 0 auto;
+        padding: 2.25rem 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <!-- Left: Photo Collage -->
+    <div class="collage-container" aria-label="Campus Photo Collage">
+      <!-- Top Left Sub Card -->
+      <div class="sub-card-photo sub-card-1">
+        <img src="/img/campus_hostel.svg" alt="Hostel Residence Building">
+      </div>
+
+      <!-- Main Circular Campus Photo with Blue Outline -->
+      <div class="main-circle-photo">
+        <img src="/img/campus_main.svg" alt="College Campus Main Ground">
+      </div>
+
+      <!-- Bottom Right Sub Card -->
+      <div class="sub-card-photo sub-card-2">
+        <img src="/img/campus_students.svg" alt="Student Community Life">
+      </div>
+    </div>
+
+    <!-- Right: Floating Rounded Login Card -->
+    <div class="login-card">
+      <!-- College Logo Placeholder -->
+      <div class="login-logo">
+        <div class="logo-icon-svg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-text-title">HostelHub</div>
+          <div class="logo-text-sub">Smart Campus Residences</div>
+        </div>
+      </div>
+
+      <h1 class="login-heading">Login</h1>
+      <p class="login-subheading">Enter your credentials to access your portal</p>
+
+      <!-- Pill-style Role Switcher -->
+      <div class="role-pills" id="rolePills" role="tablist">
+        <button type="button" class="role-pill-btn active" data-role="STUDENT">Student</button>
+        <button type="button" class="role-pill-btn" data-role="WARDEN">Warden</button>
+        <button type="button" class="role-pill-btn" data-role="ADMIN">Admin</button>
+        <button type="button" class="role-pill-btn" data-role="STAFF">Staff</button>
+      </div>
+
+      <!-- Inline Error Message -->
+      <div class="error-banner" id="errorBanner" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="errorMessage"></span>
+      </div>
+
+      <form id="loginForm">
+        <!-- Email or Register Number -->
+        <div class="form-group">
+          <label class="form-label" for="identifierInput">Email or Register Number</label>
+          <div class="input-wrapper">
+            <span class="input-icon-left">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            <input type="text" id="identifierInput" class="login-input" placeholder="e.g. REG202609 or student@college.edu" required autocomplete="username">
+          </div>
+        </div>
+
+        <!-- Password with Eye Toggle -->
+        <div class="form-group" style="margin-bottom: 0.25rem;">
+          <label class="form-label" for="passwordInput">Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon-left">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <input type="password" id="passwordInput" class="login-input has-toggle" placeholder="Enter your password" required autocomplete="current-password">
+            <span class="input-icon-right" id="togglePasswordBtn" title="Toggle password visibility">
+              <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <a href="#" class="forgot-link" id="forgotPasswordLink">Forgot Password?</a>
+
+        <!-- Sign in Button -->
+        <button type="submit" id="submitBtn" class="btn-signin">
+          <span id="btnText">Sign in</span>
+          <span id="btnSpinner" style="display: none;">Authenticating...</span>
+        </button>
+      </form>
+
+      <div class="demo-hint-box">
+        <strong>Demo Passwords:</strong> <code>Hostel@123</code><br>
+        Admin: <code>admin@hostel.edu</code> | Warden: <code>warden@hostel.edu</code><br>
+        Student: <code>REG202609</code> / <code>student9@college.edu</code>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    // Selected Role Tab State
+    let selectedRole = 'STUDENT';
+
+    // Role pill button switcher
+    document.querySelectorAll('.role-pill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.role-pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedRole = btn.dataset.role;
+        hideError();
+      });
+    });
+
+    // Password show/hide toggle
+    const passwordInput = document.getElementById('passwordInput');
+    const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+    let showPassword = false;
+
+    togglePasswordBtn.addEventListener('click', () => {
+      showPassword = !showPassword;
+      passwordInput.type = showPassword ? 'text' : 'password';
+      togglePasswordBtn.innerHTML = showPassword 
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    });
+
+    // Error handling
+    const errorBanner = document.getElementById('errorBanner');
+    const errorMessage = document.getElementById('errorMessage');
+
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorBanner.style.display = 'flex';
+    }
+
+    function hideError() {
+      errorBanner.style.display = 'none';
+      errorMessage.textContent = '';
+    }
+
+    // Forgot password info modal
+    document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      UI.showConfirm({
+        title: 'Reset Password',
+        message: 'Please contact the Hostel Administration or Warden Office to request a password reset ticket with your registered college ID.',
+        confirmText: 'Understood',
+        cancelText: 'Close'
+      });
+    });
+
+    // Login submission
+    const loginForm = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const identifier = document.getElementById('identifierInput').value.trim();
+      const password = passwordInput.value;
+
+      if (!identifier || !password) {
+        showError('Please fill in both identifier and password');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'inline';
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            identifier,
+            password,
+            selectedRole
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.message || 'Invalid credentials');
+          submitBtn.disabled = false;
+          btnText.style.display = 'inline';
+          btnSpinner.style.display = 'none';
+          return;
+        }
+
+        // Login success
+        if (data.mustChangePassword) {
+          window.location.replace('/change-password.html');
+        } else {
+          Auth.redirectToDashboard(data.role);
+        }
+      } catch (err) {
+        showError('Unable to connect to the server. Please check your network or try again.');
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    // Auto redirect if already logged in
+    (async () => {
+      const me = await Auth.getMe();
+      if (me) {
+        if (me.mustChangePassword) {
+          window.location.replace('/change-password.html');
+        } else {
+          Auth.redirectToDashboard(me.role);
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

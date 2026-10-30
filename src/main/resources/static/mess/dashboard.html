@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mess & Dining - Smart Hostel</title>
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h1 id="welcomeUser">Hostel Mess & Dining Operations</h1>
+            <p>Menu planning, dining attendance tracking, food safety, and meal opt-outs.</p>
+          </div>
+          <div>
+            <span class="status-badge badge-active">Kitchen Active</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Dining Operations</h2>
+          </div>
+          <div class="coming-soon-grid">
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <h3>Weekly Menu Publisher</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Breakfast, lunch, snacks & dinner timetable</p>
+              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
+            </div>
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <h3>Meal Rebate / Leave Log</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Advance meal cancellations for mess bill deductions</p>
+              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['MESS_STAFF', 'ADMIN']);
+      if (!user) return;
+      document.getElementById('welcomeUser').textContent = `Welcome, ${user.name}`;
+      UI.renderLayout(user, 'dashboard');
+    })();
+  </script>
+</body>
+</html>

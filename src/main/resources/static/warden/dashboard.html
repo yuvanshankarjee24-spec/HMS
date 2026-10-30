@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warden Dashboard - Smart Hostel</title>
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h1>Hostel Warden Portal</h1>
+            <p>Live occupancy monitoring, room allocation requests, and student residency directory.</p>
+          </div>
+          <div>
+            <a href="/warden/rooms.html" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Manage Rooms & Beds
+            </a>
+          </div>
+        </div>
+
+        <!-- 5 Summary Metric Cards -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="statTotalRooms">0</div>
+              <div class="stat-label">Total Rooms</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="statTotalBeds">0</div>
+              <div class="stat-label">Total Beds</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="statOccupiedBeds">0</div>
+              <div class="stat-label">Occupied Beds</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="statAvailableBeds">0</div>
+              <div class="stat-label">Available Beds</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="statPendingRequests">0</div>
+              <div class="stat-label">Pending Requests</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Room Requests Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Pending Room Requests
+            </h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadRequests()">Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="pendingRequestsTable">
+              <thead>
+                <tr>
+                  <th>Req #</th>
+                  <th>Student Name</th>
+                  <th>Reg No</th>
+                  <th>Preferred Room</th>
+                  <th>Floor</th>
+                  <th>Student Note</th>
+                  <th>Requested Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="pendingRequestsBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading pending requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Room Occupancy Table with Colored Bar -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Hostel Room Occupancy Overview
+            </h2>
+            <a href="/warden/rooms.html" class="btn btn-secondary btn-sm">+ Add / Edit Rooms</a>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="roomOccupancyTable">
+              <thead>
+                <tr>
+                  <th>Room No</th>
+                  <th>Floor</th>
+                  <th>Capacity</th>
+                  <th>Occupied</th>
+                  <th>Available</th>
+                  <th>Occupancy Rate</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="roomOccupancyBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading rooms...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Searchable Student List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+              Student Directory
+            </h2>
+            <div style="display: flex; gap: 0.5rem; max-width: 300px; width: 100%;">
+              <input type="text" id="studentSearchInput" class="form-control" placeholder="Search name or reg no..." style="padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="studentsTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Reg No</th>
+                  <th>Email / Phone</th>
+                  <th>Department & Year</th>
+                  <th>Room & Bed</th>
+                  <th>Allocation Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="studentsTableBody">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading students...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Rejection Modal -->
+  <div class="modal-overlay" id="rejectModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Reject Room Request</h3>
+        <button class="modal-close" onclick="UI.closeModal('rejectModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          Please provide a reason for rejecting this room allocation request. The student will be notified.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="rejectReasonInput">Rejection Reason *</label>
+          <textarea id="rejectReasonInput" class="form-control" rows="3" placeholder="e.g. Preferred room is undergoing maintenance; no vacant beds on floor 1..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('rejectModal')">Cancel</button>
+        <button class="btn btn-danger" id="btnConfirmReject">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    let activeRejectRequestId = null;
+
+    async function loadSummary() {
+      try {
+        const res = await fetch('/api/warden/summary');
+        if (!res.ok) throw new Error('Failed to load summary');
+        const data = await res.json();
+        document.getElementById('statTotalRooms').textContent = data.totalRooms;
+        document.getElementById('statTotalBeds').textContent = data.totalBeds;
+        document.getElementById('statOccupiedBeds').textContent = data.occupiedBeds;
+        document.getElementById('statAvailableBeds').textContent = data.availableBeds;
+        document.getElementById('statPendingRequests').textContent = data.pendingRequests;
+      } catch (err) {
+        console.error('Summary error:', err);
+      }
+    }
+
+    async function loadRooms() {
+      try {
+        const res = await fetch('/api/warden/rooms');
+        if (!res.ok) throw new Error('Failed to load rooms');
+        const rooms = await res.json();
+        renderRoomOccupancy(rooms);
+      } catch (err) {
+        console.error('Rooms error:', err);
+      }
+    }
+
+    function renderRoomOccupancy(rooms) {
+      const tbody = document.getElementById('roomOccupancyBody');
+      tbody.innerHTML = '';
+
+      if (rooms.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 7;
+        td.style.textAlign = 'center';
+        td.textContent = 'No rooms created yet.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      rooms.forEach(r => {
+        const tr = document.createElement('tr');
+
+        const tdRoom = document.createElement('td');
+        tdRoom.setAttribute('data-label', 'Room No');
+        tdRoom.textContent = 'Room ' + r.roomNumber;
+        tdRoom.style.fontWeight = '700';
+
+        const tdFloor = document.createElement('td');
+        tdFloor.setAttribute('data-label', 'Floor');
+        tdFloor.textContent = 'Floor ' + r.floor;
+
+        const tdCap = document.createElement('td');
+        tdCap.setAttribute('data-label', 'Capacity');
+        tdCap.textContent = r.capacity + ' beds';
+
+        const tdOcc = document.createElement('td');
+        tdOcc.setAttribute('data-label', 'Occupied');
+        tdOcc.textContent = r.occupied + ' occupied';
+
+        const tdAvail = document.createElement('td');
+        tdAvail.setAttribute('data-label', 'Available');
+        tdAvail.textContent = r.available + ' free';
+
+        // Colored Progress Bar
+        const tdBar = document.createElement('td');
+        tdBar.setAttribute('data-label', 'Occupancy Rate');
+        const percent = r.capacity > 0 ? Math.round((r.occupied / r.capacity) * 100) : 0;
+        
+        const barBox = document.createElement('div');
+        barBox.className = 'progress-bar-container';
+        const barFill = document.createElement('div');
+        barFill.className = `progress-bar-fill ${percent >= 100 ? 'red' : percent >= 50 ? 'amber' : 'green'}`;
+        barFill.style.width = percent + '%';
+        barBox.appendChild(barFill);
+
+        const percentText = document.createElement('span');
+        percentText.style.fontSize = '0.75rem';
+        percentText.style.fontWeight = '600';
+        percentText.textContent = `${percent}% (${r.occupied}/${r.capacity})`;
+
+        tdBar.append(percentText, barBox);
+
+        // Status
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Status');
+        const span = document.createElement('span');
+        span.textContent = r.available === 0 ? 'FULL' : 'AVAILABLE';
+        span.className = `status-badge ${r.available === 0 ? 'badge-full' : 'badge-available'}`;
+        tdStatus.appendChild(span);
+
+        tr.append(tdRoom, tdFloor, tdCap, tdOcc, tdAvail, tdBar, tdStatus);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadRequests() {
+      try {
+        const res = await fetch('/api/warden/room-requests?status=PENDING');
+        if (!res.ok) throw new Error('Failed to load pending requests');
+        const reqs = await res.json();
+        renderPendingRequests(reqs);
+      } catch (err) {
+        console.error('Requests error:', err);
+      }
+    }
+
+    function renderPendingRequests(requests) {
+      const tbody = document.getElementById('pendingRequestsBody');
+      tbody.innerHTML = '';
+
+      if (requests.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.style.textAlign = 'center';
+        td.style.padding = '2rem';
+        td.style.color = 'var(--text-muted)';
+        td.textContent = 'No pending room requests at this time.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      requests.forEach(req => {
+        const tr = document.createElement('tr');
+
+        const tdId = document.createElement('td');
+        tdId.setAttribute('data-label', 'Req #');
+        tdId.textContent = '#' + req.id;
+
+        const tdName = document.createElement('td');
+        tdName.setAttribute('data-label', 'Student Name');
+        tdName.textContent = req.studentName;
+        tdName.style.fontWeight = '600';
+
+        const tdReg = document.createElement('td');
+        tdReg.setAttribute('data-label', 'Reg No');
+        tdReg.textContent = req.registerNumber;
+
+        const tdRoom = document.createElement('td');
+        tdRoom.setAttribute('data-label', 'Preferred Room');
+        tdRoom.textContent = req.preferredRoomNumber ? `Room ${req.preferredRoomNumber}` : 'Any Room';
+
+        const tdFloor = document.createElement('td');
+        tdFloor.setAttribute('data-label', 'Floor');
+        tdFloor.textContent = req.preferredFloor ? `Floor ${req.preferredFloor}` : '-';
+
+        const tdNote = document.createElement('td');
+        tdNote.setAttribute('data-label', 'Student Note');
+        tdNote.textContent = req.note || '-';
+
+        const tdDate = document.createElement('td');
+        tdDate.setAttribute('data-label', 'Requested Date');
+        tdDate.textContent = req.createdAt ? new Date(req.createdAt).toLocaleDateString() : '-';
+
+        // Actions
+        const tdActions = document.createElement('td');
+        tdActions.setAttribute('data-label', 'Actions');
+        tdActions.style.display = 'flex';
+        tdActions.style.gap = '0.5rem';
+
+        const btnApprove = document.createElement('button');
+        btnApprove.className = 'btn btn-success btn-sm';
+        btnApprove.textContent = 'Approve';
+        btnApprove.onclick = () => approveRequest(req.id, req.preferredRoomNumber);
+
+        const btnReject = document.createElement('button');
+        btnReject.className = 'btn btn-danger btn-sm';
+        btnReject.textContent = 'Reject';
+        btnReject.onclick = () => {
+          activeRejectRequestId = req.id;
+          document.getElementById('rejectReasonInput').value = '';
+          UI.openModal('rejectModal');
+        };
+
+        tdActions.append(btnApprove, btnReject);
+
+        tr.append(tdId, tdName, tdReg, tdRoom, tdFloor, tdNote, tdDate, tdActions);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function approveRequest(requestId, prefRoom) {
+      const confirmed = await UI.showConfirm({
+        title: 'Approve Room Request',
+        message: `Approve room allocation for request #${requestId}? This will allocate the first available bed in preferred room (${prefRoom || 'Any space'}) and lock the row.`
+      });
+
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/api/warden/room-requests/${requestId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}) // bedId null = auto pick
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to approve request', 'error');
+          return;
+        }
+
+        UI.showToast(`Allocation Approved: Allocated into Room ${data.roomNumber}, Bed #${data.bedNumber}!`, 'success');
+        refreshAll();
+      } catch (err) {
+        UI.showToast('Network error while approving request', 'error');
+      }
+    }
+
+    // Confirm Reject
+    document.getElementById('btnConfirmReject').addEventListener('click', async () => {
+      const reason = document.getElementById('rejectReasonInput').value.trim();
+      if (!reason) {
+        UI.showToast('Please enter a rejection reason', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/warden/room-requests/${activeRejectRequestId}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          UI.showToast(data.message || 'Failed to reject request', 'error');
+          return;
+        }
+
+        UI.showToast('Room request rejected', 'info');
+        UI.closeModal('rejectModal');
+        refreshAll();
+      } catch (err) {
+        UI.showToast('Error rejecting request', 'error');
+      }
+    });
+
+    async function loadStudents(query = '') {
+      try {
+        const url = `/api/warden/students?query=${encodeURIComponent(query)}&size=20`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load students');
+        const data = await res.json();
+        renderStudents(data.content);
+      } catch (err) {
+        console.error('Students error:', err);
+      }
+    }
+
+    function renderStudents(students) {
+      const tbody = document.getElementById('studentsTableBody');
+      tbody.innerHTML = '';
+
+      if (students.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 7;
+        td.style.textAlign = 'center';
+        td.textContent = 'No students found.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      students.forEach(s => {
+        const tr = document.createElement('tr');
+
+        const tdName = document.createElement('td');
+        tdName.setAttribute('data-label', 'Name');
+        tdName.textContent = s.fullName;
+        tdName.style.fontWeight = '600';
+
+        const tdReg = document.createElement('td');
+        tdReg.setAttribute('data-label', 'Reg No');
+        tdReg.textContent = s.registerNumber;
+
+        const tdContact = document.createElement('td');
+        tdContact.setAttribute('data-label', 'Email / Phone');
+        tdContact.textContent = `${s.email} • ${s.phone}`;
+        tdContact.style.fontSize = '0.85rem';
+
+        const tdDept = document.createElement('td');
+        tdDept.setAttribute('data-label', 'Department & Year');
+        tdDept.textContent = `${s.department} (Yr ${s.year})`;
+
+        const tdRoom = document.createElement('td');
+        tdRoom.setAttribute('data-label', 'Room & Bed');
+        tdRoom.textContent = s.roomNumber ? `Room ${s.roomNumber} - Bed #${s.bedNumber}` : 'Not assigned';
+        if (s.roomNumber) tdRoom.style.fontWeight = '700';
+
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Allocation Status');
+        const span = document.createElement('span');
+        span.textContent = s.allocationStatus;
+        if (s.allocationStatus === 'ALLOCATED') span.className = 'status-badge badge-allocated';
+        else if (s.allocationStatus === 'REQUEST PENDING') span.className = 'status-badge badge-pending';
+        else span.className = 'status-badge badge-not-allocated';
+        tdStatus.appendChild(span);
+
+        // Action: Vacate if allocated
+        const tdAction = document.createElement('td');
+        tdAction.setAttribute('data-label', 'Action');
+        if (s.allocationStatus === 'ALLOCATED') {
+          const btnVacate = document.createElement('button');
+          btnVacate.className = 'btn btn-secondary btn-sm';
+          btnVacate.textContent = 'Vacate Bed';
+          btnVacate.onclick = async () => {
+            const confirmed = await UI.showConfirm({
+              title: 'Vacate Student',
+              message: `Vacate ${s.fullName} (${s.registerNumber}) from Room ${s.roomNumber} - Bed #${s.bedNumber}? This will make the bed immediately available for new allocations.`
+            });
+            if (confirmed) {
+              await vacateStudent(s.id);
+            }
+          };
+          tdAction.appendChild(btnVacate);
+        } else {
+          tdAction.textContent = '-';
+        }
+
+        tr.append(tdName, tdReg, tdContact, tdDept, tdRoom, tdStatus, tdAction);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function vacateStudent(studentId) {
+      try {
+        const res = await fetch(`/api/warden/students/${studentId}/vacate`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to vacate student', 'error');
+          return;
+        }
+        UI.showToast('Student vacated and bed released!', 'success');
+        refreshAll();
+      } catch (err) {
+        UI.showToast('Network error while vacating student', 'error');
+      }
+    }
+
+    function refreshAll() {
+      loadSummary();
+      loadRooms();
+      loadRequests();
+      loadStudents(document.getElementById('studentSearchInput').value);
+    }
+
+    // Debounced student search
+    let searchTimeout = null;
+    document.getElementById('studentSearchInput').addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadStudents(e.target.value.trim());
+      }, 300);
+    });
+
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, user.role === 'ADMIN' ? 'warden-overview' : 'dashboard');
+      refreshAll();
+    })();
+  </script>
+</body>
+</html>

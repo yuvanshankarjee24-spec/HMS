@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - Smart Hostel</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .profile-hero {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .profile-avatar-large {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      overflow: hidden;
+      background: var(--primary-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .profile-avatar-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .profile-field-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .profile-field-val {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .room-badge-pill {
+      font-size: 1.15rem;
+      font-weight: 800;
+      font-family: var(--font-heading);
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-md);
+      background: #e0f2fe;
+      color: #0369a1;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .profile-hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      .profile-avatar-large {
+        margin: 0 auto;
+      }
+      .profile-actions {
+        display: flex;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h1 id="welcomeTitle">Welcome, Student</h1>
+            <p>View your room allocation status, submit requests, and manage hostel services.</p>
+          </div>
+          <div id="quickRequestContainer">
+            <button id="openRequestModalBtn" class="btn btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Request Room
+            </button>
+          </div>
+        </div>
+
+        <!-- Student Profile & Allocation Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              My Room & Allocation Details
+            </h2>
+            <div id="statusBadgeContainer">
+              <span class="status-badge" id="statusBadge">Loading...</span>
+            </div>
+          </div>
+
+          <div class="profile-hero">
+            <div class="profile-avatar-large" id="avatarDisplay">S</div>
+            <div>
+              <h3 id="studentFullName" style="font-size: 1.4rem; margin-bottom: 0.25rem;">Student Name</h3>
+              <p id="studentEmail" style="color: var(--text-muted); font-size: 0.95rem;">student@college.edu</p>
+              <div style="margin-top: 0.5rem;">
+                <a href="/student/profile.html" class="btn btn-secondary btn-sm">Edit Profile / Photo</a>
+              </div>
+            </div>
+            <div class="profile-actions" id="roomDisplayContainer">
+              <div class="room-badge-pill" id="roomBadgePill">
+                <span id="roomBedText">Not Allocated</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-details-grid">
+            <div>
+              <div class="profile-field-label">Register Number</div>
+              <div class="profile-field-val" id="valRegNo">-</div>
+            </div>
+            <div>
+              <div class="profile-field-label">Department</div>
+              <div class="profile-field-val" id="valDept">-</div>
+            </div>
+            <div>
+              <div class="profile-field-label">Year of Study</div>
+              <div class="profile-field-val" id="valYear">-</div>
+            </div>
+            <div>
+              <div class="profile-field-label">Phone Number</div>
+              <div class="profile-field-val" id="valPhone">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request History Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Room Request History
+            </h2>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="requestTable">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Preferred Room</th>
+                  <th>Preferred Floor</th>
+                  <th>Note</th>
+                  <th>Status</th>
+                  <th>Decision Note</th>
+                  <th>Requested Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="requestTableBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Coming Soon Modules Section -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+              Hostel Services (Upcoming Features)
+            </h2>
+          </div>
+          <div class="coming-soon-grid">
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Digital Attendance</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Biometric & QR check-ins</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Outpass Management</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">One-click leave approval</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Parcel Delivery</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Security desk package pickup</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Maintenance Requests</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Plumbing, electrical & AC fix</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Events & Activities</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Hostel cultural fest & tournaments</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Mess & Meals</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Daily menu & feedback ratings</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="22" x2="9" y2="2"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+              </div>
+              <h3 style="font-size: 1.05rem;">Smart Vending</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Snack & beverage dispensers</p>
+              <span class="coming-soon-badge">Coming soon</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Room Request Modal -->
+  <div class="modal-overlay" id="requestModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Submit Room Request</h3>
+        <button class="modal-close" onclick="UI.closeModal('requestModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="roomRequestForm">
+          <div class="form-group">
+            <label class="form-label" for="selectPreferredRoom">Preferred Room (Optional)</label>
+            <select id="selectPreferredRoom" class="form-control">
+              <option value="">-- No preference / Any room with available space --</option>
+            </select>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Select from rooms currently having free beds</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputPreferredFloor">Preferred Floor (Optional)</label>
+            <select id="inputPreferredFloor" class="form-control">
+              <option value="">-- No preference --</option>
+              <option value="1">Floor 1</option>
+              <option value="2">Floor 2</option>
+              <option value="3">Floor 3</option>
+              <option value="4">Floor 4</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputNote">Special Notes / Medical Requirements</label>
+            <textarea id="inputNote" class="form-control" rows="3" placeholder="e.g. Near restroom, ground floor preference for accessibility, quiet room study..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('requestModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitRequest">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    let currentStudent = null;
+
+    async function loadStudentData() {
+      try {
+        const res = await fetch('/api/student/profile');
+        if (!res.ok) throw new Error('Failed to load profile');
+        currentStudent = await res.json();
+        renderProfile(currentStudent);
+        loadRequests();
+      } catch (err) {
+        UI.showToast('Error loading student profile: ' + err.message, 'error');
+      }
+    }
+
+    function renderProfile(profile) {
+      document.getElementById('welcomeTitle').textContent = `Welcome, ${profile.fullName}`;
+      document.getElementById('studentFullName').textContent = profile.fullName;
+      document.getElementById('studentEmail').textContent = profile.collegeEmail;
+      document.getElementById('valRegNo').textContent = profile.registerNumber;
+      document.getElementById('valDept').textContent = profile.department;
+      document.getElementById('valYear').textContent = `Year ${profile.year}`;
+      document.getElementById('valPhone').textContent = profile.phone;
+
+      // Avatar
+      const avatarBox = document.getElementById('avatarDisplay');
+      if (profile.photoUrl) {
+        avatarBox.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = profile.photoUrl + '?t=' + Date.now();
+        img.alt = profile.fullName;
+        avatarBox.appendChild(img);
+      } else {
+        avatarBox.textContent = profile.fullName.charAt(0).toUpperCase();
+      }
+
+      // Status Badge
+      const statusBadge = document.getElementById('statusBadge');
+      statusBadge.textContent = profile.allocationStatus;
+
+      const roomBadgePill = document.getElementById('roomBadgePill');
+      const roomBedText = document.getElementById('roomBedText');
+      const openRequestModalBtn = document.getElementById('openRequestModalBtn');
+
+      if (profile.allocationStatus === 'ALLOCATED') {
+        statusBadge.className = 'status-badge badge-allocated';
+        roomBadgePill.style.background = '#dcfce7';
+        roomBadgePill.style.color = '#15803d';
+        roomBedText.textContent = `Room ${profile.roomNumber} - Bed #${profile.bedNumber}`;
+        if (openRequestModalBtn) {
+          openRequestModalBtn.disabled = true;
+          openRequestModalBtn.title = 'You are already allocated to a room';
+        }
+      } else if (profile.allocationStatus === 'REQUEST PENDING') {
+        statusBadge.className = 'status-badge badge-pending';
+        roomBadgePill.style.background = '#fef3c7';
+        roomBadgePill.style.color = '#b45309';
+        roomBedText.textContent = 'Request Pending Approval';
+        if (openRequestModalBtn) {
+          openRequestModalBtn.disabled = true;
+          openRequestModalBtn.title = 'You already have a pending request';
+        }
+      } else {
+        statusBadge.className = 'status-badge badge-not-allocated';
+        roomBadgePill.style.background = '#fee2e2';
+        roomBadgePill.style.color = '#b91c1c';
+        roomBedText.textContent = 'Not Allocated';
+        if (openRequestModalBtn) {
+          openRequestModalBtn.disabled = false;
+        }
+      }
+    }
+
+    async function loadRequests() {
+      try {
+        const res = await fetch('/api/student/room-requests');
+        if (!res.ok) throw new Error('Failed to load request history');
+        const requests = await res.json();
+        renderRequests(requests);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderRequests(requests) {
+      const tbody = document.getElementById('requestTableBody');
+      tbody.innerHTML = '';
+
+      if (requests.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.style.textAlign = 'center';
+        td.style.padding = '2rem';
+        td.style.color = 'var(--text-muted)';
+        td.textContent = 'No room requests submitted yet.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      requests.forEach(req => {
+        const tr = document.createElement('tr');
+
+        // Request ID
+        const tdId = document.createElement('td');
+        tdId.setAttribute('data-label', 'Request ID');
+        tdId.textContent = '#' + req.id;
+
+        // Preferred Room
+        const tdRoom = document.createElement('td');
+        tdRoom.setAttribute('data-label', 'Preferred Room');
+        tdRoom.textContent = req.preferredRoomNumber ? `Room ${req.preferredRoomNumber}` : 'Any Room';
+
+        // Preferred Floor
+        const tdFloor = document.createElement('td');
+        tdFloor.setAttribute('data-label', 'Preferred Floor');
+        tdFloor.textContent = req.preferredFloor ? `Floor ${req.preferredFloor}` : '-';
+
+        // Note
+        const tdNote = document.createElement('td');
+        tdNote.setAttribute('data-label', 'Note');
+        tdNote.textContent = req.note || '-';
+
+        // Status Badge
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Status');
+        const spanStatus = document.createElement('span');
+        spanStatus.textContent = req.status;
+        if (req.status === 'APPROVED') spanStatus.className = 'status-badge badge-allocated';
+        else if (req.status === 'PENDING') spanStatus.className = 'status-badge badge-pending';
+        else if (req.status === 'REJECTED') spanStatus.className = 'status-badge badge-rejected';
+        else spanStatus.className = 'status-badge badge-cancelled';
+        tdStatus.appendChild(spanStatus);
+
+        // Decision Note
+        const tdDecision = document.createElement('td');
+        tdDecision.setAttribute('data-label', 'Decision Note');
+        tdDecision.textContent = req.decisionNote || '-';
+
+        // Date
+        const tdDate = document.createElement('td');
+        tdDate.setAttribute('data-label', 'Requested Date');
+        tdDate.textContent = req.createdAt ? new Date(req.createdAt).toLocaleDateString() : '-';
+
+        // Action
+        const tdAction = document.createElement('td');
+        tdAction.setAttribute('data-label', 'Action');
+        if (req.status === 'PENDING') {
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'btn btn-danger btn-sm';
+          btnCancel.textContent = 'Cancel';
+          btnCancel.onclick = async () => {
+            const confirmed = await UI.showConfirm({
+              title: 'Cancel Room Request',
+              message: 'Are you sure you want to cancel this pending room request?'
+            });
+            if (confirmed) {
+              await cancelRequest(req.id);
+            }
+          };
+          tdAction.appendChild(btnCancel);
+        } else {
+          tdAction.textContent = '-';
+        }
+
+        tr.append(tdId, tdRoom, tdFloor, tdNote, tdStatus, tdDecision, tdDate, tdAction);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cancelRequest(requestId) {
+      try {
+        const res = await fetch(`/api/student/room-requests/${requestId}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Could not cancel request');
+        UI.showToast('Room request cancelled', 'info');
+        loadStudentData();
+      } catch (err) {
+        UI.showToast(err.message, 'error');
+      }
+    }
+
+    // Available rooms loader for modal
+    async function loadAvailableRoomsForModal() {
+      try {
+        const res = await fetch('/api/student/rooms/available');
+        if (!res.ok) throw new Error('Failed to load available rooms');
+        const rooms = await res.json();
+        const select = document.getElementById('selectPreferredRoom');
+        select.innerHTML = '<option value="">-- No preference / Any room with available space --</option>';
+
+        rooms.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id;
+          opt.textContent = `Room ${r.roomNumber} (Floor ${r.floor}) - ${r.availableBeds} beds free`;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Modal submit handler
+    document.getElementById('btnSubmitRequest').addEventListener('click', async () => {
+      const preferredRoomId = document.getElementById('selectPreferredRoom').value || null;
+      const preferredFloor = document.getElementById('inputPreferredFloor').value || null;
+      const note = document.getElementById('inputNote').value.trim();
+
+      const btn = document.getElementById('btnSubmitRequest');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/student/room-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            preferredRoomId: preferredRoomId ? parseInt(preferredRoomId) : null,
+            preferredFloor: preferredFloor ? parseInt(preferredFloor) : null,
+            note: note || null
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to submit room request', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Submit Request';
+          return;
+        }
+
+        UI.showToast('Room request submitted successfully!', 'success');
+        UI.closeModal('requestModal');
+        document.getElementById('roomRequestForm').reset();
+        btn.disabled = false;
+        btn.textContent = 'Submit Request';
+        loadStudentData();
+      } catch (err) {
+        UI.showToast('Network error while submitting request', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Submit Request';
+      }
+    });
+
+    document.getElementById('openRequestModalBtn').addEventListener('click', () => {
+      loadAvailableRoomsForModal();
+      UI.openModal('requestModal');
+    });
+
+    // Guard & Initialize
+    (async () => {
+      const user = await Auth.requireAuth(['STUDENT']);
+      if (!user) return;
+      UI.renderLayout(user, 'dashboard');
+      loadStudentData();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Desk - Smart Hostel</title>
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="welcome-card">
+          <div class="welcome-text">
+            <h1 id="welcomeUser">Security Officer Portal</h1>
+            <p>Campus perimeter security, student visitor logs, and parcel checkpoints.</p>
+          </div>
+          <div>
+            <span class="status-badge badge-active">On Duty</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Security Modules</h2>
+          </div>
+          <div class="coming-soon-grid">
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h3>Gate Visitor Log</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Visitor registration & vehicle verification</p>
+              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
+            </div>
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              </div>
+              <h3>Night Curfew Scanner</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">QR badge verification for late entries</p>
+              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
+            </div>
+            <div class="coming-soon-card">
+              <div class="coming-soon-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
+              </div>
+              <h3>Parcel Intake</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Courier package barcode intake & student notifications</p>
+              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['SECURITY', 'ADMIN']);
+      if (!user) return;
+      document.getElementById('welcomeUser').textContent = `Welcome, Officer ${user.name}`;
+      UI.renderLayout(user, 'dashboard');
+    })();
+  </script>
+</body>
+</html>

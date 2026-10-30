@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Profile & Photo - Smart Hostel</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .profile-card {
+      background: #fff;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .photo-upload-section {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 2rem;
+    }
+
+    .photo-preview-box {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 4px solid var(--primary);
+      overflow: hidden;
+      background: var(--input-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .photo-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .file-input-hidden {
+      display: none;
+    }
+
+    .profile-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .photo-upload-section {
+        flex-direction: column;
+        text-align: center;
+      }
+      .profile-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <div class="profile-card">
+          <div class="card-header" style="margin-bottom: 2rem;">
+            <h1 class="card-title" style="font-size: 1.6rem;">My Hostel Profile</h1>
+            <a href="/student/dashboard.html" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+          </div>
+
+          <!-- Photo Upload Section -->
+          <div class="photo-upload-section">
+            <div class="photo-preview-box" id="photoPreviewContainer">
+              <span id="avatarPlaceholder" style="font-size: 3rem; font-weight: 800; color: var(--text-light);">S</span>
+            </div>
+            <div class="photo-controls">
+              <h3 style="font-size: 1.15rem;">Student Identification Photo</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">
+                Upload a clear passport-style portrait photo. Allowed formats: JPG, PNG. Maximum file size: 2 MB.
+              </p>
+              <input type="file" id="photoFileInput" class="file-input-hidden" accept="image/jpeg,image/png,image/jpg">
+              <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnChoosePhoto">Choose Photo</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnUploadPhoto" disabled>Upload & Save</button>
+              </div>
+              <small id="selectedFileName" style="color: var(--primary); font-weight: 600;"></small>
+            </div>
+          </div>
+
+          <!-- Profile Fields View -->
+          <div class="profile-grid-2">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="profFullName" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Register Number</label>
+              <input type="text" id="profRegNo" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">College Email</label>
+              <input type="email" id="profEmail" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Phone</label>
+              <input type="text" id="profPhone" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <input type="text" id="profDept" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year of Study</label>
+              <input type="text" id="profYear" class="form-control" readonly>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    let selectedFile = null;
+
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/student/profile');
+        if (!res.ok) throw new Error('Could not load profile');
+        const data = await res.json();
+
+        document.getElementById('profFullName').value = data.fullName;
+        document.getElementById('profRegNo').value = data.registerNumber;
+        document.getElementById('profEmail').value = data.collegeEmail;
+        document.getElementById('profPhone').value = data.phone;
+        document.getElementById('profDept').value = data.department;
+        document.getElementById('profYear').value = `Year ${data.year}`;
+
+        const container = document.getElementById('photoPreviewContainer');
+        if (data.photoUrl) {
+          container.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = data.photoUrl + '?t=' + Date.now();
+          container.appendChild(img);
+        } else {
+          document.getElementById('avatarPlaceholder').textContent = data.fullName.charAt(0).toUpperCase();
+        }
+      } catch (err) {
+        UI.showToast(err.message, 'error');
+      }
+    }
+
+    const fileInput = document.getElementById('photoFileInput');
+    const btnChoose = document.getElementById('btnChoosePhoto');
+    const btnUpload = document.getElementById('btnUploadPhoto');
+    const selectedFileName = document.getElementById('selectedFileName');
+
+    btnChoose.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        selectedFile = fileInput.files[0];
+
+        if (selectedFile.size > 2 * 1024 * 1024) {
+          UI.showToast('Selected file exceeds 2 MB limit', 'error');
+          fileInput.value = '';
+          selectedFile = null;
+          btnUpload.disabled = true;
+          selectedFileName.textContent = '';
+          return;
+        }
+
+        selectedFileName.textContent = `Selected: ${selectedFile.name} (${Math.round(selectedFile.size / 1024)} KB)`;
+        btnUpload.disabled = false;
+
+        // Local Preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const container = document.getElementById('photoPreviewContainer');
+          container.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          container.appendChild(img);
+        };
+        reader.readAsDataURL(selectedFile);
+      }
+    });
+
+    btnUpload.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      btnUpload.disabled = true;
+      btnUpload.textContent = 'Uploading...';
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const res = await fetch('/api/student/photo', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to upload photo', 'error');
+          btnUpload.disabled = false;
+          btnUpload.textContent = 'Upload & Save';
+          return;
+        }
+
+        UI.showToast('Photo uploaded and updated successfully!', 'success');
+        btnUpload.textContent = 'Upload & Save';
+        btnUpload.disabled = true;
+        selectedFileName.textContent = '';
+        loadProfile();
+      } catch (err) {
+        UI.showToast('Upload failed due to network error', 'error');
+        btnUpload.disabled = false;
+        btnUpload.textContent = 'Upload & Save';
+      }
+    });
+
+    (async () => {
+      const user = await Auth.requireAuth(['STUDENT']);
+      if (!user) return;
+      UI.renderLayout(user, 'profile');
+      loadProfile();
+    })();
+  </script>
+</body>
+</html>

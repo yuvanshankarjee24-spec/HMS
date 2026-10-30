@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Hostel Management</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <script src="/js/auth.js"></script>
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg-base);color:var(--text-primary);font-family:inherit;">
+  <div style="text-align:center;">
+    <div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto 16px auto;"></div>
+    <p style="color:var(--text-secondary);font-size:14px;letter-spacing:0.02em;">Loading Smart Hostel Portal...</p>
+  </div>
+  <script>
+    (async () => {
+      try {
+        const user = await Auth.getMe();
+        if (!user) {
+          window.location.replace('/login.html');
+        } else {
+          Auth.redirectToDashboard(user.role);
+        }
+      } catch (e) {
+        window.location.replace('/login.html');
+      }
+    })();
+  </script>
+</body>
+</html>
