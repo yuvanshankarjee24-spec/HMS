@@ -398,7 +398,7 @@
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
             </span>
-            <input type="password" id="passwordInput" class="login-input has-toggle" placeholder="Enter your password" required autocomplete="current-password">
+            <input type="password" id="passwordInput" class="login-input has-toggle" placeholder="Password: Hostel@123" required autocomplete="current-password">
             <span class="input-icon-right" id="togglePasswordBtn" title="Toggle password visibility">
               <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -417,10 +417,24 @@
         </button>
       </form>
 
-      <div class="demo-hint-box">
-        <strong>Demo Passwords:</strong> <code>Hostel@123</code><br>
-        Admin: <code>admin@hostel.edu</code> | Warden: <code>warden@hostel.edu</code><br>
-        Student: <code>REG202609</code> / <code>student9@college.edu</code>
+      <div class="demo-hint-box" style="text-align: left; padding: 0.85rem 1rem;">
+        <div style="font-weight: 700; color: #1e40af; margin-bottom: 0.5rem;">
+          🔑 Quick 1-Click Demo Fill:
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.82rem;">
+          <button type="button" onclick="fillCredentials('STUDENT', 'REG202609', 'Hostel@123')" style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: left; cursor: pointer; color: #1e3a8a; font-size: 0.82rem; font-family: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <span>🎓 <strong>Student:</strong> <code>REG202609</code></span>
+            <span style="color: #2563eb; font-weight: 600; font-size: 0.75rem;">Fill &rarr;</span>
+          </button>
+          <button type="button" onclick="fillCredentials('WARDEN', 'warden@hostel.edu', 'Hostel@123')" style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: left; cursor: pointer; color: #1e3a8a; font-size: 0.82rem; font-family: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <span>🏢 <strong>Warden:</strong> <code>warden@hostel.edu</code></span>
+            <span style="color: #2563eb; font-weight: 600; font-size: 0.75rem;">Fill &rarr;</span>
+          </button>
+          <button type="button" onclick="fillCredentials('ADMIN', 'admin@hostel.edu', 'Hostel@123')" style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: left; cursor: pointer; color: #1e3a8a; font-size: 0.82rem; font-family: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <span>⚙️ <strong>Admin:</strong> <code>admin@hostel.edu</code></span>
+            <span style="color: #2563eb; font-weight: 600; font-size: 0.75rem;">Fill &rarr;</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -430,6 +444,14 @@
   <script>
     // Selected Role Tab State
     let selectedRole = 'STUDENT';
+
+    function fillCredentials(role, identifier, password) {
+      const btn = document.querySelector(`.role-pill-btn[data-role="${role}"]`);
+      if (btn) btn.click();
+      document.getElementById('identifierInput').value = identifier;
+      document.getElementById('passwordInput').value = password;
+      hideError();
+    }
 
     // Role pill button switcher
     document.querySelectorAll('.role-pill-btn').forEach(btn => {
