@@ -73,12 +73,14 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(
                                 "/",
+                                "/index.html",
                                 "/login.html",
                                 "/change-password.html",
                                 "/css/**",
                                 "/js/**",
                                 "/img/**",
                                 "/favicon.ico",
+                                "/error",
                                 "/api/auth/login",
                                 "/api/auth/logout"
                         ).permitAll()
