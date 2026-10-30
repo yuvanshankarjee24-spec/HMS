@@ -159,11 +159,16 @@ const UI = {
     const menuItemsByRole = {
       'STUDENT': [
         { key: 'dashboard', label: 'My Dashboard', href: '/student/dashboard.html' },
+        { key: 'allocation', label: 'Online Room Booking', href: '/student/dashboard.html#onlineAllocationCard' },
+        { key: 'outpasses', label: 'My Outpasses', href: '/student/dashboard.html#outpassCard' },
         { key: 'profile', label: 'Profile & Photo', href: '/student/profile.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],
       'WARDEN': [
         { key: 'dashboard', label: 'Warden Overview', href: '/warden/dashboard.html' },
+        { key: 'attendance', label: 'Active Attendance', href: '/warden/dashboard.html#attendanceSection' },
+        { key: 'outpasses', label: 'Outpass Requests', href: '/warden/dashboard.html#outpassSection' },
+        { key: 'whitelist', label: 'Online Allocation Whitelist', href: '/warden/dashboard.html#allocationWhitelistSection' },
         { key: 'rooms', label: 'Room Management', href: '/warden/rooms.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],

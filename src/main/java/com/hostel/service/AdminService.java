@@ -157,6 +157,10 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        if (actorUser != null && user.getId().equals(actorUser.getId())) {
+            throw new BadRequestException("You cannot disable or modify the status of your own account.");
+        }
+
         User.Status newStatus;
         try {
             newStatus = User.Status.valueOf(req.status().trim().toUpperCase());

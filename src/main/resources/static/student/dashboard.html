@@ -97,7 +97,13 @@
             <h1 id="welcomeTitle">Welcome, Student</h1>
             <p>View your room allocation status, submit requests, and manage hostel services.</p>
           </div>
-          <div id="quickRequestContainer">
+          <div id="quickRequestContainer" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="openOutpassModalBtn" class="btn btn-secondary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              Apply Outpass
+            </button>
             <button id="openRequestModalBtn" class="btn btn-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"/>
@@ -186,6 +192,63 @@
               </thead>
               <tbody id="requestTableBody">
                 <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Online Room Allocation & Counseling Round Card -->
+        <div class="card" id="onlineAllocationCard">
+          <div class="card-header" style="flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h2 class="card-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Online Room Allocation (Counseling Round)
+              </h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Live room booking for student groups. One designated roll number per room group accesses the portal to book with friends.
+              </p>
+            </div>
+            <div>
+              <span id="studentRoundBadge" class="status-badge badge-active">Round: OPEN</span>
+            </div>
+          </div>
+          <div id="allocationPortalContainer" style="padding: 1.25rem;">
+            <p style="color: var(--text-muted);">Checking allocation eligibility & access...</p>
+          </div>
+        </div>
+
+        <!-- Student Outpass Requests Card -->
+        <div class="card" id="outpassCard">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              My Outpasses & Leave Records
+            </h2>
+            <button class="btn btn-secondary btn-sm" id="btnOpenOutpassModal2">+ Apply for Outpass</button>
+          </div>
+          <div id="outpassStatusAlertArea" style="padding: 0 1.25rem 0.5rem 1.25rem;"></div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="outpassTable">
+              <thead>
+                <tr>
+                  <th>Pass #</th>
+                  <th>Pass Type</th>
+                  <th>Departure</th>
+                  <th>Expected Return</th>
+                  <th>Reason & Destination</th>
+                  <th>Emergency Contact</th>
+                  <th>Status</th>
+                  <th>Warden Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="outpassTableBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading outpass records...</td></tr>
               </tbody>
             </table>
           </div>
@@ -310,6 +373,55 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="UI.closeModal('requestModal')">Cancel</button>
         <button class="btn btn-primary" id="btnSubmitRequest">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outpass Request Modal -->
+  <div class="modal-overlay" id="outpassModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Apply for Hostel Outpass / Leave</h3>
+        <button class="modal-close" onclick="UI.closeModal('outpassModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="outpassForm">
+          <div class="form-group">
+            <label class="form-label" for="selectPassType">Pass Type *</label>
+            <select id="selectPassType" class="form-control" required>
+              <option value="DAY_PASS">Day Pass (Return same day before curfew)</option>
+              <option value="WEEKEND_PASS">Weekend Pass (Hometown / Overnight)</option>
+              <option value="EMERGENCY_PASS">Emergency Pass (Medical / Urgent)</option>
+              <option value="VACATION_PASS">Vacation Pass (Term break)</option>
+            </select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="inputDeparture">Departure Date & Time *</label>
+              <input type="datetime-local" id="inputDeparture" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputReturn">Expected Return Date & Time *</label>
+              <input type="datetime-local" id="inputReturn" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputDestination">Destination (City / Hospital / Address) *</label>
+            <input type="text" id="inputDestination" class="form-control" placeholder="e.g. Chennai Central, Apollo Hospital, Home" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputEmergencyPhone">Emergency / Parent Contact *</label>
+            <input type="tel" id="inputEmergencyPhone" class="form-control" placeholder="e.g. +91 9876543210" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inputReason">Detailed Reason *</label>
+            <textarea id="inputReason" class="form-control" rows="3" placeholder="Provide reason for leave/outpass..." required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('outpassModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitOutpass">Submit Outpass Request</button>
       </div>
     </div>
   </div>
@@ -567,12 +679,414 @@
       UI.openModal('requestModal');
     });
 
+    // ==========================================
+    // Student Outpass Logic
+    // ==========================================
+    async function loadOutpasses() {
+      try {
+        const res = await fetch('/api/student/outpasses');
+        if (!res.ok) throw new Error('Failed to load outpasses');
+        const outpasses = await res.json();
+        renderOutpasses(outpasses);
+      } catch (err) {
+        console.error('Outpass error:', err);
+      }
+    }
+
+    function renderOutpasses(outpasses) {
+      const tbody = document.getElementById('outpassTableBody');
+      tbody.innerHTML = '';
+
+      if (outpasses.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.style.textAlign = 'center';
+        td.style.padding = '2rem';
+        td.style.color = 'var(--text-muted)';
+        td.textContent = 'No outpasses submitted yet. Click "Apply for Outpass" to request leave.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      outpasses.forEach(op => {
+        const tr = document.createElement('tr');
+
+        // Pass #
+        const tdId = document.createElement('td');
+        tdId.setAttribute('data-label', 'Pass #');
+        tdId.textContent = `#OP-${op.id}`;
+        tdId.style.fontWeight = '700';
+
+        // Pass Type
+        const tdType = document.createElement('td');
+        tdType.setAttribute('data-label', 'Pass Type');
+        const typeBadge = document.createElement('span');
+        typeBadge.textContent = op.passType.replace('_', ' ');
+        if (op.passType === 'DAY_PASS') typeBadge.className = 'status-badge badge-day-pass';
+        else if (op.passType === 'WEEKEND_PASS') typeBadge.className = 'status-badge badge-weekend-pass';
+        else if (op.passType === 'EMERGENCY_PASS') typeBadge.className = 'status-badge badge-emergency-pass';
+        else typeBadge.className = 'status-badge badge-vacation-pass';
+        tdType.appendChild(typeBadge);
+
+        // Departure
+        const tdDep = document.createElement('td');
+        tdDep.setAttribute('data-label', 'Departure');
+        tdDep.textContent = op.departureDateTime ? new Date(op.departureDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
+        // Return
+        const tdRet = document.createElement('td');
+        tdRet.setAttribute('data-label', 'Expected Return');
+        tdRet.textContent = op.returnDateTime ? new Date(op.returnDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
+        // Destination & Reason
+        const tdDest = document.createElement('td');
+        tdDest.setAttribute('data-label', 'Reason & Destination');
+        tdDest.innerHTML = `<div><strong>${op.reason}</strong></div><small style="color:var(--text-muted);">${op.destination ? '📍 ' + op.destination : ''}</small>`;
+
+        // Contact
+        const tdContact = document.createElement('td');
+        tdContact.setAttribute('data-label', 'Emergency Contact');
+        tdContact.textContent = op.emergencyPhone || '-';
+
+        // Status
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Status');
+        const statusBadge = document.createElement('span');
+        statusBadge.textContent = op.status;
+        if (op.status === 'APPROVED') statusBadge.className = 'status-badge badge-allocated';
+        else if (op.status === 'PENDING') statusBadge.className = 'status-badge badge-pending';
+        else if (op.status === 'REJECTED') statusBadge.className = 'status-badge badge-rejected';
+        else statusBadge.className = 'status-badge badge-cancelled';
+        tdStatus.appendChild(statusBadge);
+
+        // Remarks
+        const tdRemarks = document.createElement('td');
+        tdRemarks.setAttribute('data-label', 'Warden Remarks');
+        tdRemarks.textContent = op.wardenRemarks || '-';
+
+        tr.append(tdId, tdType, tdDep, tdRet, tdDest, tdContact, tdStatus, tdRemarks);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Open outpass modal listeners
+    const openOutpassModalBtn = document.getElementById('openOutpassModalBtn');
+    if (openOutpassModalBtn) {
+      openOutpassModalBtn.addEventListener('click', () => UI.openModal('outpassModal'));
+    }
+    const btnOpenOutpassModal2 = document.getElementById('btnOpenOutpassModal2');
+    if (btnOpenOutpassModal2) {
+      btnOpenOutpassModal2.addEventListener('click', () => UI.openModal('outpassModal'));
+    }
+
+    // Submit outpass handler
+    document.getElementById('btnSubmitOutpass').addEventListener('click', async () => {
+      const passType = document.getElementById('selectPassType').value;
+      const departure = document.getElementById('inputDeparture').value;
+      const retTime = document.getElementById('inputReturn').value;
+      const destination = document.getElementById('inputDestination').value.trim();
+      const emergencyPhone = document.getElementById('inputEmergencyPhone').value.trim();
+      const reason = document.getElementById('inputReason').value.trim();
+
+      if (!departure || !retTime || !destination || !emergencyPhone || !reason) {
+        UI.showToast('Please fill all required outpass fields', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitOutpass');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/student/outpasses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            passType,
+            departureDateTime: departure,
+            returnDateTime: retTime,
+            destination,
+            emergencyPhone,
+            reason
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to submit outpass request', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Submit Outpass Request';
+          return;
+        }
+
+        UI.showToast('Outpass request submitted successfully! Awaiting warden approval.', 'success');
+        UI.closeModal('outpassModal');
+        document.getElementById('outpassForm').reset();
+        btn.disabled = false;
+        btn.textContent = 'Submit Outpass Request';
+        loadOutpasses();
+      } catch (e) {
+        UI.showToast('Network error submitting outpass request', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Submit Outpass Request';
+      }
+    });
+
+    // ==========================================
+    // Outpass Eligibility & Live Home Status
+    // ==========================================
+    async function loadOutpassEligibility() {
+      try {
+        const res = await fetch('/api/student/outpass-eligibility');
+        if (!res.ok) return;
+        const data = await res.json();
+        const alertArea = document.getElementById('outpassStatusAlertArea');
+        if (!alertArea) return;
+
+        alertArea.innerHTML = '';
+
+        if (!data.eligible) {
+          const alert = document.createElement('div');
+          alert.style.cssText = 'background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:0.9rem 1.25rem; border-radius:var(--radius-md); margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;';
+          alert.innerHTML = `
+            <span style="font-size:1.5rem;">⚠️</span>
+            <div>
+              <strong>Outpass Privileges Disabled (Attendance Default):</strong><br>
+              <span style="font-size:0.88rem;">${data.message}</span>
+            </div>
+          `;
+          alertArea.appendChild(alert);
+
+          if (openOutpassModalBtn) {
+            openOutpassModalBtn.disabled = true;
+            openOutpassModalBtn.style.opacity = '0.5';
+            openOutpassModalBtn.style.cursor = 'not-allowed';
+            openOutpassModalBtn.title = data.message;
+          }
+          if (btnOpenOutpassModal2) {
+            btnOpenOutpassModal2.disabled = true;
+            btnOpenOutpassModal2.style.opacity = '0.5';
+            btnOpenOutpassModal2.style.cursor = 'not-allowed';
+            btnOpenOutpassModal2.title = data.message;
+          }
+        } else if (data.hasActiveOutpass) {
+          const alert = document.createElement('div');
+          alert.style.cssText = 'background:#f5f3ff; border:1px solid #c4b5fd; color:#6d28d9; padding:0.85rem 1.25rem; border-radius:var(--radius-md); margin-bottom:1rem; font-weight:600; display:flex; align-items:center; gap:0.5rem;';
+          alert.innerHTML = `
+            <span style="font-size:1.4rem;">🏡</span>
+            <div><strong>Active Residency Status:</strong> ${data.activeOutpassStatus}</div>
+          `;
+          alertArea.appendChild(alert);
+        }
+      } catch (err) {
+        console.error('Outpass eligibility error:', err);
+      }
+    }
+
+    // ==========================================
+    // Online Room Allocation Access & Booking
+    // ==========================================
+    async function loadOnlineAllocationAccess() {
+      try {
+        const res = await fetch('/api/student/online-allocation/access');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const badge = document.getElementById('studentRoundBadge');
+        if (badge) {
+          badge.textContent = `Round: ${data.roundStatus}`;
+          badge.className = data.roundOpen ? 'status-badge badge-active' : 'status-badge badge-inactive';
+        }
+
+        const container = document.getElementById('allocationPortalContainer');
+        if (!container) return;
+
+        if (data.accessStatus === 'ALREADY_ALLOCATED') {
+          container.innerHTML = `
+            <div style="background:#f0fdf4; border:1px solid #86efac; color:#166534; padding:1.25rem; border-radius:var(--radius-md); font-weight:600; display:flex; align-items:center; gap:0.75rem;">
+              <span style="font-size:1.5rem;">✅</span>
+              <div>
+                <strong>Room Allocation Confirmed:</strong> You are currently allocated to <strong>Room ${data.currentRoom}</strong>, <strong>Bed #${data.currentBed}</strong>.
+              </div>
+            </div>
+          `;
+        } else if (data.accessStatus === 'NOT_AUTHORIZED') {
+          container.innerHTML = `
+            <div class="allocation-box-restricted">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                <span style="font-size:1.3rem;">🔒</span>
+                <h3 style="color:#92400e; margin:0;">Online Room Allocation Restricted</h3>
+              </div>
+              <p style="color:#78350f; font-size:0.92rem; margin-bottom:0.5rem;">${data.message}</p>
+              <p style="color:#b45309; font-size:0.82rem; margin:0;">
+                Hostel room counseling is conducted online per room group. Only specific designated roll numbers pre-noted on the warden's allocation Excel sheet can access room booking. If you are part of a friend group, your representative will book the room for you.
+              </p>
+            </div>
+          `;
+        } else if (data.accessStatus === 'GROUP_MEMBER') {
+          container.innerHTML = `
+            <div class="allocation-box-member">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                <span style="font-size:1.3rem;">ℹ️</span>
+                <h3 style="color:#0369a1; margin:0;">Group Booking Registered</h3>
+              </div>
+              <p style="color:#075985; font-size:0.95rem; margin-bottom:0.5rem;">${data.message}</p>
+              <div style="font-size:0.85rem; color:#0284c7;">
+                Group Size: <strong>${data.groupSize} Members</strong> | Target Room: <strong>${data.allowedRoomNumber ? 'Room ' + data.allowedRoomNumber : 'Any Available'}</strong>
+              </div>
+            </div>
+          `;
+        } else if (data.accessStatus === 'ALREADY_BOOKED') {
+          container.innerHTML = `
+            <div style="background:#f0fdf4; border:1px solid #86efac; color:#166534; padding:1.25rem; border-radius:var(--radius-md); font-weight:600; display:flex; align-items:center; gap:0.75rem;">
+              <span style="font-size:1.5rem;">🎉</span>
+              <div>
+                <strong>Group Booking Completed!</strong> You have successfully booked <strong>Room ${data.allocatedRoomNumber}</strong> for your group.
+              </div>
+            </div>
+          `;
+        } else if (data.accessStatus === 'AUTHORIZED_LEADER') {
+          container.innerHTML = `
+            <div class="allocation-box-leader">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+                <div>
+                  <h3 style="color:#065f46; font-size:1.2rem; margin-bottom:0.25rem;">🌟 Group Representative Booking Access Granted</h3>
+                  <p style="color:#047857; font-size:0.9rem; margin:0;">
+                    You are the designated representative for your group of <strong>${data.groupSize} members</strong>. Choose an available room to complete online booking together.
+                  </p>
+                </div>
+                <span class="badge" style="background:#10b981; color:#fff; font-weight:700; padding:0.4rem 0.8rem; border-radius:var(--radius-full);">Leader Access: Active</span>
+              </div>
+
+              <form id="onlineBookingForm">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                  <div>
+                    <label class="form-label" for="bookRoomSelect">Select Room with ≥ ${data.groupSize} Free Beds *</label>
+                    <select id="bookRoomSelect" class="form-control" required>
+                      <option value="">Loading eligible rooms...</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" for="bookFriendsInput">Friend Register Numbers (${data.groupSize - 1} required)</label>
+                    <input type="text" id="bookFriendsInput" class="form-control" value="${data.friendRegisterNumbers ? data.friendRegisterNumbers.join(', ') : ''}" placeholder="e.g. REG202609">
+                    <small style="color:var(--text-muted); font-size:0.75rem;">Pre-filled from Excel allocation sheet. Comma-separated.</small>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btnBookOnlineRoom" style="width:100%; justify-content:center; padding:0.75rem; font-size:1rem; font-weight:700;">
+                  🚀 Confirm & Book Room For All Friends Now
+                </button>
+              </form>
+
+              <div id="bookingResultArea" style="margin-top:1rem;"></div>
+            </div>
+          `;
+
+          loadEligibleRooms(data.groupSize, data.allowedRoomNumber);
+
+          const form = document.getElementById('onlineBookingForm');
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const roomId = document.getElementById('bookRoomSelect').value;
+            const friendsRaw = document.getElementById('bookFriendsInput').value;
+            const friends = friendsRaw ? friendsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+            if (!roomId) {
+              UI.showToast('Please select a room', 'error');
+              return;
+            }
+
+            const btn = document.getElementById('btnBookOnlineRoom');
+            btn.disabled = true;
+            btn.textContent = 'Processing Group Allocation...';
+
+            try {
+              const bRes = await fetch('/api/student/online-allocation/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  roomId: parseInt(roomId),
+                  friendRegisterNumbers: friends
+                })
+              });
+              const bData = await bRes.json();
+              if (!bRes.ok) {
+                UI.showToast(bData.message || 'Room booking failed', 'error');
+                btn.disabled = false;
+                btn.textContent = '🚀 Confirm & Book Room For All Friends Now';
+                return;
+              }
+
+              UI.showToast(bData.message, 'success');
+              const resArea = document.getElementById('bookingResultArea');
+              if (resArea) {
+                let memberListHtml = bData.allocatedMembers.map(m =>
+                  `<li style="margin-bottom:0.25rem;"><strong>${m.studentName} (${m.registerNumber})</strong>: Room ${m.roomNumber} - Bed #${m.bedNumber}</li>`
+                ).join('');
+
+                resArea.innerHTML = `
+                  <div style="background:#f0fdf4; border:1px solid #86efac; color:#166534; padding:1.25rem; border-radius:var(--radius-md);">
+                    <h4 style="margin-bottom:0.5rem; font-size:1.1rem;">🎉 Room ${bData.roomNumber} Booked Successfully!</h4>
+                    <p style="margin-bottom:0.5rem; font-size:0.9rem;">Beds assigned to all group members:</p>
+                    <ul style="padding-left:1.25rem; font-size:0.9rem;">${memberListHtml}</ul>
+                  </div>
+                `;
+              }
+              btn.style.display = 'none';
+              loadStudentData();
+            } catch (err) {
+              UI.showToast('Network error during room booking', 'error');
+              btn.disabled = false;
+              btn.textContent = '🚀 Confirm & Book Room For All Friends Now';
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Online allocation access error:', err);
+      }
+    }
+
+    async function loadEligibleRooms(minBeds, preferredRoom) {
+      const select = document.getElementById('bookRoomSelect');
+      if (!select) return;
+
+      try {
+        const res = await fetch('/api/student/rooms/available');
+        if (!res.ok) throw new Error('Failed to load rooms');
+        const rooms = await res.json();
+        select.innerHTML = '<option value="">-- Choose a Room --</option>';
+
+        const eligible = rooms.filter(r => r.availableBeds >= minBeds);
+        if (eligible.length === 0) {
+          select.innerHTML = '<option value="">No rooms available with enough free beds</option>';
+          return;
+        }
+
+        eligible.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id;
+          opt.textContent = `Room ${r.roomNumber} (Floor ${r.floor}) - ${r.availableBeds} beds available (Capacity ${r.capacity})`;
+          if (preferredRoom && r.roomNumber === preferredRoom) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        select.innerHTML = '<option value="">Error loading rooms</option>';
+      }
+    }
+
     // Guard & Initialize
     (async () => {
       const user = await Auth.requireAuth(['STUDENT']);
       if (!user) return;
       UI.renderLayout(user, 'dashboard');
       loadStudentData();
+      loadOutpasses();
+      loadOutpassEligibility();
+      loadOnlineAllocationAccess();
     })();
   </script>
 </body>
