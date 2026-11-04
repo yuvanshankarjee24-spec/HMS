@@ -82,11 +82,13 @@
           <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
             From the User Directory, administrators can search all users, filter by role, unlock accounts, disable access, and issue temporary password resets.
           </p>
-          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="/warden/dashboard.html" class="btn btn-secondary">Open Warden Dashboard</a>
-            <a href="/warden/rooms.html" class="btn btn-secondary">Inspect All Rooms & Beds</a>
-            <a href="/admin/users.html?role=STUDENT" class="btn btn-secondary">Filter Students</a>
-            <a href="/admin/users.html?role=WARDEN" class="btn btn-secondary">Filter Wardens</a>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="/admin/users.html" class="btn btn-primary">User Directory</a>
+            <a href="/warden/dashboard.html" class="btn btn-secondary">Hostel Overview</a>
+            <a href="/warden/attendance.html" class="btn btn-secondary">Active Attendance</a>
+            <a href="/warden/outpasses.html" class="btn btn-secondary">Outpass Requests</a>
+            <a href="/warden/whitelist.html" class="btn btn-secondary">Allocation Whitelist</a>
+            <a href="/warden/rooms.html" class="btn btn-secondary">Room Management</a>
           </div>
         </div>
 
@@ -95,7 +97,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js"></script>
+  <script src="/js/ui.js?v=2"></script>
   <script>
     async function loadStats() {
       try {

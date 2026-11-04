@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Outpasses & Leave - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .filter-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border-light);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .outpass-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card-mini {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .stat-icon-mini {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">My Outpasses & Campus Leave</h1>
+            <p class="page-subtitle">Submit outpass requests, check approval status, and view residency attendance history.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button type="button" class="btn btn-primary" id="btnOpenOutpassModal">+ Apply for Outpass</button>
+            <a href="/student/dashboard.html" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+          </div>
+        </div>
+
+        <!-- Eligibility & Active Status Area -->
+        <div id="outpassStatusAlertArea"></div>
+
+        <!-- Stats Counter -->
+        <div class="outpass-stats-grid">
+          <div class="stat-card-mini">
+            <div class="stat-icon-mini" style="background: #e0f2fe; color: #0284c7;">📑</div>
+            <div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Requests</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);" id="statTotalOutpasses">0</div>
+            </div>
+          </div>
+          <div class="stat-card-mini">
+            <div class="stat-icon-mini" style="background: #ecfdf5; color: #059669;">✅</div>
+            <div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Approved</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: #059669;" id="statApprovedOutpasses">0</div>
+            </div>
+          </div>
+          <div class="stat-card-mini">
+            <div class="stat-icon-mini" style="background: #fffbeb; color: #d97706;">⏳</div>
+            <div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: #d97706;" id="statPendingOutpasses">0</div>
+            </div>
+          </div>
+          <div class="stat-card-mini">
+            <div class="stat-icon-mini" style="background: #fef2f2; color: #dc2626;">❌</div>
+            <div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Rejected</div>
+              <div style="font-size: 1.35rem; font-weight: 800; color: #dc2626;" id="statRejectedOutpasses">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outpasses History Card -->
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              Outpass Request Records
+            </h2>
+            <div class="filter-bar" id="filterBar" style="margin: 0;">
+              <button type="button" class="filter-btn active" data-filter="ALL">All Requests</button>
+              <button type="button" class="filter-btn" data-filter="PENDING">Pending</button>
+              <button type="button" class="filter-btn" data-filter="APPROVED">Approved</button>
+              <button type="button" class="filter-btn" data-filter="REJECTED">Rejected</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="outpassTable">
+              <thead>
+                <tr>
+                  <th>Pass #</th>
+                  <th>Pass Type</th>
+                  <th>Departure Date & Time</th>
+                  <th>Expected Return</th>
+                  <th>Reason & Destination</th>
+                  <th>Emergency Contact</th>
+                  <th>Status</th>
+                  <th>Warden Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="outpassTableBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading outpasses...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Apply Outpass Modal -->
+  <div class="modal-overlay" id="outpassModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Apply for Hostel Outpass / Leave</h3>
+        <button type="button" class="modal-close" onclick="UI.closeModal('outpassModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="outpassForm">
+          <div class="form-group">
+            <label class="form-label" for="selectPassType">Pass Type *</label>
+            <select id="selectPassType" class="form-control" required>
+              <option value="DAY_PASS">Day Pass (Local Town / City)</option>
+              <option value="WEEKEND_PASS">Weekend Home Pass</option>
+              <option value="VACATION_PASS">Semester Vacation / Festival Pass</option>
+              <option value="EMERGENCY_PASS">Emergency Medical / Family Leave</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="inputDeparture">Departure Date & Time *</label>
+              <input type="datetime-local" id="inputDeparture" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inputReturn">Expected Return *</label>
+              <input type="datetime-local" id="inputReturn" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputDestination">Destination City / Address *</label>
+            <input type="text" id="inputDestination" class="form-control" placeholder="e.g. Coimbatore City Center / Home Address" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputEmergencyPhone">Emergency Contact Number *</label>
+            <input type="tel" id="inputEmergencyPhone" class="form-control" placeholder="e.g. +91 9876543210 (Parent/Guardian)" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputReason">Detailed Purpose / Reason *</label>
+            <textarea id="inputReason" class="form-control" rows="3" placeholder="Provide specific reason for campus leave..." required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="UI.closeModal('outpassModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSubmitOutpass">Submit Outpass Request</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=2"></script>
+  <script>
+    let currentUser = null;
+    let allOutpasses = [];
+    let activeFilter = 'ALL';
+
+    (async () => {
+      currentUser = await Auth.requireAuth(['STUDENT']);
+      if (!currentUser) return;
+
+      UI.renderLayout(currentUser, 'outpasses');
+
+      await Promise.all([
+        loadOutpassEligibility(),
+        loadOutpasses()
+      ]);
+
+      document.getElementById('btnOpenOutpassModal').addEventListener('click', () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('inputDeparture').value = now.toISOString().slice(0, 16);
+
+        const ret = new Date(Date.now() + 4 * 3600 * 1000);
+        ret.setMinutes(ret.getMinutes() - ret.getTimezoneOffset());
+        document.getElementById('inputReturn').value = ret.toISOString().slice(0, 16);
+
+        UI.openModal('outpassModal');
+      });
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeFilter = btn.dataset.filter;
+          renderOutpasses();
+        });
+      });
+    })();
+
+    async function loadOutpasses() {
+      try {
+        const res = await fetch('/api/student/outpasses');
+        if (!res.ok) throw new Error('Failed to load outpasses');
+        allOutpasses = await res.json();
+        updateStats();
+        renderOutpasses();
+      } catch (err) {
+        console.error('Outpass error:', err);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('statTotalOutpasses').textContent = allOutpasses.length;
+      document.getElementById('statApprovedOutpasses').textContent = allOutpasses.filter(o => o.status === 'APPROVED').length;
+      document.getElementById('statPendingOutpasses').textContent = allOutpasses.filter(o => o.status === 'PENDING').length;
+      document.getElementById('statRejectedOutpasses').textContent = allOutpasses.filter(o => o.status === 'REJECTED').length;
+    }
+
+    function renderOutpasses() {
+      const tbody = document.getElementById('outpassTableBody');
+      tbody.innerHTML = '';
+
+      const filtered = activeFilter === 'ALL'
+        ? allOutpasses
+        : allOutpasses.filter(o => o.status === activeFilter);
+
+      if (filtered.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.style.textAlign = 'center';
+        td.style.padding = '2rem';
+        td.style.color = 'var(--text-muted)';
+        td.textContent = activeFilter === 'ALL'
+          ? 'No outpasses submitted yet. Click "+ Apply for Outpass" to request leave.'
+          : `No outpass requests found with status: ${activeFilter}`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      filtered.forEach(op => {
+        const tr = document.createElement('tr');
+
+        // Pass #
+        const tdId = document.createElement('td');
+        tdId.setAttribute('data-label', 'Pass #');
+        tdId.textContent = `#OP-${op.id}`;
+        tdId.style.fontWeight = '700';
+
+        // Pass Type
+        const tdType = document.createElement('td');
+        tdType.setAttribute('data-label', 'Pass Type');
+        const typeBadge = document.createElement('span');
+        typeBadge.textContent = op.passType.replace('_', ' ');
+        if (op.passType === 'DAY_PASS') typeBadge.className = 'status-badge badge-day-pass';
+        else if (op.passType === 'WEEKEND_PASS') typeBadge.className = 'status-badge badge-weekend-pass';
+        else if (op.passType === 'EMERGENCY_PASS') typeBadge.className = 'status-badge badge-emergency-pass';
+        else typeBadge.className = 'status-badge badge-vacation-pass';
+        tdType.appendChild(typeBadge);
+
+        // Departure
+        const tdDep = document.createElement('td');
+        tdDep.setAttribute('data-label', 'Departure');
+        tdDep.textContent = op.departureDateTime ? new Date(op.departureDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
+        // Return
+        const tdRet = document.createElement('td');
+        tdRet.setAttribute('data-label', 'Expected Return');
+        tdRet.textContent = op.returnDateTime ? new Date(op.returnDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-';
+
+        // Destination & Reason
+        const tdDest = document.createElement('td');
+        tdDest.setAttribute('data-label', 'Reason & Destination');
+        tdDest.innerHTML = `<div><strong>${op.reason}</strong></div><small style="color:var(--text-muted);">${op.destination ? '📍 ' + op.destination : ''}</small>`;
+
+        // Contact
+        const tdContact = document.createElement('td');
+        tdContact.setAttribute('data-label', 'Emergency Contact');
+        tdContact.textContent = op.emergencyPhone || '-';
+
+        // Status
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Status');
+        const statusBadge = document.createElement('span');
+        statusBadge.textContent = op.status;
+        if (op.status === 'APPROVED') statusBadge.className = 'status-badge badge-allocated';
+        else if (op.status === 'PENDING') statusBadge.className = 'status-badge badge-pending';
+        else if (op.status === 'REJECTED') statusBadge.className = 'status-badge badge-rejected';
+        else statusBadge.className = 'status-badge badge-cancelled';
+        tdStatus.appendChild(statusBadge);
+
+        // Remarks
+        const tdRemarks = document.createElement('td');
+        tdRemarks.setAttribute('data-label', 'Warden Remarks');
+        tdRemarks.textContent = op.wardenRemarks || '-';
+
+        tr.append(tdId, tdType, tdDep, tdRet, tdDest, tdContact, tdStatus, tdRemarks);
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('btnSubmitOutpass').addEventListener('click', async () => {
+      const passType = document.getElementById('selectPassType').value;
+      const departure = document.getElementById('inputDeparture').value;
+      const retTime = document.getElementById('inputReturn').value;
+      const destination = document.getElementById('inputDestination').value.trim();
+      const emergencyPhone = document.getElementById('inputEmergencyPhone').value.trim();
+      const reason = document.getElementById('inputReason').value.trim();
+
+      if (!departure || !retTime || !destination || !emergencyPhone || !reason) {
+        UI.showToast('Please fill all required outpass fields', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitOutpass');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/student/outpasses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            passType,
+            departureDateTime: departure,
+            returnDateTime: retTime,
+            destination,
+            emergencyPhone,
+            reason
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to submit outpass request', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Submit Outpass Request';
+          return;
+        }
+
+        UI.showToast('Outpass request submitted successfully! Awaiting warden approval.', 'success');
+        UI.closeModal('outpassModal');
+        document.getElementById('outpassForm').reset();
+        btn.disabled = false;
+        btn.textContent = 'Submit Outpass Request';
+        await loadOutpasses();
+      } catch (e) {
+        UI.showToast('Network error submitting outpass request', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Submit Outpass Request';
+      }
+    });
+
+    async function loadOutpassEligibility() {
+      try {
+        const res = await fetch('/api/student/outpass-eligibility');
+        if (!res.ok) return;
+        const data = await res.json();
+        const alertArea = document.getElementById('outpassStatusAlertArea');
+        if (!alertArea) return;
+
+        alertArea.innerHTML = '';
+
+        if (!data.eligible) {
+          const alert = document.createElement('div');
+          alert.style.cssText = 'background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:1rem 1.25rem; border-radius:var(--radius-md); margin-bottom:1.25rem; display:flex; align-items:center; gap:0.75rem;';
+          alert.innerHTML = `
+            <span style="font-size:1.6rem;">⚠️</span>
+            <div>
+              <strong>Outpass Privileges Disabled (Attendance Default):</strong><br>
+              <span style="font-size:0.9rem;">${data.message}</span>
+            </div>
+          `;
+          alertArea.appendChild(alert);
+
+          const applyBtn = document.getElementById('btnOpenOutpassModal');
+          if (applyBtn) {
+            applyBtn.disabled = true;
+            applyBtn.style.opacity = '0.5';
+            applyBtn.style.cursor = 'not-allowed';
+            applyBtn.title = data.message;
+          }
+        } else if (data.hasActiveOutpass) {
+          const alert = document.createElement('div');
+          alert.style.cssText = 'background:#f5f3ff; border:1px solid #c4b5fd; color:#6d28d9; padding:1rem 1.25rem; border-radius:var(--radius-md); margin-bottom:1.25rem; font-weight:600; display:flex; align-items:center; gap:0.75rem;';
+          alert.innerHTML = `
+            <span style="font-size:1.6rem;">🏡</span>
+            <div>
+              <strong>Active Residency Status:</strong> ${data.activeOutpassStatus}<br>
+              <span style="font-weight:400; font-size:0.88rem; color:#5b21b6;">Remember to mark your biometric check-in with security upon returning to campus.</span>
+            </div>
+          `;
+          alertArea.appendChild(alert);
+        }
+      } catch (err) {
+        console.error('Outpass eligibility error:', err);
+      }
+    }
+  </script>
+</body>
+</html>

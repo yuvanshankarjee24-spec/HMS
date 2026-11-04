@@ -95,14 +95,15 @@ const UI = {
     if (!appContainer) return;
 
     // --- TOP NAVBAR ---
-    const brandSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    brandSvg.setAttribute('viewBox', '0 0 24 24');
-    brandSvg.setAttribute('fill', 'currentColor');
-    brandSvg.innerHTML = '<path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 2.84L18 11v7h-2v-6H8v6H6v-7l6-5.16z"/>';
+    const brandLogo = this.createElement('img', {
+      src: '/img/psgitech_logo.png',
+      alt: 'PSG iTech Logo',
+      className: 'navbar-brand-logo'
+    });
 
     const brand = this.createElement('a', { className: 'navbar-brand', href: '#' },
-      brandSvg,
-      this.createElement('span', {}, 'HostelHub')
+      brandLogo,
+      this.createElement('span', {}, 'PSG iTech Hostel')
     );
 
     const hamburgerBtn = this.createElement('button', {
@@ -159,16 +160,16 @@ const UI = {
     const menuItemsByRole = {
       'STUDENT': [
         { key: 'dashboard', label: 'My Dashboard', href: '/student/dashboard.html' },
-        { key: 'allocation', label: 'Online Room Booking', href: '/student/dashboard.html#onlineAllocationCard' },
-        { key: 'outpasses', label: 'My Outpasses', href: '/student/dashboard.html#outpassCard' },
+        { key: 'booking', label: 'Online Room Booking', href: '/student/booking.html' },
+        { key: 'outpasses', label: 'My Outpasses', href: '/student/outpasses.html' },
         { key: 'profile', label: 'Profile & Photo', href: '/student/profile.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],
       'WARDEN': [
         { key: 'dashboard', label: 'Warden Overview', href: '/warden/dashboard.html' },
-        { key: 'attendance', label: 'Active Attendance', href: '/warden/dashboard.html#attendanceSection' },
-        { key: 'outpasses', label: 'Outpass Requests', href: '/warden/dashboard.html#outpassSection' },
-        { key: 'whitelist', label: 'Online Allocation Whitelist', href: '/warden/dashboard.html#allocationWhitelistSection' },
+        { key: 'attendance', label: 'Active Attendance', href: '/warden/attendance.html' },
+        { key: 'outpasses', label: 'Outpass Requests', href: '/warden/outpasses.html' },
+        { key: 'whitelist', label: 'Online Allocation Whitelist', href: '/warden/whitelist.html' },
         { key: 'rooms', label: 'Room Management', href: '/warden/rooms.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],

@@ -130,6 +130,13 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary);
 }
 
+.navbar-brand-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
 .navbar-user {
   display: flex;
   align-items: center;

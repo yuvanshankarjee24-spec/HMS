@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Active Attendance - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .attendance-kpi-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.85rem 1.25rem;
+      background: var(--bg-main);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .attendance-chip {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .btn-status-toggle {
+      border: 1px solid var(--border-light);
+      background: #ffffff;
+      border-radius: var(--radius-sm);
+      padding: 0.25rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-status-toggle:hover {
+      background: var(--border-subtle);
+    }
+
+    .btn-status-toggle.active-p {
+      background: #dcfce7;
+      color: #15803d;
+      border-color: #86efac;
+    }
+
+    .btn-status-toggle.active-a {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+
+    .btn-status-toggle.active-l {
+      background: #fef3c7;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Active Attendance & Live Roll Call</h1>
+            <p class="page-subtitle">Track daily hostel attendance, mark roll call per room, and enforce outpass eligibility.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="/warden/dashboard.html" class="btn btn-secondary btn-sm">Back to Overview</a>
+          </div>
+        </div>
+
+        <!-- Attendance Card -->
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              Student Active Attendance Roster
+            </h2>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <input type="date" id="attendanceDatePicker" class="form-control" style="width: auto; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+              <select id="attendanceFilterSelect" class="form-control" style="width: auto; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+                <option value="ALL">All Statuses</option>
+                <option value="PRESENT">Present</option>
+                <option value="ABSENT">Absent</option>
+                <option value="ON_OUTPASS">On Outpass</option>
+                <option value="LATE">Late</option>
+              </select>
+              <button class="btn btn-primary btn-sm" id="btnMarkAllPresent" title="Mark all unrecorded allocated students as Present">
+                ✓ Mark All Present
+              </button>
+            </div>
+          </div>
+
+          <div class="attendance-kpi-bar">
+            <span class="attendance-chip" style="color: #1e3a8a;">
+              Total Residents: <strong id="chipTotal">0</strong>
+            </span>
+            <span class="attendance-chip" style="color: #15803d;">
+              🟢 Present: <strong id="chipPresent">0</strong>
+            </span>
+            <span class="attendance-chip" style="color: #b91c1c;">
+              🔴 Absent: <strong id="chipAbsent">0</strong>
+            </span>
+            <span class="attendance-chip" style="color: #6d28d9;">
+              🟣 On Outpass: <strong id="chipOutpass">0</strong>
+            </span>
+            <span class="attendance-chip" style="color: #b45309;">
+              🟡 Late: <strong id="chipLate">0</strong>
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="attendanceTable">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Room & Bed</th>
+                  <th>Department & Year</th>
+                  <th>Current Active Status</th>
+                  <th>Outpass / Notes</th>
+                  <th>Quick Roll Call Actions</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading live attendance records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=2"></script>
+  <script>
+    let currentUser = null;
+    const datePicker = document.getElementById('attendanceDatePicker');
+    const filterSelect = document.getElementById('attendanceFilterSelect');
+
+    (async () => {
+      currentUser = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!currentUser) return;
+
+      UI.renderLayout(currentUser, 'attendance');
+
+      // Initialize date picker to today
+      const today = new Date().toISOString().split('T')[0];
+      datePicker.value = today;
+
+      datePicker.addEventListener('change', loadAttendance);
+      filterSelect.addEventListener('change', loadAttendance);
+
+      document.getElementById('btnMarkAllPresent').addEventListener('click', async () => {
+        const date = datePicker.value;
+        const confirmed = await new Promise(resolve => {
+          UI.showConfirm({
+            title: 'Confirm Bulk Attendance',
+            message: `Mark all students who have not yet been recorded for ${date} as PRESENT?`,
+            confirmText: 'Mark All Present',
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false)
+          });
+        });
+        if (!confirmed) return;
+
+        try {
+          const res = await fetch(`/api/warden/attendance/mark-all-present?date=${date}`, {
+            method: 'POST'
+          });
+          if (res.ok) {
+            UI.showToast('All pending students marked Present successfully!', 'success');
+            loadAttendance();
+          } else {
+            UI.showToast('Failed to mark all present', 'error');
+          }
+        } catch (e) {
+          UI.showToast('Network error during bulk attendance', 'error');
+        }
+      });
+
+      await loadAttendance();
+    })();
+
+    async function loadAttendance() {
+      const date = datePicker.value;
+      const status = filterSelect.value;
+
+      try {
+        const [listRes, sumRes] = await Promise.all([
+          fetch(`/api/warden/attendance?date=${date}&status=${encodeURIComponent(status)}`),
+          fetch(`/api/warden/attendance/summary?date=${date}`)
+        ]);
+
+        if (listRes.ok) {
+          const items = await listRes.json();
+          renderAttendance(items);
+        }
+
+        if (sumRes.ok) {
+          const sum = await sumRes.json();
+          document.getElementById('chipTotal').textContent = sum.totalAllocated;
+          document.getElementById('chipPresent').textContent = sum.presentCount;
+          document.getElementById('chipAbsent').textContent = sum.absentCount;
+          document.getElementById('chipOutpass').textContent = sum.onOutpassCount;
+          document.getElementById('chipLate').textContent = sum.lateCount;
+        }
+      } catch (err) {
+        console.error('Attendance error:', err);
+      }
+    }
+
+    function renderAttendance(items) {
+      const tbody = document.getElementById('attendanceTableBody');
+      tbody.innerHTML = '';
+
+      if (items.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 6;
+        td.style.textAlign = 'center';
+        td.style.padding = '2rem';
+        td.style.color = 'var(--text-muted)';
+        td.textContent = 'No resident students match the selected filter.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+
+        // Student
+        const tdStudent = document.createElement('td');
+        tdStudent.setAttribute('data-label', 'Student');
+        const nameDiv = document.createElement('div');
+        nameDiv.style.fontWeight = '700';
+        nameDiv.textContent = item.studentName;
+        const regDiv = document.createElement('div');
+        regDiv.style.fontSize = '0.8rem';
+        regDiv.style.color = 'var(--text-muted)';
+        regDiv.textContent = item.registerNumber;
+        tdStudent.append(nameDiv, regDiv);
+
+        // Room & Bed
+        const tdRoom = document.createElement('td');
+        tdRoom.setAttribute('data-label', 'Room & Bed');
+        tdRoom.textContent = `Room ${item.roomNumber} - Bed #${item.bedNumber}`;
+        tdRoom.style.fontWeight = '600';
+
+        // Dept & Year
+        const tdDept = document.createElement('td');
+        tdDept.setAttribute('data-label', 'Department & Year');
+        tdDept.textContent = `${item.department} (Yr ${item.year})`;
+
+        // Status Badge
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Current Active Status');
+        if (item.status === 'ON_OUTPASS') {
+          const badge = document.createElement('span');
+          badge.textContent = '🏡 Gone to Home';
+          badge.className = 'status-badge badge-home';
+          tdStatus.appendChild(badge);
+        } else if (item.status === 'ABSENT') {
+          const badge = document.createElement('span');
+          badge.textContent = 'ABSENT';
+          badge.className = 'status-badge badge-absent';
+          const sub = document.createElement('span');
+          sub.textContent = 'Outpass Disabled';
+          sub.style.cssText = 'font-size: 0.72rem; color: #b91c1c; font-weight: 700; display: block; margin-top: 2px;';
+          tdStatus.append(badge, sub);
+        } else if (item.status === 'PRESENT') {
+          const badge = document.createElement('span');
+          badge.textContent = 'PRESENT';
+          badge.className = 'status-badge badge-present';
+          tdStatus.appendChild(badge);
+        } else if (item.status === 'LATE') {
+          const badge = document.createElement('span');
+          badge.textContent = 'LATE';
+          badge.className = 'status-badge badge-late';
+          tdStatus.appendChild(badge);
+        } else {
+          const badge = document.createElement('span');
+          badge.textContent = 'NOT MARKED';
+          badge.className = 'status-badge badge-not-allocated';
+          tdStatus.appendChild(badge);
+        }
+
+        // Outpass / Notes
+        const tdNotes = document.createElement('td');
+        tdNotes.setAttribute('data-label', 'Outpass / Notes');
+        if (item.status === 'ON_OUTPASS' && item.activeOutpassDetails) {
+          tdNotes.innerHTML = `<span style="font-size:0.82rem; color:#6d28d9; font-weight:600;">${item.activeOutpassDetails}</span>`;
+        } else {
+          tdNotes.textContent = item.notes || '-';
+        }
+
+        // Actions
+        const tdActions = document.createElement('td');
+        tdActions.setAttribute('data-label', 'Roll Call Actions');
+        const btnGroup = document.createElement('div');
+        btnGroup.style.display = 'flex';
+        btnGroup.style.gap = '0.35rem';
+        btnGroup.style.flexWrap = 'wrap';
+
+        const btnP = document.createElement('button');
+        btnP.className = `btn-status-toggle ${item.status === 'PRESENT' ? 'active-p' : ''}`;
+        btnP.textContent = 'P';
+        btnP.title = 'Mark Present';
+        btnP.onclick = () => markSingleAttendance(item.studentId, 'PRESENT');
+
+        const btnA = document.createElement('button');
+        btnA.className = `btn-status-toggle ${item.status === 'ABSENT' ? 'active-a' : ''}`;
+        btnA.textContent = 'A';
+        btnA.title = 'Mark Absent';
+        btnA.onclick = () => markSingleAttendance(item.studentId, 'ABSENT');
+
+        const btnL = document.createElement('button');
+        btnL.className = `btn-status-toggle ${item.status === 'LATE' ? 'active-l' : ''}`;
+        btnL.textContent = 'L';
+        btnL.title = 'Mark Late';
+        btnL.onclick = () => markSingleAttendance(item.studentId, 'LATE');
+
+        btnGroup.append(btnP, btnA, btnL);
+        tdActions.appendChild(btnGroup);
+
+        tr.append(tdStudent, tdRoom, tdDept, tdStatus, tdNotes, tdActions);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function markSingleAttendance(studentId, status) {
+      const date = datePicker.value;
+      try {
+        const res = await fetch('/api/warden/attendance/mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId,
+            date,
+            status,
+            notes: null
+          })
+        });
+
+        if (res.ok) {
+          UI.showToast(`Marked as ${status}`, 'success');
+          loadAttendance();
+        } else {
+          const err = await res.json();
+          UI.showToast(err.message || 'Failed to update attendance', 'error');
+        }
+      } catch (e) {
+        UI.showToast('Network error updating attendance', 'error');
+      }
+    }
+  </script>
+</body>
+</html>

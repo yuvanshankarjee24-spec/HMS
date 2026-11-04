@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outpass Requests - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border-light);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      background: #e2e8f0;
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <!-- Page Header -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Student Outpass & Campus Leave Review</h1>
+            <p class="page-subtitle">Review, verify, and approve collegiate day passes, weekend passes, and emergency leave requests.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <a href="/warden/dashboard.html" class="btn btn-secondary btn-sm">Back to Overview</a>
+          </div>
+        </div>
+
+        <!-- Outpass Section Card -->
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              Student Outpass Requests Queue
+            </h2>
+            <div class="filter-bar" id="outpassFilterBar">
+              <button class="filter-btn active" data-filter="PENDING">Pending Review</button>
+              <button class="filter-btn" data-filter="APPROVED">Approved Passes</button>
+              <button class="filter-btn" data-filter="REJECTED">Rejected</button>
+              <button class="filter-btn" data-filter="ALL">All Records</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table" id="outpassesTable">
+              <thead>
+                <tr>
+                  <th>Pass #</th>
+                  <th>Student</th>
+                  <th>Room & Bed</th>
+                  <th>Pass Type</th>
+                  <th>Departure & Return</th>
+                  <th>Reason & Destination</th>
+                  <th>Emergency Contact</th>
+                  <th>Status</th>
+                  <th>Decision Actions</th>
+                </tr>
+              </thead>
+              <tbody id="outpassesTableBody">
+                <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading outpasses...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Outpass Decision Modal -->
+  <div class="modal-overlay" id="outpassDecisionModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="outpassModalTitle">Review Outpass Request</h3>
+        <button type="button" class="modal-close" onclick="UI.closeModal('outpassDecisionModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="outpassModalDesc" style="margin-bottom: 1rem; color: var(--text-muted);"></p>
+        <div class="form-group">
+          <label class="form-label" for="outpassDecisionRemarks">Warden Remarks / Instructions</label>
+          <textarea id="outpassDecisionRemarks" class="form-control" rows="3" placeholder="Optional approval conditions, travel guidance, or rejection rationale..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="UI.closeModal('outpassDecisionModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmOutpassDecision">Confirm Decision</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=2"></script>
+  <script>
+    let currentUser = null;
+    let currentOutpassFilter = 'PENDING';
+    let pendingDecisionOutpassId = null;
+    let pendingDecisionAction = null;
+
+    (async () => {
+      currentUser = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!currentUser) return;
+
+      UI.renderLayout(currentUser, 'outpasses');
+
+      document.querySelectorAll('#outpassFilterBar .filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#outpassFilterBar .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentOutpassFilter = btn.dataset.filter;
+          loadOutpasses();
+        });
+      });
+
+      document.getElementById('btnConfirmOutpassDecision').addEventListener('click', async () => {
+        const remarks = document.getElementById('outpassDecisionRemarks').value.trim();
+        const url = `/api/warden/outpasses/${pendingDecisionOutpassId}/${pendingDecisionAction}`;
+
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ remarks })
+          });
+
+          if (res.ok) {
+            UI.showToast(`Outpass successfully ${pendingDecisionAction}d!`, 'success');
+            UI.closeModal('outpassDecisionModal');
+            loadOutpasses();
+          } else {
+            const err = await res.json();
+            UI.showToast(err.message || 'Action failed', 'error');
+          }
+        } catch (e) {
+          UI.showToast('Network error processing decision', 'error');
+        }
+      });
+
+      await loadOutpasses();
+    })();
+
+    async function loadOutpasses() {
+      try {
+        const res = await fetch(`/api/warden/outpasses?status=${encodeURIComponent(currentOutpassFilter)}`);
+        if (!res.ok) throw new Error('Failed to load outpasses');
+        const outpasses = await res.json();
+        renderOutpasses(outpasses);
+      } catch (err) {
+        console.error('Outpass error:', err);
+      }
+    }
+
+    function renderOutpasses(outpasses) {
+      const tbody = document.getElementById('outpassesTableBody');
+      tbody.innerHTML = '';
+
+      if (outpasses.length === 0) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 9;
+        td.style.textAlign = 'center';
+        td.style.padding = '2rem';
+        td.style.color = 'var(--text-muted)';
+        td.textContent = `No outpass requests found with status: ${currentOutpassFilter}.`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      outpasses.forEach(op => {
+        const tr = document.createElement('tr');
+
+        // Pass #
+        const tdId = document.createElement('td');
+        tdId.setAttribute('data-label', 'Pass #');
+        tdId.textContent = `#OP-${op.id}`;
+        tdId.style.fontWeight = '700';
+
+        // Student
+        const tdStudent = document.createElement('td');
+        tdStudent.setAttribute('data-label', 'Student');
+        const nameDiv = document.createElement('div');
+        nameDiv.style.fontWeight = '700';
+        nameDiv.textContent = op.studentName;
+        const regDiv = document.createElement('div');
+        regDiv.style.fontSize = '0.8rem';
+        regDiv.style.color = 'var(--text-muted)';
+        regDiv.textContent = op.registerNumber;
+        tdStudent.append(nameDiv, regDiv);
+
+        // Room & Bed
+        const tdRoom = document.createElement('td');
+        tdRoom.setAttribute('data-label', 'Room & Bed');
+        tdRoom.textContent = op.roomNumber !== '-' ? `Room ${op.roomNumber} - Bed #${op.bedNumber}` : 'Not Allocated';
+
+        // Pass Type
+        const tdType = document.createElement('td');
+        tdType.setAttribute('data-label', 'Pass Type');
+        const typeBadge = document.createElement('span');
+        typeBadge.textContent = op.passType.replace('_', ' ');
+        if (op.passType === 'DAY_PASS') typeBadge.className = 'status-badge badge-day-pass';
+        else if (op.passType === 'WEEKEND_PASS') typeBadge.className = 'status-badge badge-weekend-pass';
+        else if (op.passType === 'EMERGENCY_PASS') typeBadge.className = 'status-badge badge-emergency-pass';
+        else typeBadge.className = 'status-badge badge-vacation-pass';
+        tdType.appendChild(typeBadge);
+
+        // Dates
+        const tdDates = document.createElement('td');
+        tdDates.setAttribute('data-label', 'Departure & Return');
+        const depStr = op.departureDateTime ? new Date(op.departureDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-';
+        const retStr = op.returnDateTime ? new Date(op.returnDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '-';
+        tdDates.innerHTML = `<div style="font-size:0.85rem;"><strong>Out:</strong> ${depStr}</div><div style="font-size:0.85rem; color:var(--text-muted);"><strong>In:</strong> ${retStr}</div>`;
+
+        // Reason & Destination
+        const tdReason = document.createElement('td');
+        tdReason.setAttribute('data-label', 'Reason & Destination');
+        tdReason.innerHTML = `<div>${op.reason}</div><small style="color:var(--text-muted);">${op.destination ? '📍 ' + op.destination : ''}</small>`;
+
+        // Contact
+        const tdContact = document.createElement('td');
+        tdContact.setAttribute('data-label', 'Emergency Contact');
+        tdContact.textContent = op.emergencyPhone || op.phone || '-';
+
+        // Status
+        const tdStatus = document.createElement('td');
+        tdStatus.setAttribute('data-label', 'Status');
+        const statusBadge = document.createElement('span');
+        statusBadge.textContent = op.status;
+        if (op.status === 'APPROVED') statusBadge.className = 'status-badge badge-allocated';
+        else if (op.status === 'PENDING') statusBadge.className = 'status-badge badge-pending';
+        else if (op.status === 'REJECTED') statusBadge.className = 'status-badge badge-rejected';
+        else statusBadge.className = 'status-badge badge-cancelled';
+        tdStatus.appendChild(statusBadge);
+
+        // Actions
+        const tdActions = document.createElement('td');
+        tdActions.setAttribute('data-label', 'Actions');
+        tdActions.style.display = 'flex';
+        tdActions.style.gap = '0.4rem';
+
+        if (op.status === 'PENDING') {
+          const btnApprove = document.createElement('button');
+          btnApprove.className = 'btn btn-success btn-sm';
+          btnApprove.textContent = 'Approve';
+          btnApprove.onclick = () => openOutpassDecisionModal(op.id, 'approve', op.studentName);
+
+          const btnReject = document.createElement('button');
+          btnReject.className = 'btn btn-danger btn-sm';
+          btnReject.textContent = 'Reject';
+          btnReject.onclick = () => openOutpassDecisionModal(op.id, 'reject', op.studentName);
+
+          tdActions.append(btnApprove, btnReject);
+        } else {
+          tdActions.innerHTML = `<span style="font-size:0.8rem; color:var(--text-muted);">${op.wardenRemarks || 'Decision Recorded'}</span>`;
+        }
+
+        tr.append(tdId, tdStudent, tdRoom, tdType, tdDates, tdReason, tdContact, tdStatus, tdActions);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openOutpassDecisionModal(outpassId, action, studentName) {
+      pendingDecisionOutpassId = outpassId;
+      pendingDecisionAction = action;
+
+      document.getElementById('outpassModalTitle').textContent = action === 'approve' ? 'Approve Outpass' : 'Reject Outpass';
+      document.getElementById('outpassModalDesc').textContent = `Decision for student: ${studentName} (Pass #OP-${outpassId})`;
+      document.getElementById('outpassDecisionRemarks').value = '';
+
+      const confirmBtn = document.getElementById('btnConfirmOutpassDecision');
+      if (action === 'approve') {
+        confirmBtn.className = 'btn btn-success';
+        confirmBtn.textContent = '✓ Approve Outpass';
+      } else {
+        confirmBtn.className = 'btn btn-danger';
+        confirmBtn.textContent = '✕ Reject Outpass';
+      }
+
+      UI.openModal('outpassDecisionModal');
+    }
+  </script>
+</body>
+</html>

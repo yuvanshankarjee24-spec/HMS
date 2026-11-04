@@ -171,109 +171,73 @@
           </div>
         </div>
 
-        <!-- ========================================================================= -->
-        <!-- ACTIVE STUDENT ATTENDANCE SECTION -->
-        <!-- ========================================================================= -->
-        <div class="card" id="attendanceSection">
-          <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
-            <h2 class="card-title">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
-              Student Active Attendance Status (Live Roll Call)
-            </h2>
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <input type="date" id="attendanceDatePicker" class="form-control" style="width: auto; padding: 0.35rem 0.65rem; font-size: 0.85rem;">
-              <select id="attendanceFilterSelect" class="form-control" style="width: auto; padding: 0.35rem 0.65rem; font-size: 0.85rem;">
-                <option value="ALL">All Statuses</option>
-                <option value="PRESENT">Present</option>
-                <option value="ABSENT">Absent</option>
-                <option value="ON_OUTPASS">On Outpass</option>
-                <option value="LATE">Late</option>
-              </select>
-              <button class="btn btn-primary btn-sm" id="btnMarkAllPresent" title="Mark all unrecorded allocated students as Present">
-                ✓ Mark All Present
-              </button>
+        <!-- Warden Operations Modules Hub (Dedicated Pages) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+          
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">📋</span>
+                <span class="status-badge badge-present">Daily Active</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Active Attendance</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Live roll call roster, 1-click "Mark All Present", daily statistics, and outpass defaulter tracking.
+              </p>
             </div>
+            <a href="/warden/attendance.html" class="btn btn-primary" style="margin-top: 1rem; justify-content: center;">
+              Open Attendance Page &rarr;
+            </a>
           </div>
 
-          <div class="attendance-kpi-bar">
-            <span class="attendance-chip" style="color: #1e3a8a;">
-              Total Residents: <strong id="chipTotal">0</strong>
-            </span>
-            <span class="attendance-chip" style="color: #15803d;">
-              🟢 Present: <strong id="chipPresent">0</strong>
-            </span>
-            <span class="attendance-chip" style="color: #b91c1c;">
-              🔴 Absent: <strong id="chipAbsent">0</strong>
-            </span>
-            <span class="attendance-chip" style="color: #6d28d9;">
-              🟣 On Outpass: <strong id="chipOutpass">0</strong>
-            </span>
-            <span class="attendance-chip" style="color: #b45309;">
-              🟡 Late: <strong id="chipLate">0</strong>
-            </span>
-          </div>
-
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table" id="attendanceTable">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Room & Bed</th>
-                  <th>Department & Year</th>
-                  <th>Current Active Status</th>
-                  <th>Outpass / Notes</th>
-                  <th>Quick Roll Call Actions</th>
-                </tr>
-              </thead>
-              <tbody id="attendanceTableBody">
-                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading live attendance records...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ========================================================================= -->
-        <!-- STUDENT OUTPASS REQUESTS SECTION -->
-        <!-- ========================================================================= -->
-        <div class="card" id="outpassSection">
-          <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
-            <h2 class="card-title">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-              </svg>
-              Student Outpass Requests
-            </h2>
-            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-              <button class="badge-filter-btn active" data-outpass-filter="ALL">All</button>
-              <button class="badge-filter-btn" data-outpass-filter="PENDING">Pending</button>
-              <button class="badge-filter-btn" data-outpass-filter="APPROVED">Approved</button>
-              <button class="badge-filter-btn" data-outpass-filter="REJECTED">Rejected</button>
-              <button class="btn btn-secondary btn-sm" onclick="loadOutpasses()" style="margin-left: 0.5rem;">Refresh</button>
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">📬</span>
+                <span class="status-badge badge-pending">Leave Queue</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Outpass Requests</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Review student day passes, weekend passes, emergency leave applications, and record remarks.
+              </p>
             </div>
+            <a href="/warden/outpasses.html" class="btn btn-primary" style="margin-top: 1rem; justify-content: center;">
+              Open Outpasses Page &rarr;
+            </a>
           </div>
 
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table" id="outpassesTable">
-              <thead>
-                <tr>
-                  <th>Pass #</th>
-                  <th>Student</th>
-                  <th>Room & Bed</th>
-                  <th>Pass Type</th>
-                  <th>Departure & Return</th>
-                  <th>Reason & Destination</th>
-                  <th>Emergency Contact</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="outpassesTableBody">
-                <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Loading outpass requests...</td></tr>
-              </tbody>
-            </table>
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">🎯</span>
+                <span class="status-badge badge-active">Counseling</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Allocation Whitelist</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Configure counseling rounds, upload pre-noted student groups via Excel/CSV, and grant permissions.
+              </p>
+            </div>
+            <a href="/warden/whitelist.html" class="btn btn-primary" style="margin-top: 1rem; justify-content: center;">
+              Open Whitelist Page &rarr;
+            </a>
           </div>
+
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">🏢</span>
+                <span class="status-badge badge-allocated">Inventory</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Room Management</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Add new hostel rooms, assign floors, adjust bed capacities, and configure room specifications.
+              </p>
+            </div>
+            <a href="/warden/rooms.html" class="btn btn-secondary" style="margin-top: 1rem; justify-content: center;">
+              Manage Rooms & Beds &rarr;
+            </a>
+          </div>
+
         </div>
 
         <!-- Pending Room Requests Table -->
@@ -337,57 +301,6 @@
               </thead>
               <tbody id="roomOccupancyBody">
                 <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading rooms...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ========================================================================= -->
-        <!-- ONLINE ROOM ALLOCATION & WHITELIST (EXCEL ACCESS CONTROL) -->
-        <!-- ========================================================================= -->
-        <div class="card" id="allocationWhitelistSection">
-          <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
-            <div>
-              <h2 class="card-title">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
-                </svg>
-                Online Room Allocation & Whitelist (Excel Sheet Access Control)
-              </h2>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                Only one specific Register Number per room group is authorized to access the online room allocation system. Room booking is restricted to whitelisted representatives noted on the allocation sheet.
-              </p>
-            </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <span id="roundStatusBadge" class="status-badge badge-active" style="font-weight: 700;">Round: OPEN</span>
-              <button class="btn btn-secondary btn-sm" id="btnToggleRound">Toggle Round (Open/Close)</button>
-              <a href="/api/warden/online-allocation/sample-csv" class="btn btn-secondary btn-sm" download="room_allocation_whitelist_template.csv">📥 Sample Excel/CSV</a>
-              <button class="btn btn-primary btn-sm" id="btnOpenUploadModal">📤 Upload Excel/CSV Sheet</button>
-              <button class="btn btn-secondary btn-sm" id="btnOpenAddModal">+ Add Representative</button>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table" id="whitelistTable">
-              <thead>
-                <tr>
-                  <th>Group Representative Roll No</th>
-                  <th>Student Name</th>
-                  <th>Group Size</th>
-                  <th>Target Room</th>
-                  <th>Registered Friends (Roll Nos)</th>
-                  <th>Booking Status</th>
-                  <th>Allocated Room</th>
-                  <th>Notes</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="whitelistTableBody">
-                <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Loading whitelist entries...</td></tr>
               </tbody>
             </table>
           </div>
@@ -550,7 +463,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js"></script>
+  <script src="/js/ui.js?v=2"></script>
   <script>
     let activeRejectRequestId = null;
     let activeOutpassId = null;
@@ -1512,10 +1425,6 @@
 
     function refreshAll() {
       loadSummary();
-      loadAttendance();
-      loadOutpasses();
-      loadRoundStatus();
-      loadWhitelist();
       loadRequests();
       loadRooms();
       loadStudents(document.getElementById('studentSearchInput').value);
