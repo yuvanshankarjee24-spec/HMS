@@ -36,6 +36,25 @@ public class Student {
     @Column(name = "photo_path", length = 255)
     private String photoPath;
 
+    @Column(name = "is_locked", nullable = false)
+    private boolean locked = false;
+
+    @Column(name = "lock_reason", length = 500)
+    private String lockReason;
+
+    @Column(name = "locked_at")
+    private LocalDateTime lockedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unlocked_by_user_id")
+    private User unlockedBy;
+
+    @Column(name = "unlocked_at")
+    private LocalDateTime unlockedAt;
+
+    @Column(name = "unlock_remarks", length = 500)
+    private String unlockRemarks;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -67,6 +86,24 @@ public class Student {
 
     public String getPhotoPath() { return photoPath; }
     public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
+
+    public boolean isLocked() { return locked; }
+    public void setLocked(boolean locked) { this.locked = locked; }
+
+    public String getLockReason() { return lockReason; }
+    public void setLockReason(String lockReason) { this.lockReason = lockReason; }
+
+    public LocalDateTime getLockedAt() { return lockedAt; }
+    public void setLockedAt(LocalDateTime lockedAt) { this.lockedAt = lockedAt; }
+
+    public User getUnlockedBy() { return unlockedBy; }
+    public void setUnlockedBy(User unlockedBy) { this.unlockedBy = unlockedBy; }
+
+    public LocalDateTime getUnlockedAt() { return unlockedAt; }
+    public void setUnlockedAt(LocalDateTime unlockedAt) { this.unlockedAt = unlockedAt; }
+
+    public String getUnlockRemarks() { return unlockRemarks; }
+    public void setUnlockRemarks(String unlockRemarks) { this.unlockRemarks = unlockRemarks; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

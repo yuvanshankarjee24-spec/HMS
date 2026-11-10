@@ -51,6 +51,9 @@ public class OutpassDtos {
         java.util.List<String> defaultDates,
         boolean residentAtHostel,
         boolean hasActiveOutpass,
-        String activeOutpassStatus
+        String activeOutpassStatus,
+        boolean outpassLocked,
+        String lockReason,
+        LocalDateTime lockedAt
     ) {}
 }

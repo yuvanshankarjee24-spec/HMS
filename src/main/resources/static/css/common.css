@@ -1138,3 +1138,63 @@ h1, h2, h3, h4, h5, h6 {
 .star-btn.active {
   color: #f59e0b;
 }
+
+/* Digital Attendance & Outpass Lock Styles */
+.lock-alert-banner {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #dc2626;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #991b1b;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.12);
+}
+
+.btn-mark-attendance {
+  width: 100%;
+  padding: 1.15rem 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-height: 58px;
+}
+
+.btn-mark-attendance:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(22, 163, 74, 0.35);
+}
+
+.btn-mark-attendance:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.countdown-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: #fef3c7;
+  color: #92400e;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.badge-da-marked         { background: #dcfce7; color: #15803d; }
+.badge-da-manual_present { background: #d1fae5; color: #065f46; }
+.badge-da-pending        { background: #fef3c7; color: #b45309; }
+.badge-da-missed         { background: #fee2e2; color: #b91c1c; }
+.badge-da-on_outpass     { background: #ede9fe; color: #6d28d9; }

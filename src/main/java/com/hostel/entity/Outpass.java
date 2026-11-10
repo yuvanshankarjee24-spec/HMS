@@ -17,6 +17,8 @@ public class Outpass {
     public enum Status {
         PENDING,
         APPROVED,
+        OUT,
+        RETURNED,
         REJECTED,
         EXPIRED
     }
@@ -62,6 +64,9 @@ public class Outpass {
     @Column(name = "decided_at")
     private LocalDateTime decidedAt;
 
+    @Column(name = "actual_exit_time")
+    private LocalDateTime actualExitTime;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -102,6 +107,9 @@ public class Outpass {
 
     public LocalDateTime getDecidedAt() { return decidedAt; }
     public void setDecidedAt(LocalDateTime decidedAt) { this.decidedAt = decidedAt; }
+
+    public LocalDateTime getActualExitTime() { return actualExitTime; }
+    public void setActualExitTime(LocalDateTime actualExitTime) { this.actualExitTime = actualExitTime; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

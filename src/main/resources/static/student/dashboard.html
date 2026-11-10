@@ -851,14 +851,28 @@
 
         if (!data.eligible) {
           const alert = document.createElement('div');
-          alert.style.cssText = 'background:#fee2e2; border:1px solid #f87171; color:#991b1b; padding:0.9rem 1.25rem; border-radius:var(--radius-md); margin-bottom:1rem; display:flex; align-items:center; gap:0.75rem;';
-          alert.innerHTML = `
-            <span style="font-size:1.5rem;">⚠️</span>
-            <div>
-              <strong>Outpass Privileges Disabled (Attendance Default):</strong><br>
-              <span style="font-size:0.88rem;">${data.message}</span>
-            </div>
-          `;
+          alert.className = 'lock-alert-banner';
+          const icon = document.createElement('span');
+          icon.style.fontSize = '1.6rem';
+          icon.textContent = data.outpassLocked ? '\uD83D\uDD12' : '\u26A0\uFE0F';
+          const body = document.createElement('div');
+          const title = document.createElement('strong');
+          title.textContent = data.outpassLocked
+            ? 'OUTPASS LOCKED DUE TO MISSED ATTENDANCE'
+            : 'Outpass Privileges Disabled (Attendance Default):';
+          const msgEl = document.createElement('div');
+          msgEl.style.fontSize = '0.9rem';
+          msgEl.style.marginTop = '0.25rem';
+          msgEl.textContent = data.message;
+          body.append(title, msgEl);
+          if (data.lockedAt) {
+            const meta = document.createElement('div');
+            meta.style.fontSize = '0.8rem';
+            meta.style.marginTop = '0.25rem';
+            meta.textContent = `Locked at: ${UI.formatDateTime(data.lockedAt)}`;
+            body.appendChild(meta);
+          }
+          alert.append(icon, body);
           alertArea.appendChild(alert);
 
           if (openOutpassModalBtn) {

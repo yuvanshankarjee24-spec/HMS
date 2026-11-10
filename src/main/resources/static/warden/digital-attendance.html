@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Attendance Desk - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-5 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .mini-stat {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+    }
+    .mini-stat-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
+    .mini-stat-val { font-size: 1.65rem; font-weight: 800; margin-top: 0.25rem; }
+    .tab-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .tab-btn {
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-light);
+      background: #ffffff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Digital Attendance &amp; Outpass Locks</h1>
+            <p class="page-subtitle">Monitor live sessions, manage missed attendance locks, mark exceptions manually, and export reports.</p>
+          </div>
+          <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
+            <a href="/api/warden/digital-attendance/report/export" class="btn btn-secondary btn-sm">Export CSV Report</a>
+            <button type="button" class="btn btn-primary btn-sm" id="btnNewSession">+ Configure Session</button>
+          </div>
+        </div>
+
+        <div class="stats-grid-5">
+          <div class="mini-stat" style="border-left:4px solid #0284c7;">
+            <div class="mini-stat-label">Active Students</div>
+            <div class="mini-stat-val" id="sTotal">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #16a34a;">
+            <div class="mini-stat-label">Marked Today</div>
+            <div class="mini-stat-val" style="color:#15803d;" id="sMarked">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #f59e0b;">
+            <div class="mini-stat-label">Pending Today</div>
+            <div class="mini-stat-val" style="color:#b45309;" id="sPending">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #dc2626;">
+            <div class="mini-stat-label">Missed Today</div>
+            <div class="mini-stat-val" style="color:#b91c1c;" id="sMissed">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #7c3aed;">
+            <div class="mini-stat-label">On Outpass / Locked</div>
+            <div class="mini-stat-val" id="sOutLocked">0 / 0</div>
+          </div>
+        </div>
+
+        <div class="tab-bar" id="viewTabs">
+          <button type="button" class="tab-btn active" data-tab="missed">Missed &amp; Locked Queue</button>
+          <button type="button" class="tab-btn" data-tab="pending">Live Pending Students</button>
+          <button type="button" class="tab-btn" data-tab="sessions">Sessions &amp; Geofence Config</button>
+          <button type="button" class="tab-btn" data-tab="report">30-Day Student Report</button>
+        </div>
+
+        <!-- TAB: Missed & Locked -->
+        <div id="tab-missed" class="card">
+          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+            <h2 class="card-title">Missed Attendance &amp; Locked Outpasses</h2>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+              <input type="text" id="missedQuery" class="form-control" style="width:180px;" placeholder="Name or Reg No...">
+              <input type="date" id="missedDate" class="form-control" style="width:150px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnFilterMissed">Filter</button>
+              <button type="button" class="btn btn-success btn-sm" id="btnBulkUnlock">Bulk Unlock Selected</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="chkAllMissed"></th>
+                  <th>Student</th>
+                  <th>Room</th>
+                  <th>Session &amp; Date</th>
+                  <th>Misses (30d)</th>
+                  <th>Lock Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="missedBody"></tbody>
+            </table>
+          </div>
+          <div id="missedPag" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
+        </div>
+
+        <!-- TAB: Live Pending -->
+        <div id="tab-pending" class="card" style="display:none;">
+          <div class="card-header">
+            <h2 class="card-title">Live Pending Students (Window Open)</h2>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshPending">Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Room</th>
+                  <th>Session</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="pendingBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: Sessions Config -->
+        <div id="tab-sessions" class="card" style="display:none;">
+          <div class="card-header">
+            <h2 class="card-title">Configured Attendance Sessions</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Block</th>
+                  <th>Window</th>
+                  <th>Active Days</th>
+                  <th>Reminders</th>
+                  <th>Geofence</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sessionsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: 30-Day Report -->
+        <div id="tab-report" class="card" style="display:none;">
+          <div class="card-header">
+            <h2 class="card-title">Attendance Summary Report (Last 30 Days)</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Reg No</th>
+                  <th>Student Name</th>
+                  <th>Room</th>
+                  <th>Total</th>
+                  <th>Marked</th>
+                  <th>Missed</th>
+                  <th>Rate</th>
+                  <th>Lock Status</th>
+                </tr>
+              </thead>
+              <tbody id="reportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Session Modal -->
+  <div class="modal-overlay" id="sessionModal">
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="sessionModalTitle">Configure Attendance Session</h3>
+        <button class="modal-close" onclick="UI.closeModal('sessionModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editSessionId">
+        <div class="form-group">
+          <label class="form-label">Session Name *</label>
+          <input type="text" id="sessName" class="form-control" required placeholder="e.g. Night Attendance">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Hostel / Block *</label>
+            <input type="text" id="sessBlock" class="form-control" value="ALL" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Active Days *</label>
+            <input type="text" id="sessDays" class="form-control" value="MON,TUE,WED,THU,FRI,SAT,SUN" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Start Time *</label>
+            <input type="time" id="sessStart" class="form-control" value="20:30" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Time (Deadline) *</label>
+            <input type="time" id="sessEnd" class="form-control" value="22:00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">First Reminder Lead (min)</label>
+            <input type="number" id="sessLead" class="form-control" value="30" min="1" max="180">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Second Reminder (min, 0=off)</label>
+            <input type="number" id="sessSecond" class="form-control" value="5" min="0" max="60">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:700;cursor:pointer;">
+            <input type="checkbox" id="sessGeoEnabled"> Enable GPS Geofence Verification
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Latitude</label>
+            <input type="number" step="any" id="sessLat" class="form-control" value="11.0698">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitude</label>
+            <input type="number" step="any" id="sessLon" class="form-control" value="77.0928">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Radius (m)</label>
+            <input type="number" id="sessRad" class="form-control" value="200">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('sessionModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveSession">Save Session</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'digital-attendance');
+
+      let missedPage = 0;
+
+      document.querySelectorAll('#viewTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#viewTabs .tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          ['missed', 'pending', 'sessions', 'report'].forEach(t => {
+            document.getElementById('tab-' + t).style.display = btn.dataset.tab === t ? 'block' : 'none';
+          });
+          if (btn.dataset.tab === 'pending') loadPending();
+          if (btn.dataset.tab === 'sessions') loadSessions();
+          if (btn.dataset.tab === 'report') loadReport();
+        });
+      });
+
+      async function loadSummary() {
+        const res = await fetch('/api/warden/digital-attendance/summary', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('sTotal').textContent = s.totalStudents;
+        document.getElementById('sMarked').textContent = s.markedCount;
+        document.getElementById('sPending').textContent = s.pendingCount;
+        document.getElementById('sMissed').textContent = s.missedCount;
+        document.getElementById('sOutLocked').textContent = `${s.onOutpassCount} / ${s.lockedStudentsCount}`;
+      }
+
+      async function loadMissed(page = 0) {
+        missedPage = page;
+        const params = new URLSearchParams({ status: 'MISSED', page, size: 10 });
+        const q = document.getElementById('missedQuery').value.trim();
+        const d = document.getElementById('missedDate').value;
+        if (q) params.append('query', q);
+        if (d) params.append('date', d);
+
+        const res = await fetch(`/api/warden/digital-attendance/records?${params.toString()}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('missedBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const pageData = await res.json();
+        const list = pageData.content || [];
+
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 7, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No missed attendance records found.')));
+        } else {
+          list.forEach(r => {
+            const chk = UI.createElement('input', { type: 'checkbox', className: 'chk-missed-student', value: r.studentId });
+            const act = UI.createElement('div', { style: 'display:flex;gap:0.35rem;flex-wrap:wrap;' });
+
+            if (r.outpassLocked) {
+              act.appendChild(UI.createElement('button', {
+                className: 'btn btn-success btn-sm',
+                onclick: () => unlockSingle(r.studentId, r.fullName)
+              }, 'Unlock'));
+            } else {
+              act.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: () => relockSingle(r.studentId, r.fullName)
+              }, 'Re-lock'));
+            }
+            act.appendChild(UI.createElement('button', {
+              className: 'btn btn-secondary btn-sm',
+              onclick: () => manualMark(r)
+            }, 'Mark Present'));
+
+            const missBadge = UI.createElement('span', {
+              className: `status-badge ${r.repeatOffender ? 'badge-absent' : 'badge-late'}`
+            }, `${r.missesLast30Days}x` + (r.repeatOffender ? ' (Repeat)' : ''));
+
+            tbody.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', {}, chk),
+              UI.createElement('td', { dataset: { label: 'Student' } },
+                UI.createElement('div', { style: 'font-weight:700;' }, r.fullName),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, r.registerNumber)
+              ),
+              UI.createElement('td', { dataset: { label: 'Room' } }, `${r.hostelBlock} / ${r.roomNumber}`),
+              UI.createElement('td', { dataset: { label: 'Session' } }, `${r.sessionName} (${r.attendanceDate})`),
+              UI.createElement('td', { dataset: { label: '30d Misses' } }, missBadge),
+              UI.createElement('td', { dataset: { label: 'Lock' } },
+                r.outpassLocked
+                  ? UI.createElement('span', { className: 'status-badge badge-absent' }, 'LOCKED')
+                  : UI.createElement('span', { className: 'status-badge badge-active' }, 'Unlocked')
+              ),
+              UI.createElement('td', { dataset: { label: 'Actions' } }, act)
+            ));
+          });
+        }
+        MaintUI.renderPagination(document.getElementById('missedPag'), pageData, p => loadMissed(p));
+      }
+
+      async function loadPending() {
+        const today = new Date().toISOString().slice(0, 10);
+        const res = await fetch(`/api/warden/digital-attendance/records?status=PENDING&date=${today}&size=50`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('pendingBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const list = (await res.json()).content || [];
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 6, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No pending students right now.')));
+          return;
+        }
+        list.forEach(r => {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, `${r.fullName} (${r.registerNumber})`),
+            UI.createElement('td', {}, `${r.hostelBlock} / ${r.roomNumber}`),
+            UI.createElement('td', {}, r.sessionName),
+            UI.createElement('td', {}, r.attendanceDate),
+            UI.createElement('td', {}, UI.digitalAttendanceBadge('PENDING')),
+            UI.createElement('td', {}, UI.createElement('button', {
+              className: 'btn btn-secondary btn-sm',
+              onclick: () => manualMark(r)
+            }, 'Manual Mark'))
+          ));
+        });
+      }
+
+      async function unlockSingle(studentId, name) {
+        const reason = prompt(`Enter mandatory unlock remark for ${name}:`);
+        if (!reason || !reason.trim()) return;
+        const res = await fetch(`/api/warden/digital-attendance/unlock/${studentId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ reason: reason.trim() })
+        });
+        if (res.ok) {
+          UI.showToast(`Outpass unlocked for ${name}`, 'success');
+          await Promise.all([loadSummary(), loadMissed(missedPage)]);
+        }
+      }
+
+      async function relockSingle(studentId, name) {
+        const reason = prompt(`Enter reason to re-lock outpass for ${name}:`);
+        if (!reason || !reason.trim()) return;
+        const res = await fetch(`/api/warden/digital-attendance/relock/${studentId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ reason: reason.trim() })
+        });
+        if (res.ok) {
+          UI.showToast(`Outpass re-locked for ${name}`, 'info');
+          await Promise.all([loadSummary(), loadMissed(missedPage)]);
+        }
+      }
+
+      async function manualMark(r) {
+        const reason = prompt(`Enter reason for manually marking ${r.fullName} Present (e.g. technical issue / medical):`);
+        if (!reason || !reason.trim()) return;
+        const res = await fetch('/api/warden/digital-attendance/manual-mark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ studentId: r.studentId, sessionId: r.sessionId, date: r.attendanceDate, reason: reason.trim() })
+        });
+        if (res.ok) {
+          UI.showToast(`Manually marked ${r.fullName} present`, 'success');
+          await Promise.all([loadSummary(), loadMissed(missedPage), loadPending()]);
+        }
+      }
+
+      document.getElementById('btnBulkUnlock').addEventListener('click', async () => {
+        const ids = Array.from(document.querySelectorAll('.chk-missed-student:checked')).map(c => Number(c.value));
+        if (ids.length === 0) {
+          UI.showToast('Select at least one student to unlock', 'error');
+          return;
+        }
+        const reason = prompt(`Enter unlock reason for ${ids.length} selected student(s):`);
+        if (!reason || !reason.trim()) return;
+        const res = await fetch('/api/warden/digital-attendance/unlock-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ studentIds: ids, reason: reason.trim() })
+        });
+        if (res.ok) {
+          UI.showToast(`Unlocked ${ids.length} student(s)`, 'success');
+          await Promise.all([loadSummary(), loadMissed(missedPage)]);
+        }
+      });
+
+      document.getElementById('chkAllMissed').addEventListener('change', (e) => {
+        document.querySelectorAll('.chk-missed-student').forEach(c => { c.checked = e.target.checked; });
+      });
+
+      async function loadSessions() {
+        const res = await fetch('/api/warden/digital-attendance/sessions', { credentials: 'same-origin' });
+        const tbody = document.getElementById('sessionsBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const list = await res.json();
+        list.forEach(s => {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, s.name)),
+            UI.createElement('td', {}, s.hostelBlock),
+            UI.createElement('td', {}, `${s.startTime.slice(0,5)} - ${s.endTime.slice(0,5)}`),
+            UI.createElement('td', { style: 'font-size:0.8rem;' }, s.activeDays),
+            UI.createElement('td', {}, `${s.reminderLeadMinutes}m / ${s.secondReminderMinutes || 0}m`),
+            UI.createElement('td', {}, s.geofenceEnabled ? `ON (${s.geofenceRadiusMeters}m)` : 'OFF'),
+            UI.createElement('td', {}, UI.createElement('span', { className: `status-badge ${s.enabled ? 'badge-active' : 'badge-absent'}` }, s.enabled ? 'Enabled' : 'Disabled')),
+            UI.createElement('td', {},
+              UI.createElement('button', {
+                className: 'btn btn-secondary btn-sm',
+                onclick: async () => {
+                  await fetch(`/api/warden/digital-attendance/sessions/${s.id}/toggle?enabled=${!s.enabled}`, {
+                    method: 'PATCH', credentials: 'same-origin'
+                  });
+                  loadSessions();
+                }
+              }, s.enabled ? 'Disable' : 'Enable')
+            )
+          ));
+        });
+      }
+
+      async function loadReport() {
+        const res = await fetch('/api/warden/digital-attendance/report', { credentials: 'same-origin' });
+        const tbody = document.getElementById('reportBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        (await res.json()).forEach(r => {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, r.registerNumber)),
+            UI.createElement('td', {}, r.fullName),
+            UI.createElement('td', {}, r.roomNumber),
+            UI.createElement('td', {}, String(r.totalSessions)),
+            UI.createElement('td', {}, String(r.markedCount)),
+            UI.createElement('td', {}, String(r.missedCount) + (r.repeatOffender ? ' ⚠️' : '')),
+            UI.createElement('td', {}, `${r.attendancePercentage}%`),
+            UI.createElement('td', {}, r.outpassLocked
+              ? UI.createElement('span', { className: 'status-badge badge-absent' }, 'LOCKED')
+              : UI.createElement('span', { className: 'status-badge badge-active' }, 'Unlocked'))
+          ));
+        });
+      }
+
+      document.getElementById('btnNewSession').addEventListener('click', () => {
+        document.getElementById('editSessionId').value = '';
+        UI.openModal('sessionModal');
+      });
+
+      document.getElementById('btnSaveSession').addEventListener('click', async () => {
+        const payload = {
+          name: document.getElementById('sessName').value.trim(),
+          hostelBlock: document.getElementById('sessBlock').value.trim(),
+          startTime: document.getElementById('sessStart').value + ':00',
+          endTime: document.getElementById('sessEnd').value + ':00',
+          activeDays: document.getElementById('sessDays').value.trim(),
+          enabled: true,
+          reminderLeadMinutes: Number(document.getElementById('sessLead').value),
+          secondReminderMinutes: Number(document.getElementById('sessSecond').value),
+          geofenceEnabled: document.getElementById('sessGeoEnabled').checked,
+          hostelLatitude: Number(document.getElementById('sessLat').value),
+          hostelLongitude: Number(document.getElementById('sessLon').value),
+          geofenceRadiusMeters: Number(document.getElementById('sessRad').value)
+        };
+        const res = await fetch('/api/warden/digital-attendance/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to save session', 'error');
+        } else {
+          UI.closeModal('sessionModal');
+          UI.showToast('Attendance session saved!', 'success');
+          loadSessions();
+        }
+      });
+
+      document.getElementById('btnFilterMissed').addEventListener('click', () => loadMissed(0));
+      document.getElementById('btnRefreshPending').addEventListener('click', loadPending);
+
+      await Promise.all([loadSummary(), loadMissed(0)]);
+    })();
+  </script>
+</body>
+</html>
+

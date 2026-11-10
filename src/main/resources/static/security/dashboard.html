@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Security Desk - Smart Hostel</title>
+  <title>Security Desk - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
   <link rel="stylesheet" href="/css/common.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
         <div class="welcome-card">
           <div class="welcome-text">
             <h1 id="welcomeUser">Security Officer Portal</h1>
-            <p>Campus perimeter security, student visitor logs, and parcel checkpoints.</p>
+            <p>Campus gate outpass verification — automatically blocks students locked due to missed attendance.</p>
           </div>
           <div>
             <span class="status-badge badge-active">On Duty</span>
@@ -22,34 +23,14 @@
 
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Security Modules</h2>
+            <h2 class="card-title">Outpass Gate Check / Verification</h2>
           </div>
-          <div class="coming-soon-grid">
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-              <h3>Gate Visitor Log</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">Visitor registration & vehicle verification</p>
-              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
-            </div>
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-              </div>
-              <h3>Night Curfew Scanner</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">QR badge verification for late entries</p>
-              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
-            </div>
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>
-              </div>
-              <h3>Parcel Intake</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">Courier package barcode intake & student notifications</p>
-              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
-            </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+            <input type="text" id="scanQueryInput" class="form-control" style="flex:1;min-width:240px;" placeholder="Enter Outpass ID (e.g. 3) or Student Register No (e.g. REG202605)...">
+            <button type="button" class="btn btn-primary" id="btnVerifyOutpass">Verify Outpass</button>
           </div>
+
+          <div id="scanResultContainer" style="display:none;"></div>
         </div>
       </div>
     </main>
@@ -63,6 +44,81 @@
       if (!user) return;
       document.getElementById('welcomeUser').textContent = `Welcome, Officer ${user.name}`;
       UI.renderLayout(user, 'dashboard');
+
+      async function verifyOutpass() {
+        const q = document.getElementById('scanQueryInput').value.trim();
+        if (!q) {
+          UI.showToast('Please enter an Outpass ID or Register Number', 'error');
+          return;
+        }
+        const res = await fetch(`/api/security/outpasses/verify?query=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+        const container = document.getElementById('scanResultContainer');
+        container.innerHTML = '';
+        container.style.display = 'block';
+
+        const data = await res.json();
+        if (!res.ok) {
+          container.appendChild(UI.createElement('div', {
+            style: 'background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:1rem;border-radius:var(--radius-md);font-weight:600;'
+          }, data.message || 'Outpass not found'));
+          return;
+        }
+
+        if (data.outpassLocked) {
+          container.appendChild(UI.createElement('div', { className: 'lock-alert-banner' },
+            UI.createElement('span', { style: 'font-size:1.75rem;' }, '🚫'),
+            UI.createElement('div', {},
+              UI.createElement('div', { style: 'font-weight:800;font-size:1.1rem;' }, 'OUTPASS LOCKED - MISSED ATTENDANCE'),
+              UI.createElement('div', { style: 'font-size:0.92rem;margin-top:0.25rem;' }, data.lockReason || data.gateMessage)
+            )
+          ));
+        } else {
+          container.appendChild(UI.createElement('div', {
+            style: data.exitAllowed
+              ? 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-weight:700;'
+              : 'background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-weight:700;'
+          }, data.gateMessage));
+        }
+
+        const details = UI.createElement('div', {
+          style: 'background:var(--card-bg);padding:1.25rem;border-radius:var(--radius-md);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;font-size:0.92rem;'
+        },
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Student: '), `${data.studentName} (${data.registerNumber})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Room / Dept: '), `Room ${data.roomNumber} — ${data.department}`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Outpass #: '), `#${data.outpassId} (${data.passType})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Status: '), data.outpassStatus),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Departure: '), UI.formatDateTime(data.departureDateTime)),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Return: '), UI.formatDateTime(data.returnDateTime)),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Destination: '), data.destination || '—'),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Reason: '), data.reason)
+        );
+        container.appendChild(details);
+
+        const actions = UI.createElement('div', { style: 'margin-top:1rem;display:flex;justify-content:flex-end;' });
+        const btnExit = UI.createElement('button', {
+          className: 'btn btn-primary',
+          onclick: async () => {
+            const exitRes = await fetch(`/api/security/outpasses/${data.outpassId}/exit`, {
+              method: 'POST', credentials: 'same-origin'
+            });
+            const exitData = await exitRes.json();
+            if (!exitRes.ok) {
+              UI.showToast(exitData.message || 'Exit blocked', 'error');
+            } else {
+              UI.showToast(`Student ${data.registerNumber} marked OUT`, 'success');
+              await verifyOutpass();
+            }
+          }
+        }, data.outpassLocked ? 'Exit Blocked (Outpass Locked)' : 'Mark Exit (Out)');
+        btnExit.disabled = !data.exitAllowed;
+        actions.appendChild(btnExit);
+        container.appendChild(actions);
+      }
+
+      document.getElementById('btnVerifyOutpass').addEventListener('click', verifyOutpass);
+      document.getElementById('scanQueryInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') verifyOutpass();
+      });
     })();
   </script>
 </body>

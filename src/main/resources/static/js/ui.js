@@ -222,6 +222,7 @@ const UI = {
     const menuItemsByRole = {
       'STUDENT': [
         { key: 'dashboard', label: 'My Dashboard', href: '/student/dashboard.html' },
+        { key: 'attendance', label: 'Attendance', href: '/student/attendance.html' },
         { key: 'booking', label: 'Online Room Booking', href: '/student/booking.html' },
         { key: 'outpasses', label: 'My Outpasses', href: '/student/outpasses.html' },
         { key: 'raise-request', label: 'Raise Request', href: '/student/raise-request.html' },
@@ -231,7 +232,8 @@ const UI = {
       ],
       'WARDEN': [
         { key: 'dashboard', label: 'Warden Overview', href: '/warden/dashboard.html' },
-        { key: 'attendance', label: 'Active Attendance', href: '/warden/attendance.html' },
+        { key: 'digital-attendance', label: 'Digital Attendance', href: '/warden/digital-attendance.html' },
+        { key: 'attendance', label: 'Manual Roll Call', href: '/warden/attendance.html' },
         { key: 'outpasses', label: 'Outpass Requests', href: '/warden/outpasses.html' },
         { key: 'maintenance', label: 'Maintenance Requests', href: '/warden/maintenance.html' },
         { key: 'workers', label: 'Manage Workers', href: '/warden/workers.html' },
@@ -243,6 +245,7 @@ const UI = {
         { key: 'warden-overview', label: 'Hostel Overview', href: '/warden/dashboard.html' },
         { key: 'rooms', label: 'Room Management', href: '/warden/rooms.html' },
         { key: 'admin-dashboard', label: 'Admin Dashboard', href: '/admin/dashboard.html' },
+        { key: 'admin-attendance', label: 'Digital Attendance', href: '/admin/attendance.html' },
         { key: 'admin-maintenance', label: 'Maintenance & Reports', href: '/admin/maintenance.html' },
         { key: 'workers', label: 'Manage Workers', href: '/warden/workers.html' },
         { key: 'users', label: 'User Directory', href: '/admin/users.html' },
@@ -404,5 +407,18 @@ const UI = {
   priorityBadge(prio) {
     const cls = `status-badge badge-prio-${(prio || '').toLowerCase()}`;
     return this.createElement('span', { className: cls }, prio);
+  },
+
+  digitalAttendanceBadge(status) {
+    const labelMap = {
+      'MARKED': 'Marked',
+      'PENDING': 'Pending',
+      'MISSED': 'Not Pressed / Missed',
+      'ON_OUTPASS': 'On Outpass',
+      'MANUAL_PRESENT': 'Manually Marked',
+      'LOCKED': 'Locked'
+    };
+    const cls = `status-badge badge-da-${(status || '').toLowerCase()}`;
+    return this.createElement('span', { className: cls }, labelMap[status] || status);
   }
 };
