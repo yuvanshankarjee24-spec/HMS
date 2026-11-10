@@ -24,12 +24,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.hostel.dto.AttendanceDtos.*;
-import com.hostel.dto.OnlineAllocationDtos.*;
 import com.hostel.dto.OutpassDtos.*;
 import com.hostel.service.AttendanceService;
-import com.hostel.service.OnlineAllocationService;
 import com.hostel.service.OutpassService;
-import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 
 @RestController
@@ -41,18 +38,18 @@ public class WardenController {
     private final UserRepository userRepository;
     private final AttendanceService attendanceService;
     private final OutpassService outpassService;
-    private final OnlineAllocationService onlineAllocationService;
+    private final com.hostel.repository.StudentRepository studentRepository;
 
     public WardenController(WardenService wardenService,
                             UserRepository userRepository,
                             AttendanceService attendanceService,
                             OutpassService outpassService,
-                            OnlineAllocationService onlineAllocationService) {
+                            com.hostel.repository.StudentRepository studentRepository) {
         this.wardenService = wardenService;
         this.userRepository = userRepository;
         this.attendanceService = attendanceService;
         this.outpassService = outpassService;
-        this.onlineAllocationService = onlineAllocationService;
+        this.studentRepository = studentRepository;
     }
 
     private User getAuthenticatedUser(UserDetails userDetails) {
@@ -70,21 +67,18 @@ public class WardenController {
         return ResponseEntity.ok(wardenService.getAllRooms());
     }
 
-    @PostMapping("/rooms")
-    public ResponseEntity<Room> createRoom(@AuthenticationPrincipal UserDetails userDetails,
-                                           @Valid @RequestBody CreateRoomRequest request) {
-        User user = getAuthenticatedUser(userDetails);
-        Room room = wardenService.createRoom(request, user);
-        return ResponseEntity.ok(room);
-    }
-
-    @PutMapping("/rooms/{id}")
-    public ResponseEntity<Room> updateRoomCapacity(@AuthenticationPrincipal UserDetails userDetails,
-                                                   @PathVariable Long id,
-                                                   @Valid @RequestBody UpdateRoomCapacityRequest request) {
-        User user = getAuthenticatedUser(userDetails);
-        Room room = wardenService.updateRoomCapacity(id, request, user);
-        return ResponseEntity.ok(room);
+    @GetMapping("/students/summary")
+    public ResponseEntity<Map<String, Object>> getStudentsSummary() {
+        WardenSummaryResponse ws = wardenService.getSummary();
+        long totalStudents = studentRepository.count();
+        long allocated = ws.occupiedBeds();
+        long unallocated = Math.max(0, totalStudents - allocated);
+        return ResponseEntity.ok(Map.of(
+                "totalStudents", totalStudents,
+                "allocatedStudents", allocated,
+                "unallocatedStudents", unallocated,
+                "pendingRoomRequests", ws.pendingRequests()
+        ));
     }
 
     @GetMapping("/students")
@@ -194,6 +188,11 @@ public class WardenController {
     // OUTPASS MANAGEMENT
     // ==========================================
 
+    @GetMapping("/outpasses/summary")
+    public ResponseEntity<WardenOutpassSummaryResponse> getOutpassesSummary() {
+        return ResponseEntity.ok(outpassService.getWardenSummary());
+    }
+
     @GetMapping("/outpasses")
     public ResponseEntity<List<OutpassResponse>> getOutpasses(
             @RequestParam(required = false) String status) {
@@ -218,70 +217,5 @@ public class WardenController {
         User user = getAuthenticatedUser(userDetails);
         String remarks = (req != null) ? req.remarks() : null;
         return ResponseEntity.ok(outpassService.rejectOutpass(id, remarks, user));
-    }
-
-    // ==========================================
-    // ONLINE ROOM ALLOCATION & WHITELIST
-    // ==========================================
-
-    @GetMapping("/online-allocation/status")
-    public ResponseEntity<Map<String, Object>> getOnlineAllocationStatus() {
-        boolean open = onlineAllocationService.isRoundOpen();
-        return ResponseEntity.ok(Map.of(
-                "open", open,
-                "status", open ? "OPEN" : "CLOSED"
-        ));
-    }
-
-    @PostMapping("/online-allocation/toggle")
-    public ResponseEntity<Map<String, Object>> toggleOnlineAllocation(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody ToggleRoundRequest req) {
-        User user = getAuthenticatedUser(userDetails);
-        onlineAllocationService.toggleRound(req.open(), user);
-        return ResponseEntity.ok(Map.of(
-                "open", req.open(),
-                "status", req.open() ? "OPEN" : "CLOSED",
-                "message", "Online Room Allocation round is now " + (req.open() ? "OPEN" : "CLOSED")
-        ));
-    }
-
-    @GetMapping("/online-allocation/whitelist")
-    public ResponseEntity<List<WhitelistItemResponse>> getWhitelist() {
-        return ResponseEntity.ok(onlineAllocationService.getAllWhitelist());
-    }
-
-    @PostMapping("/online-allocation/whitelist")
-    public ResponseEntity<WhitelistItemResponse> addWhitelistEntry(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody AddWhitelistRequest req) {
-        User user = getAuthenticatedUser(userDetails);
-        return ResponseEntity.ok(onlineAllocationService.addWhitelistEntry(req, user));
-    }
-
-    @DeleteMapping("/online-allocation/whitelist/{id}")
-    public ResponseEntity<Map<String, String>> deleteWhitelistEntry(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id) {
-        User user = getAuthenticatedUser(userDetails);
-        onlineAllocationService.deleteWhitelistEntry(id, user);
-        return ResponseEntity.ok(Map.of("message", "Whitelist entry removed successfully"));
-    }
-
-    @PostMapping("/online-allocation/upload-csv")
-    public ResponseEntity<CsvUploadSummary> uploadWhitelistCsv(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam("file") MultipartFile file) {
-        User user = getAuthenticatedUser(userDetails);
-        return ResponseEntity.ok(onlineAllocationService.uploadWhitelistCsv(file, user));
-    }
-
-    @GetMapping("/online-allocation/sample-csv")
-    public ResponseEntity<String> downloadSampleCsv() {
-        String csv = onlineAllocationService.generateSampleCsv();
-        return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=\"room_allocation_whitelist_template.csv\"")
-                .header("Content-Type", "text/csv; charset=UTF-8")
-                .body(csv);
     }
 }

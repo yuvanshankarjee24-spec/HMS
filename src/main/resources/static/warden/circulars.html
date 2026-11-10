@@ -21,6 +21,8 @@
           </div>
         </div>
 
+        <div id="circSummaryCards"></div>
+
         <div class="card">
           <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
             <h2 class="card-title">Published &amp; Draft Circulars</h2>
@@ -190,7 +192,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -199,6 +201,38 @@
       UI.renderLayout(user, user.role === 'ADMIN' ? 'admin-circulars' : 'circulars');
 
       let currentPage = 0;
+      let activeCircCard = null;
+      let filterTypeOverride = '';
+
+      async function loadCircSummary() {
+        const res = await fetch('/api/warden/circulars/summary', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const s = await res.json();
+        UI.SummaryCards.render('circSummaryCards', {
+          activeKey: activeCircCard,
+          onSelect: (key) => {
+            activeCircCard = (activeCircCard === key) ? null : key;
+            filterTypeOverride = (activeCircCard === 'EVENT') ? 'EVENT' : '';
+            document.getElementById('filterStatus').value =
+              (activeCircCard && activeCircCard !== 'EVENT' && activeCircCard !== 'UNACK') ? activeCircCard : '';
+            loadCircSummary();
+            loadCirculars(0);
+          },
+          cards: [
+            { key: 'PUBLISHED', label: 'Published', value: s.publishedCount, accentColor: '#16a34a', valColor: '#15803d' },
+            { key: 'UNACK', label: 'Unread / Unacked', value: s.unreadOrUnackCount, accentColor: '#dc2626', valColor: '#b91c1c', filterable: false },
+            { key: 'EVENT', label: 'Upcoming Events', value: s.upcomingEventsCount, accentColor: '#0284c7' },
+            { key: 'SCHEDULED', label: 'Scheduled', value: s.scheduledCount, accentColor: '#f59e0b', valColor: '#b45309' },
+            { key: 'DRAFT', label: 'Drafts', value: s.draftCount, accentColor: '#64748b' }
+          ],
+          chartTitle: 'Circulars & Events Pipeline',
+          chartSegments: [
+            { label: 'Published', value: s.publishedCount, color: '#16a34a' },
+            { label: 'Scheduled', value: s.scheduledCount, color: '#f59e0b' },
+            { label: 'Drafts', value: s.draftCount, color: '#94a3b8' }
+          ]
+        });
+      }
 
       document.getElementById('cType').addEventListener('change', e => {
         document.getElementById('eventFields').style.display = e.target.value === 'EVENT' ? 'grid' : 'none';
@@ -218,6 +252,7 @@
         const st = document.getElementById('filterStatus').value;
         if (q) params.append('query', q);
         if (st) params.append('status', st);
+        if (filterTypeOverride) params.append('type', filterTypeOverride);
 
         const res = await fetch(`/api/warden/circulars?${params.toString()}`, { credentials: 'same-origin' });
         const tbody = document.getElementById('circularsBody');
@@ -356,7 +391,7 @@
       });
 
       document.getElementById('btnFilter').addEventListener('click', () => loadCirculars(0));
-      await loadCirculars(0);
+      await Promise.all([loadCircSummary(), loadCirculars(0)]);
     })();
   </script>
 </body>

@@ -56,4 +56,14 @@ public class OutpassDtos {
         String lockReason,
         LocalDateTime lockedAt
     ) {}
+
+    public record WardenOutpassSummaryResponse(
+        long pending,
+        long approved,
+        long currentlyOut,
+        long lateReturns,
+        long returned,
+        long rejected,
+        long total
+    ) {}
 }

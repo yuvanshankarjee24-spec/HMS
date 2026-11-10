@@ -18,7 +18,9 @@ public class StudentDtos {
         String photoUrl,
         String roomNumber,
         Integer bedNumber,
-        String allocationStatus // ALLOCATED, REQUEST PENDING, NOT ALLOCATED
+        String allocationStatus, // ALLOCATED, REQUEST PENDING, NOT ALLOCATED
+        String hostelBlock,
+        Integer floor
     ) {}
 
     public record RoomAvailabilityResponse(

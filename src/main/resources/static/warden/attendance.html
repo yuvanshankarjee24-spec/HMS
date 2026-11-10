@@ -80,6 +80,8 @@
           </div>
         </div>
 
+        <div id="rollSummaryCards"></div>
+
         <!-- Attendance Card -->
         <div class="card">
           <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
@@ -146,7 +148,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script>
     let currentUser = null;
     const datePicker = document.getElementById('attendanceDatePicker');
@@ -218,6 +220,29 @@
           document.getElementById('chipAbsent').textContent = sum.absentCount;
           document.getElementById('chipOutpass').textContent = sum.onOutpassCount;
           document.getElementById('chipLate').textContent = sum.lateCount;
+          if (UI.SummaryCards) {
+            UI.SummaryCards.render('rollSummaryCards', {
+              activeKey: filterSelect.value,
+              onSelect: (key) => {
+                filterSelect.value = (filterSelect.value === key) ? 'ALL' : key;
+                loadAttendance();
+              },
+              cards: [
+                { key: 'ALL', label: 'Total Residents', value: sum.totalAllocated, accentColor: '#0284c7' },
+                { key: 'PRESENT', label: 'Present', value: sum.presentCount, accentColor: '#16a34a', valColor: '#15803d' },
+                { key: 'ABSENT', label: 'Absent', value: sum.absentCount, accentColor: '#dc2626', valColor: '#b91c1c' },
+                { key: 'ON_OUTPASS', label: 'On Outpass', value: sum.onOutpassCount, accentColor: '#7c3aed' },
+                { key: 'LATE', label: 'Late', value: sum.lateCount, accentColor: '#f59e0b', valColor: '#b45309' }
+              ],
+              chartTitle: 'Roll Call Breakdown',
+              chartSegments: [
+                { label: 'Present', value: sum.presentCount, color: '#16a34a' },
+                { label: 'Absent', value: sum.absentCount, color: '#dc2626' },
+                { label: 'On Outpass', value: sum.onOutpassCount, color: '#7c3aed' },
+                { label: 'Late', value: sum.lateCount, color: '#f59e0b' }
+              ]
+            });
+          }
         }
       } catch (err) {
         console.error('Attendance error:', err);

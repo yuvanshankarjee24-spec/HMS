@@ -165,14 +165,31 @@ public class OutpassService {
                 .collect(Collectors.toList());
     }
 
+    public WardenOutpassSummaryResponse getWardenSummary() {
+        LocalDateTime now = LocalDateTime.now();
+        long pending = outpassRepository.countByStatus(Outpass.Status.PENDING);
+        long approved = outpassRepository.countByStatus(Outpass.Status.APPROVED);
+        long currentlyOut = outpassRepository.countByStatus(Outpass.Status.OUT);
+        long lateReturns = outpassRepository.countByStatusAndReturnDateTimeBefore(Outpass.Status.OUT, now);
+        long returned = outpassRepository.countByStatus(Outpass.Status.RETURNED);
+        long rejected = outpassRepository.countByStatus(Outpass.Status.REJECTED);
+        long total = outpassRepository.count();
+        return new WardenOutpassSummaryResponse(pending, approved, currentlyOut, lateReturns, returned, rejected, total);
+    }
+
     public List<OutpassResponse> getAllOutpasses(String statusFilter) {
         List<Outpass> list;
         if (statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter)) {
-            try {
-                Outpass.Status status = Outpass.Status.valueOf(statusFilter.trim().toUpperCase());
-                list = outpassRepository.findByStatusOrderByCreatedAtDesc(status);
-            } catch (IllegalArgumentException e) {
-                list = outpassRepository.findAllByOrderByCreatedAtDesc();
+            if ("LATE".equalsIgnoreCase(statusFilter.trim())) {
+                list = outpassRepository.findByStatusAndReturnDateTimeBeforeOrderByReturnDateTimeAsc(
+                        Outpass.Status.OUT, LocalDateTime.now());
+            } else {
+                try {
+                    Outpass.Status status = Outpass.Status.valueOf(statusFilter.trim().toUpperCase());
+                    list = outpassRepository.findByStatusOrderByCreatedAtDesc(status);
+                } catch (IllegalArgumentException e) {
+                    list = outpassRepository.findAllByOrderByCreatedAtDesc();
+                }
             }
         } else {
             list = outpassRepository.findAllByOrderByCreatedAtDesc();

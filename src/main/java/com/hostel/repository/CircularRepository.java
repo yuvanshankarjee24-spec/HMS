@@ -26,6 +26,9 @@ public interface CircularRepository extends JpaRepository<Circular, Long> {
     List<Circular> findByStatusAndTypeAndEventDateTimeBetween(
             Circular.Status status, Circular.Type type, LocalDateTime start, LocalDateTime end);
 
+    long countByStatus(Circular.Status status);
+    long countByStatusAndTypeAndEventDateTimeAfter(Circular.Status status, Circular.Type type, LocalDateTime after);
+
     @Query("SELECT c FROM Circular c WHERE " +
            "(:status IS NULL OR c.status = :status) AND " +
            "(:type IS NULL OR c.type = :type) AND " +

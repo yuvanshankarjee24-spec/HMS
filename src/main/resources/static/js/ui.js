@@ -237,45 +237,36 @@ const UI = {
 
     const menuItemsByRole = {
       'STUDENT': [
-        { key: 'dashboard', label: 'My Dashboard', href: '/student/dashboard.html' },
-        { key: 'circulars', label: 'Circulars & Events', href: '/student/circulars.html' },
-        { key: 'mess-booking', label: 'Mess Token Booking', href: '/student/mess-booking.html' },
-        { key: 'my-tokens', label: 'My Mess Tokens', href: '/student/my-tokens.html' },
+        { key: 'dashboard', label: 'Dashboard', href: '/student/dashboard.html' },
+        { key: 'outpasses', label: 'Outpass', href: '/student/outpasses.html' },
         { key: 'attendance', label: 'Attendance', href: '/student/attendance.html' },
-        { key: 'my-parcels', label: 'My Parcels', href: '/student/my-parcels.html' },
-        { key: 'booking', label: 'Online Room Booking', href: '/student/booking.html' },
-        { key: 'outpasses', label: 'My Outpasses', href: '/student/outpasses.html' },
-        { key: 'raise-request', label: 'Raise Request', href: '/student/raise-request.html' },
-        { key: 'my-requests', label: 'My Requests', href: '/student/my-requests.html' },
-        { key: 'profile', label: 'Profile & Photo', href: '/student/profile.html' },
-        { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
+        { key: 'my-parcels', label: 'Parcels', href: '/student/my-parcels.html' },
+        { key: 'mess-tokens', label: 'Mess Tokens', href: '/student/mess-tokens.html' },
+        { key: 'maintenance', label: 'Maintenance Requests', href: '/student/maintenance.html' },
+        { key: 'circulars', label: 'Circulars & Events', href: '/student/circulars.html' },
+        { key: 'profile', label: 'My Profile', href: '/student/profile.html' }
       ],
       'WARDEN': [
-        { key: 'dashboard', label: 'Warden Overview', href: '/warden/dashboard.html' },
-        { key: 'circulars', label: 'Circulars & Events', href: '/warden/circulars.html' },
-        { key: 'mess-menu', label: 'Mess Menu', href: '/warden/mess-menu.html' },
-        { key: 'mess-scan', label: 'Scan Token / Serve', href: '/warden/mess-scan.html' },
-        { key: 'digital-attendance', label: 'Digital Attendance', href: '/warden/digital-attendance.html' },
-        { key: 'attendance', label: 'Manual Roll Call', href: '/warden/attendance.html' },
-        { key: 'outpasses', label: 'Outpass Requests', href: '/warden/outpasses.html' },
+        { key: 'dashboard', label: 'Dashboard', href: '/warden/dashboard.html' },
+        { key: 'outpasses', label: 'Outpass', href: '/warden/outpasses.html' },
+        { key: 'digital-attendance', label: 'Attendance', href: '/warden/digital-attendance.html' },
+        { key: 'attendance', label: 'Roll Call Register', href: '/warden/attendance.html' },
         { key: 'parcels', label: 'Parcels', href: '/warden/parcels.html' },
-        { key: 'parcel-scan', label: 'Scan QR / Deliver', href: '/warden/parcel-scan.html' },
-        { key: 'maintenance', label: 'Maintenance Requests', href: '/warden/maintenance.html' },
-        { key: 'workers', label: 'Manage Workers', href: '/warden/workers.html' },
-        { key: 'whitelist', label: 'Online Allocation Whitelist', href: '/warden/whitelist.html' },
-        { key: 'rooms', label: 'Room Management', href: '/warden/rooms.html' },
+        { key: 'mess', label: 'Mess', href: '/warden/mess.html' },
+        { key: 'maintenance', label: 'Maintenance', href: '/warden/maintenance.html' },
+        { key: 'circulars', label: 'Circulars & Events', href: '/warden/circulars.html' },
+        { key: 'students', label: 'Students', href: '/warden/students.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],
       'ADMIN': [
         { key: 'warden-overview', label: 'Hostel Overview', href: '/warden/dashboard.html' },
-        { key: 'rooms', label: 'Room Management', href: '/warden/rooms.html' },
         { key: 'admin-dashboard', label: 'Admin Dashboard', href: '/admin/dashboard.html' },
         { key: 'admin-circulars', label: 'Circulars & Events', href: '/admin/circulars.html' },
         { key: 'admin-mess', label: 'Mess Reports', href: '/admin/mess.html' },
         { key: 'admin-attendance', label: 'Digital Attendance', href: '/admin/attendance.html' },
         { key: 'admin-parcels', label: 'Parcels & Reports', href: '/admin/parcels.html' },
         { key: 'admin-maintenance', label: 'Maintenance & Reports', href: '/admin/maintenance.html' },
-        { key: 'workers', label: 'Manage Workers', href: '/warden/workers.html' },
+        { key: 'workers', label: 'Maintenance & Workers', href: '/warden/maintenance.html?tab=workers' },
         { key: 'users', label: 'User Directory', href: '/admin/users.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],
@@ -323,6 +314,7 @@ const UI = {
 
     appContainer.insertBefore(sidebar, appContainer.firstChild);
 
+    this._currentUserRole = currentUser.role;
     this.refreshUnreadCount();
     if (currentUser.role === 'STUDENT') {
       this.refreshParcelBadge();
@@ -390,12 +382,15 @@ const UI = {
         items.forEach(n => {
           const item = this.createElement('div', {
             className: `notif-item ${n.read ? '' : 'unread'}`,
+            style: 'cursor:pointer;',
             onclick: async () => {
               if (!n.read) {
                 await fetch(`/api/notifications/${n.id}/read`, { method: 'POST', credentials: 'same-origin' });
                 item.classList.remove('unread');
                 await this.refreshUnreadCount();
               }
+              const target = this.resolveNotificationUrl(n, this._currentUserRole);
+              if (target) window.location.href = target;
             }
           },
             this.createElement('div', { className: 'notif-item-title' }, n.title),
@@ -506,5 +501,112 @@ const UI = {
     };
     const cls = `status-badge badge-tkn-${(status || '').toLowerCase()}`;
     return this.createElement('span', { className: cls }, labelMap[status] || status);
+  },
+
+  resolveNotificationUrl(n, role) {
+    const rt = (n && n.referenceType) ? String(n.referenceType).toUpperCase() : '';
+    const refId = n && n.referenceId ? n.referenceId : '';
+    if (role === 'STUDENT') {
+      if (rt === 'CIRCULAR') return `/student/circulars.html${refId ? '?id=' + encodeURIComponent(refId) : ''}`;
+      if (rt === 'MESS_TOKEN') return '/student/mess-tokens.html?tab=my-tokens';
+      if (rt === 'PARCEL') return '/student/my-parcels.html';
+      if (rt === 'MAINTENANCE_REQUEST') return '/student/maintenance.html?tab=list';
+      if (rt === 'DIGITAL_ATTENDANCE') return '/student/attendance.html';
+      if (rt === 'OUTPASS') return '/student/outpasses.html';
+      return '/student/dashboard.html';
+    }
+    if (role === 'WARDEN' || role === 'ADMIN') {
+      if (rt === 'CIRCULAR') return '/warden/circulars.html';
+      if (rt === 'MESS_TOKEN') return '/warden/mess.html?tab=tokens';
+      if (rt === 'PARCEL') return '/warden/parcels.html?tab=register';
+      if (rt === 'MAINTENANCE_REQUEST') return '/warden/maintenance.html?tab=requests';
+      if (rt === 'DIGITAL_ATTENDANCE') return '/warden/digital-attendance.html';
+      if (rt === 'OUTPASS') return '/warden/outpasses.html';
+      return '/warden/dashboard.html';
+    }
+    if (role === 'WORKER') return '/worker/dashboard.html';
+    return null;
+  },
+
+  Tabs: {
+    init({ barSelector = '.portal-tabs', paramName = 'tab', defaultTab, onChange }) {
+      const bar = document.querySelector(barSelector);
+      if (!bar) return null;
+      const buttons = Array.from(bar.querySelectorAll('[data-tab]'));
+      const panels = {};
+      buttons.forEach(b => {
+        const key = b.dataset.tab;
+        const p = document.getElementById(`panel-${key}`) || document.querySelector(`[data-tab-panel="${key}"]`);
+        if (p) panels[key] = p;
+      });
+      const activate = (key, updateUrl = true) => {
+        const chosen = panels[key] ? key : (defaultTab || buttons[0]?.dataset.tab);
+        buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === chosen));
+        Object.entries(panels).forEach(([k, p]) => {
+          p.style.display = (k === chosen) ? '' : 'none';
+        });
+        if (updateUrl && chosen) {
+          const url = new URL(window.location.href);
+          url.searchParams.set(paramName, chosen);
+          history.replaceState(null, '', url.toString());
+        }
+        if (typeof onChange === 'function' && chosen) onChange(chosen);
+      };
+      buttons.forEach(b => b.addEventListener('click', () => activate(b.dataset.tab, true)));
+      const initial = new URLSearchParams(window.location.search).get(paramName) || defaultTab;
+      activate(initial, false);
+      return { switchTo: (k) => activate(k, true) };
+    }
+  },
+
+  SummaryCards: {
+    render(containerId, { cards = [], activeKey = null, onSelect = null, chartSegments = null, chartTitle = '' }) {
+      const host = document.getElementById(containerId);
+      if (!host) return;
+      host.innerHTML = '';
+      host.className = 'summary-strip-wrap';
+
+      const grid = UI.createElement('div', { className: 'summary-strip-grid' });
+      cards.forEach(c => {
+        const isClickable = typeof onSelect === 'function' && c.filterable !== false;
+        const card = UI.createElement('div', {
+          className: `summary-strip-card${activeKey !== null && activeKey === c.key ? ' active' : ''}`,
+          style: `border-left: 4px solid ${c.accentColor || '#2563eb'};${isClickable ? '' : 'cursor:default;'}`,
+          onclick: isClickable ? () => onSelect(c.key) : undefined
+        },
+          UI.createElement('div', { className: 'summary-strip-label' }, c.label),
+          UI.createElement('div', { className: 'summary-strip-val', style: c.valColor ? `color:${c.valColor};` : '' }, String(c.value ?? 0)),
+          c.subtext ? UI.createElement('div', { className: 'summary-strip-sub' }, c.subtext) : null
+        );
+        grid.appendChild(card);
+      });
+      host.appendChild(grid);
+
+      if (Array.isArray(chartSegments) && chartSegments.length > 0) {
+        const total = chartSegments.reduce((s, x) => s + (Number(x.value) || 0), 0);
+        if (total > 0) {
+          const bar = UI.createElement('div', { className: 'summary-chart-bar' });
+          const legend = UI.createElement('div', { className: 'summary-chart-legend' });
+          chartSegments.forEach(seg => {
+            const val = Number(seg.value) || 0;
+            const pct = (val / total) * 100;
+            if (pct > 0) {
+              bar.appendChild(UI.createElement('div', {
+                title: `${seg.label}: ${val} (${pct.toFixed(1)}%)`,
+                style: `width:${pct.toFixed(2)}%;background:${seg.color};`
+              }));
+            }
+            const dot = UI.createElement('span', { className: 'summary-legend-dot', style: `background:${seg.color};` });
+            legend.appendChild(UI.createElement('span', {}, dot, `${seg.label}: ${val}`));
+          });
+          const chartBox = UI.createElement('div', { className: 'summary-mini-chart' },
+            chartTitle ? UI.createElement('div', { style: 'font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:0.35rem;text-transform:uppercase;' }, chartTitle) : null,
+            bar,
+            legend
+          );
+          host.appendChild(chartBox);
+        }
+      }
+    }
   }
 };

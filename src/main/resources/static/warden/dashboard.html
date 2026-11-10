@@ -85,13 +85,13 @@
               </svg>
               Outpass Queue
             </a>
-            <a href="/warden/rooms.html" class="btn btn-primary">
+            <a href="/warden/parcels.html" class="btn btn-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <line x1="3" y1="9" x2="21" y2="9"/>
                 <line x1="9" y1="21" x2="9" y2="9"/>
               </svg>
-              Rooms & Beds
+              Parcels Desk
             </a>
           </div>
         </div>
@@ -209,32 +209,80 @@
           <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                <span style="font-size: 2rem;">🎯</span>
-                <span class="status-badge badge-active">Counseling</span>
+                <span style="font-size: 2rem;">📦</span>
+                <span class="status-badge badge-pending">Delivery</span>
               </div>
-              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Allocation Whitelist</h3>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Parcels &amp; QR Scan</h3>
               <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
-                Configure counseling rounds, upload pre-noted student groups via Excel/CSV, and grant permissions.
+                Scan student QR codes for delivery, register arrived parcels, and manage COD logs.
               </p>
             </div>
-            <a href="/warden/whitelist.html" class="btn btn-primary" style="margin-top: 1rem; justify-content: center;">
-              Open Whitelist Page &rarr;
+            <a href="/warden/parcels.html" class="btn btn-primary" style="margin-top: 1rem; justify-content: center;">
+              Open Parcels &rarr;
             </a>
           </div>
 
           <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                <span style="font-size: 2rem;">🏢</span>
-                <span class="status-badge badge-allocated">Inventory</span>
+                <span style="font-size: 2rem;">🍽️</span>
+                <span class="status-badge badge-active">Counter</span>
               </div>
-              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Room Management</h3>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Mess Counter &amp; Menu</h3>
               <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
-                Add new hostel rooms, assign floors, adjust bed capacities, and configure room specifications.
+                Serve booked mess tokens via QR, view kitchen prep quantities, and configure meal schedules.
               </p>
             </div>
-            <a href="/warden/rooms.html" class="btn btn-secondary" style="margin-top: 1rem; justify-content: center;">
-              Manage Rooms & Beds &rarr;
+            <a href="/warden/mess.html" class="btn btn-primary" style="margin-top: 1rem; justify-content: center;">
+              Open Mess &rarr;
+            </a>
+          </div>
+
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">🛠️</span>
+                <span class="status-badge badge-allocated">Work Orders</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Maintenance &amp; Workers</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Assign complaints to skilled hostel staff, track SLA status, and manage workers.
+              </p>
+            </div>
+            <a href="/warden/maintenance.html" class="btn btn-secondary" style="margin-top: 1rem; justify-content: center;">
+              Open Maintenance &rarr;
+            </a>
+          </div>
+
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">📢</span>
+                <span class="status-badge badge-active">Notices</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Circulars &amp; Events</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Publish notices, track student reads &amp; acknowledgements, and coordinate events.
+              </p>
+            </div>
+            <a href="/warden/circulars.html" class="btn btn-secondary" style="margin-top: 1rem; justify-content: center;">
+              Open Circulars &rarr;
+            </a>
+          </div>
+
+          <div class="card" style="margin: 0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 2rem;">🎓</span>
+                <span class="status-badge badge-allocated">Residents</span>
+              </div>
+              <h3 style="font-size: 1.2rem; margin-bottom: 0.35rem; color: var(--text-main);">Students Directory</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                Search resident students, inspect room allocations, and manage pending requests.
+              </p>
+            </div>
+            <a href="/warden/students.html" class="btn btn-secondary" style="margin-top: 1rem; justify-content: center;">
+              Open Students &rarr;
             </a>
           </div>
 
@@ -284,7 +332,7 @@
               </svg>
               Hostel Room Occupancy Overview
             </h2>
-            <a href="/warden/rooms.html" class="btn btn-secondary btn-sm">+ Add / Edit Rooms</a>
+            <a href="/warden/students.html" class="btn btn-secondary btn-sm">Open Students Directory</a>
           </div>
           <div class="table-responsive">
             <table class="data-table mobile-collapse-table" id="roomOccupancyTable">
@@ -463,7 +511,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script>
     let activeRejectRequestId = null;
     let activeOutpassId = null;
@@ -1210,7 +1258,7 @@
 
     async function loadRoundStatus() {
       try {
-        const res = await fetch('/api/warden/online-allocation/status');
+        const res = { ok: false };
         if (!res.ok) return;
         const data = await res.json();
         isRoundOpenStatus = data.open;
@@ -1245,7 +1293,7 @@
 
     async function loadWhitelist() {
       try {
-        const res = await fetch('/api/warden/online-allocation/whitelist');
+        const res = { ok: false }; // whitelist removed
         if (!res.ok) throw new Error('Failed to load whitelist');
         const list = await res.json();
         renderWhitelist(list);

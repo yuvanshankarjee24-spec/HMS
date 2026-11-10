@@ -54,11 +54,15 @@ public class StudentService {
         String allocationStatus;
         String roomNumber = null;
         Integer bedNumber = null;
+        String hostelBlock = "Not Assigned";
+        Integer floor = null;
 
         if (bedOpt.isPresent()) {
             allocationStatus = "ALLOCATED";
             roomNumber = bedOpt.get().getRoom().getRoomNumber();
             bedNumber = bedOpt.get().getBedNumber();
+            floor = bedOpt.get().getRoom().getFloor();
+            hostelBlock = "Floor " + floor;
         } else if (roomRequestRepository.existsByStudentIdAndStatus(student.getId(), RoomRequest.Status.PENDING)) {
             allocationStatus = "REQUEST PENDING";
         } else {
@@ -79,7 +83,9 @@ public class StudentService {
                 photoUrl,
                 roomNumber,
                 bedNumber,
-                allocationStatus
+                allocationStatus,
+                hostelBlock,
+                floor
         );
     }
 

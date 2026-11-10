@@ -23,8 +23,8 @@
             <p class="page-subtitle">Track 30-day token volume, no-show expiration rate, revenue, and item-wise food demand.</p>
           </div>
           <div style="display:flex;gap:0.6rem;">
-            <a href="/warden/mess-menu.html" class="btn btn-secondary btn-sm">Manage Default Menu</a>
-            <a href="/warden/mess-scan.html" class="btn btn-secondary btn-sm">Open Scan Desk</a>
+            <a href="/warden/mess.html?tab=menu" class="btn btn-secondary btn-sm">Manage Default Menu</a>
+            <a href="/warden/mess.html?tab=scan" class="btn btn-secondary btn-sm">Open Scan Desk</a>
           </div>
         </div>
 
@@ -46,7 +46,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script>
     (async () => {
       const user = await Auth.requireAuth(['ADMIN']);

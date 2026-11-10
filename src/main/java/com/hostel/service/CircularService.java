@@ -249,6 +249,29 @@ public class CircularService {
         auditService.log(actor, "DELETE_CIRCULAR", c.getCircularCode(), "SUCCESS");
     }
 
+    public WardenCircularSummaryResponse getWardenSummary() {
+        LocalDateTime now = LocalDateTime.now();
+        long publishedCount = circularRepository.countByStatus(Circular.Status.PUBLISHED);
+        long draftCount = circularRepository.countByStatus(Circular.Status.DRAFT);
+        long scheduledCount = circularRepository.countByStatus(Circular.Status.SCHEDULED);
+        long upcomingEventsCount = circularRepository.countByStatusAndTypeAndEventDateTimeAfter(
+                Circular.Status.PUBLISHED, Circular.Type.EVENT, now);
+
+        long unreadOrUnackCount = 0;
+        List<Circular> activePublished = circularRepository.findByStatusOrderByPublishedAtDescCreatedAtDesc(Circular.Status.PUBLISHED);
+        for (Circular c : activePublished) {
+            if (c.getExpiresAt() != null && c.getExpiresAt().isBefore(now)) continue;
+            long targetedCount = c.getTargetScope() == Circular.TargetScope.ALL
+                    ? studentRepository.count()
+                    : resolveTargetedStudents(c).size();
+            long doneCount = c.isRequireAcknowledgement()
+                    ? readRepository.countByCircularIdAndAcknowledgedAtIsNotNull(c.getId())
+                    : readRepository.countByCircularId(c.getId());
+            unreadOrUnackCount += Math.max(0, targetedCount - doneCount);
+        }
+        return new WardenCircularSummaryResponse(publishedCount, draftCount, scheduledCount, unreadOrUnackCount, upcomingEventsCount);
+    }
+
     public Page<CircularResponse> listForStaff(String statusStr, String typeStr, String query, Pageable pageable) {
         Circular.Status st = (statusStr != null && !statusStr.isBlank() && !"ALL".equalsIgnoreCase(statusStr))
                 ? parseEnum(Circular.Status.class, statusStr, "status") : null;

@@ -87,5 +87,13 @@ public class CircularDtos {
         long attendingCount,
         List<CircularTrackerRow> students
     ) {}
+
+    public record WardenCircularSummaryResponse(
+        long publishedCount,
+        long draftCount,
+        long scheduledCount,
+        long unreadOrUnackCount,
+        long upcomingEventsCount
+    ) {}
 }
 

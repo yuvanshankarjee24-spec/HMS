@@ -185,6 +185,10 @@ public class WorkerManagementService {
     private WorkerResponse toWorkerResponse(WorkerProfile w) {
         long completed = maintenanceRequestRepository.countByAssignedWorkerIdAndStatus(w.getId(), MaintenanceRequest.Status.COMPLETED)
                 + maintenanceRequestRepository.countByAssignedWorkerIdAndStatus(w.getId(), MaintenanceRequest.Status.RESOLVED);
+        long activeTasks = maintenanceRequestRepository.countByAssignedWorkerIdAndStatus(w.getId(), MaintenanceRequest.Status.ASSIGNED)
+                + maintenanceRequestRepository.countByAssignedWorkerIdAndStatus(w.getId(), MaintenanceRequest.Status.IN_PROGRESS)
+                + maintenanceRequestRepository.countByAssignedWorkerIdAndStatus(w.getId(), MaintenanceRequest.Status.ON_HOLD)
+                + maintenanceRequestRepository.countByAssignedWorkerIdAndStatus(w.getId(), MaintenanceRequest.Status.REOPENED);
         Double avg = requestRatingRepository.findAverageRatingByWorkerId(w.getId());
         Double roundedAvg = avg != null ? Math.round(avg * 100.0) / 100.0 : null;
         return new WorkerResponse(
@@ -197,6 +201,7 @@ public class WorkerManagementService {
                 w.getWorkerType().name(),
                 w.isActive(),
                 completed,
+                activeTasks,
                 roundedAvg,
                 w.getCreatedAt()
         );

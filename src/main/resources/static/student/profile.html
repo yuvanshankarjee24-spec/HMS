@@ -3,31 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Profile & Photo - Smart Hostel</title>
+  <title>My Profile - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
   <link rel="stylesheet" href="/css/common.css">
   <style>
     .profile-card {
       background: #fff;
       border-radius: var(--radius-xl);
-      padding: 2.5rem;
+      padding: 2rem;
       border: 1px solid var(--border-light);
       box-shadow: var(--shadow-sm);
-      max-width: 800px;
+      max-width: 840px;
       margin: 0 auto;
     }
-
     .photo-upload-section {
       display: flex;
       align-items: center;
       gap: 2rem;
-      padding-bottom: 2rem;
+      padding-bottom: 1.75rem;
       border-bottom: 1px solid var(--border-subtle);
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
     }
-
     .photo-preview-box {
-      width: 140px;
-      height: 140px;
+      width: 130px;
+      height: 130px;
       border-radius: 50%;
       border: 4px solid var(--primary);
       overflow: hidden;
@@ -36,124 +35,162 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      position: relative;
     }
-
-    .photo-preview-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .photo-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .pw-rules {
+      background: var(--card-bg);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.84rem;
+      color: var(--text-muted);
     }
-
-    .photo-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .file-input-hidden {
-      display: none;
-    }
-
-    .profile-grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
+    .pw-rules ul { margin-left: 1.25rem; margin-top: 0.35rem; }
+    .strength-meter { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-top: 0.45rem; }
+    .strength-bar { height: 100%; width: 0; transition: all 0.2s ease; }
     @media (max-width: 600px) {
-      .photo-upload-section {
-        flex-direction: column;
-        text-align: center;
-      }
-      .profile-grid-2 {
-        grid-template-columns: 1fr;
-      }
+      .photo-upload-section { flex-direction: column; text-align: center; }
+      .profile-grid-2 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-
   <div id="app-layout" class="app-container">
     <main class="main-content">
       <div class="page-body">
-
-        <div class="profile-card">
-          <div class="card-header" style="margin-bottom: 2rem;">
-            <h1 class="card-title" style="font-size: 1.6rem;">My Hostel Profile</h1>
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">My Profile</h1>
+            <p class="page-subtitle">View your hostel details, manage your identification photo, and update your account password.</p>
+          </div>
+          <div>
             <a href="/student/dashboard.html" class="btn btn-secondary btn-sm">Back to Dashboard</a>
           </div>
-
-          <!-- Photo Upload Section -->
-          <div class="photo-upload-section">
-            <div class="photo-preview-box" id="photoPreviewContainer">
-              <span id="avatarPlaceholder" style="font-size: 3rem; font-weight: 800; color: var(--text-light);">S</span>
-            </div>
-            <div class="photo-controls">
-              <h3 style="font-size: 1.15rem;">Student Identification Photo</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">
-                Upload a clear passport-style portrait photo. Allowed formats: JPG, PNG. Maximum file size: 2 MB.
-              </p>
-              <input type="file" id="photoFileInput" class="file-input-hidden" accept="image/jpeg,image/png,image/jpg">
-              <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem;">
-                <button type="button" class="btn btn-secondary btn-sm" id="btnChoosePhoto">Choose Photo</button>
-                <button type="button" class="btn btn-primary btn-sm" id="btnUploadPhoto" disabled>Upload & Save</button>
-              </div>
-              <small id="selectedFileName" style="color: var(--primary); font-weight: 600;"></small>
-            </div>
-          </div>
-
-          <!-- Profile Fields View -->
-          <div class="profile-grid-2">
-            <div class="form-group">
-              <label class="form-label">Full Name</label>
-              <input type="text" id="profFullName" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Register Number</label>
-              <input type="text" id="profRegNo" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label">College Email</label>
-              <input type="email" id="profEmail" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contact Phone</label>
-              <input type="text" id="profPhone" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Department</label>
-              <input type="text" id="profDept" class="form-control" readonly>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Year of Study</label>
-              <input type="text" id="profYear" class="form-control" readonly>
-            </div>
-          </div>
-
         </div>
 
+        <div class="portal-tabs" id="profileTabs">
+          <button type="button" class="portal-tab-btn active" data-tab="profile">Profile &amp; Photo</button>
+          <button type="button" class="portal-tab-btn" data-tab="password">Change Password</button>
+        </div>
+
+        <!-- TAB 1: PROFILE -->
+        <section id="panel-profile" data-tab-panel="profile">
+          <div class="profile-card">
+            <div class="photo-upload-section">
+              <div class="photo-preview-box" id="photoPreviewContainer">
+                <span id="avatarPlaceholder" style="font-size:3rem;font-weight:800;color:var(--text-light);">S</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                <h3 style="font-size:1.15rem;">Student Identification Photo</h3>
+                <p style="font-size:0.85rem;color:var(--text-muted);">
+                  Upload a clear portrait photo. Allowed formats: JPG, PNG. Maximum file size: 2 MB.
+                </p>
+                <input type="file" id="photoFileInput" style="display:none;" accept="image/jpeg,image/png,image/jpg">
+                <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.25rem;flex-wrap:wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnChoosePhoto">Choose Photo</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnUploadPhoto" disabled>Upload &amp; Save</button>
+                </div>
+                <small id="selectedFileName" style="color:var(--primary);font-weight:600;"></small>
+              </div>
+            </div>
+
+            <div class="profile-grid-2">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="profFullName" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Register Number</label>
+                <input type="text" id="profRegNo" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">College Email</label>
+                <input type="email" id="profEmail" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contact Phone</label>
+                <input type="text" id="profPhone" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Department</label>
+                <input type="text" id="profDept" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Year of Study</label>
+                <input type="text" id="profYear" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hostel / Block</label>
+                <input type="text" id="profHostel" class="form-control" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Room &amp; Bed</label>
+                <input type="text" id="profRoom" class="form-control" readonly>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: CHANGE PASSWORD -->
+        <section id="panel-password" data-tab-panel="password" style="display:none;">
+          <div class="profile-card" style="max-width:540px;">
+            <h2 style="font-size:1.35rem;font-weight:800;margin-bottom:0.35rem;">Change Account Password</h2>
+            <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1.25rem;">Verify your current password before setting a new one.</p>
+
+            <div class="pw-rules">
+              <strong>Password Requirements:</strong>
+              <ul>
+                <li>At least 8 characters long</li>
+                <li>Must contain at least one letter and one number</li>
+              </ul>
+            </div>
+
+            <form id="changePasswordForm">
+              <div class="form-group">
+                <label class="form-label" for="oldPasswordInput">Current Password</label>
+                <input type="password" id="oldPasswordInput" class="form-control" required placeholder="Enter current password">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="newPasswordInput">New Password</label>
+                <input type="password" id="newPasswordInput" class="form-control" required minlength="8" placeholder="Enter new strong password">
+                <div class="strength-meter"><div class="strength-bar" id="strengthBar"></div></div>
+                <small id="strengthLabel" style="font-size:0.78rem;color:var(--text-muted);"></small>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="confirmPasswordInput">Confirm New Password</label>
+                <input type="password" id="confirmPasswordInput" class="form-control" required minlength="8" placeholder="Re-enter new password">
+              </div>
+              <button type="submit" id="submitPwBtn" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Update Password</button>
+            </form>
+          </div>
+        </section>
       </div>
     </main>
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script>
     let selectedFile = null;
 
     async function loadProfile() {
       try {
-        const res = await fetch('/api/student/profile');
+        const res = await fetch('/api/student/profile', { credentials: 'same-origin' });
         if (!res.ok) throw new Error('Could not load profile');
         const data = await res.json();
 
-        document.getElementById('profFullName').value = data.fullName;
-        document.getElementById('profRegNo').value = data.registerNumber;
-        document.getElementById('profEmail').value = data.collegeEmail;
-        document.getElementById('profPhone').value = data.phone;
-        document.getElementById('profDept').value = data.department;
-        document.getElementById('profYear').value = `Year ${data.year}`;
+        document.getElementById('profFullName').value = data.fullName || '';
+        document.getElementById('profRegNo').value = data.registerNumber || '';
+        document.getElementById('profEmail').value = data.collegeEmail || '';
+        document.getElementById('profPhone').value = data.phone || '';
+        document.getElementById('profDept').value = data.department || '';
+        document.getElementById('profYear').value = data.year ? `Year ${data.year}` : '';
+        document.getElementById('profHostel').value = data.hostelBlock || 'Not Assigned';
+        document.getElementById('profRoom').value = data.roomNumber
+          ? `Room ${data.roomNumber}${data.bedNumber ? ' / Bed ' + data.bedNumber : ''}`
+          : (data.allocationStatus || 'Not Allocated');
 
         const container = document.getElementById('photoPreviewContainer');
         if (data.photoUrl) {
@@ -161,7 +198,7 @@
           const img = document.createElement('img');
           img.src = data.photoUrl + '?t=' + Date.now();
           container.appendChild(img);
-        } else {
+        } else if (data.fullName) {
           document.getElementById('avatarPlaceholder').textContent = data.fullName.charAt(0).toUpperCase();
         }
       } catch (err) {
@@ -175,11 +212,9 @@
     const selectedFileName = document.getElementById('selectedFileName');
 
     btnChoose.addEventListener('click', () => fileInput.click());
-
     fileInput.addEventListener('change', () => {
       if (fileInput.files && fileInput.files[0]) {
         selectedFile = fileInput.files[0];
-
         if (selectedFile.size > 2 * 1024 * 1024) {
           UI.showToast('Selected file exceeds 2 MB limit', 'error');
           fileInput.value = '';
@@ -188,11 +223,8 @@
           selectedFileName.textContent = '';
           return;
         }
-
         selectedFileName.textContent = `Selected: ${selectedFile.name} (${Math.round(selectedFile.size / 1024)} KB)`;
         btnUpload.disabled = false;
-
-        // Local Preview
         const reader = new FileReader();
         reader.onload = (e) => {
           const container = document.getElementById('photoPreviewContainer');
@@ -207,36 +239,89 @@
 
     btnUpload.addEventListener('click', async () => {
       if (!selectedFile) return;
-
       btnUpload.disabled = true;
       btnUpload.textContent = 'Uploading...';
-
       const formData = new FormData();
       formData.append('file', selectedFile);
-
       try {
-        const res = await fetch('/api/student/photo', {
-          method: 'POST',
-          body: formData
-        });
-
+        const res = await fetch('/api/student/photo', { method: 'POST', credentials: 'same-origin', body: formData });
         const data = await res.json();
         if (!res.ok) {
           UI.showToast(data.message || 'Failed to upload photo', 'error');
           btnUpload.disabled = false;
-          btnUpload.textContent = 'Upload & Save';
-          return;
+        } else {
+          UI.showToast('Photo uploaded successfully!', 'success');
+          selectedFileName.textContent = '';
+          loadProfile();
         }
-
-        UI.showToast('Photo uploaded and updated successfully!', 'success');
-        btnUpload.textContent = 'Upload & Save';
-        btnUpload.disabled = true;
-        selectedFileName.textContent = '';
-        loadProfile();
       } catch (err) {
         UI.showToast('Upload failed due to network error', 'error');
         btnUpload.disabled = false;
+      } finally {
         btnUpload.textContent = 'Upload & Save';
+      }
+    });
+
+    const newPwInput = document.getElementById('newPasswordInput');
+    newPwInput.addEventListener('input', () => {
+      const val = newPwInput.value || '';
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+      if (/\d/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const bar = document.getElementById('strengthBar');
+      const lbl = document.getElementById('strengthLabel');
+      const cfg = [
+        { w: '0%', c: '#e2e8f0', t: '' },
+        { w: '25%', c: '#dc2626', t: 'Weak' },
+        { w: '55%', c: '#f59e0b', t: 'Fair' },
+        { w: '80%', c: '#0284c7', t: 'Good' },
+        { w: '100%', c: '#16a34a', t: 'Strong' }
+      ][score];
+      bar.style.width = cfg.w;
+      bar.style.background = cfg.c;
+      lbl.textContent = cfg.t;
+      lbl.style.color = cfg.c;
+    });
+
+    document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const oldPassword = document.getElementById('oldPasswordInput').value;
+      const newPassword = newPwInput.value;
+      const confirmPassword = document.getElementById('confirmPasswordInput').value;
+      if (newPassword !== confirmPassword) {
+        UI.showToast('New passwords do not match', 'error');
+        return;
+      }
+      if (newPassword.length < 8 || !/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+        UI.showToast('Password must be at least 8 characters with both letters and numbers', 'error');
+        return;
+      }
+      const btn = document.getElementById('submitPwBtn');
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+      try {
+        const res = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ oldPassword, newPassword })
+        });
+        if (!res.ok) {
+          const d = await res.json();
+          UI.showToast(d.message || 'Failed to update password', 'error');
+        } else {
+          UI.showToast('Password updated successfully!', 'success');
+          document.getElementById('changePasswordForm').reset();
+          document.getElementById('strengthBar').style.width = '0';
+          document.getElementById('strengthLabel').textContent = '';
+        }
+      } catch (err) {
+        UI.showToast('Network error while changing password', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Update Password';
       }
     });
 
@@ -244,6 +329,7 @@
       const user = await Auth.requireAuth(['STUDENT']);
       if (!user) return;
       UI.renderLayout(user, 'profile');
+      UI.Tabs.init({ barSelector: '#profileTabs', defaultTab: 'profile' });
       loadProfile();
     })();
   </script>

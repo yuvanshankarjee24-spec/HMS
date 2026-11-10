@@ -64,6 +64,7 @@ public class MaintenanceDtos {
         String workerType,
         boolean active,
         long tasksCompleted,
+        long activeTasks,
         Double averageRating,
         LocalDateTime createdAt
     ) {}
@@ -210,7 +211,8 @@ public class MaintenanceDtos {
         long reopened,
         long onHold,
         long resolved,
-        long total
+        long total,
+        long activeWorkers
     ) {}
 
     public record WorkerStatsResponse(

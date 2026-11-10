@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mess Tokens - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    .menu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+    .food-card { background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-lg); padding:1.15rem; display:flex; flex-direction:column; gap:0.65rem; }
+    .order-bar { position:sticky; bottom:1rem; background:#0f172a; color:#fff; border-radius:var(--radius-lg); padding:1rem 1.35rem; margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:0 12px 30px rgba(15,23,42,0.25); z-index:20; }
+    .subtab-bar { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+    .subtab-btn { padding:0.45rem 1rem; border-radius:var(--radius-full); border:1px solid var(--border-light); background:#fff; font-weight:700; font-size:0.83rem; color:var(--text-muted); cursor:pointer; }
+    .subtab-btn.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+    .tokens-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:1.25rem; }
+    .token-card { background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-lg); padding:1.35rem; display:flex; flex-direction:column; gap:0.75rem; box-shadow:var(--shadow-sm); }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Mess Tokens</h1>
+            <p class="page-subtitle">Book meal tokens ahead of cutoff and access your QR code 15 minutes before the meal starts.</p>
+          </div>
+        </div>
+
+        <div class="portal-tabs" id="messMainTabs">
+          <button type="button" class="portal-tab-btn active" data-tab="book">Book Token</button>
+          <button type="button" class="portal-tab-btn" data-tab="my-tokens">My Tokens</button>
+        </div>
+
+        <!-- TAB 1: BOOK TOKEN -->
+        <section id="panel-book" data-tab-panel="book">
+          <div class="card" style="padding:1.25rem;margin-bottom:1.25rem;">
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:end;">
+              <div>
+                <label class="form-label" for="mealDate">Meal Date</label>
+                <input type="date" id="mealDate" class="form-control" style="width:170px;">
+              </div>
+              <div>
+                <label class="form-label" for="mealPeriod">Meal Period</label>
+                <select id="mealPeriod" class="form-control" style="width:180px;">
+                  <option value="BREAKFAST">Breakfast</option>
+                  <option value="LUNCH" selected>Lunch</option>
+                  <option value="SNACKS">Snacks</option>
+                  <option value="DINNER">Dinner</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btnLoadMenu">Show Menu</button>
+            </div>
+          </div>
+
+          <div id="menuGrid" class="menu-grid"></div>
+
+          <div id="orderBar" class="order-bar" style="display:none;">
+            <div>
+              <div style="font-size:0.8rem;opacity:0.8;" id="orderItemsSummary">0 items selected</div>
+              <div style="font-size:1.35rem;font-weight:800;" id="orderTotalText">Total: Rs. 0.00</div>
+            </div>
+            <button type="button" class="btn btn-success" id="btnBookToken">Book Token Now</button>
+          </div>
+        </section>
+
+        <!-- TAB 2: MY TOKENS -->
+        <section id="panel-my-tokens" data-tab-panel="my-tokens" style="display:none;">
+          <div class="subtab-bar" id="tokenStatusTabs">
+            <button type="button" class="subtab-btn active" data-sub="UPCOMING">Upcoming</button>
+            <button type="button" class="subtab-btn" data-sub="DELIVERED">Delivered</button>
+            <button type="button" class="subtab-btn" data-sub="PAST">Cancelled / Expired</button>
+          </div>
+
+          <div id="tokensGrid" class="tokens-grid"></div>
+          <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 0 0;"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bright QR Overlay -->
+  <div id="qrFullscreen" class="qr-fullscreen-overlay">
+    <div style="max-width:400px;width:100%;">
+      <div style="font-size:0.82rem;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:0.4rem;">Present at Mess Counter</div>
+      <h2 id="qrTokenTitle" style="font-size:1.65rem;font-weight:800;color:#0f172a;margin-bottom:0.25rem;">TKN-2026-00001</h2>
+      <p id="qrTokenSub" style="color:#475569;margin-bottom:1.1rem;font-size:0.95rem;"></p>
+
+      <div class="qr-box-bright">
+        <div id="qrRenderBox"></div>
+        <div style="border-top:1px dashed #cbd5e1;width:100%;padding-top:0.75rem;">
+          <div style="font-size:0.75rem;color:#64748b;text-transform:uppercase;font-weight:700;">6-Digit Pickup Code</div>
+          <div id="qrPickupCode" style="font-size:1.75rem;font-weight:800;letter-spacing:0.2em;color:#0f172a;margin-top:0.2rem;">000000</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;">
+        <button type="button" class="btn btn-primary" style="width:100%;" onclick="document.getElementById('qrFullscreen').classList.remove('active')">Close QR View</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['STUDENT']);
+      if (!user) return;
+      UI.renderLayout(user, 'mess-tokens');
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const dateInput = document.getElementById('mealDate');
+      dateInput.value = todayStr;
+      dateInput.min = todayStr;
+
+      let currentMenu = [];
+      let cart = {};
+      let currentSubTab = 'UPCOMING';
+      let currentPage = 0;
+      let timers = [];
+      let highlightTokenCode = null;
+      let tabsCtrl = null;
+
+      function fmtSec(secs) {
+        const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
+        return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+      }
+
+      function updateSummary() {
+        let totalQty = 0;
+        let totalAmt = 0;
+        const names = [];
+        currentMenu.forEach(m => {
+          const q = cart[m.id] || 0;
+          if (q > 0) {
+            totalQty += q;
+            totalAmt += q * Number(m.price || 0);
+            names.push(`${m.foodName} x${q}`);
+          }
+        });
+        const bar = document.getElementById('orderBar');
+        bar.style.display = totalQty > 0 ? 'flex' : 'none';
+        document.getElementById('orderItemsSummary').textContent = names.join(', ');
+        document.getElementById('orderTotalText').textContent = `Total: Rs. ${totalAmt.toFixed(2)}`;
+      }
+
+      async function loadMenu() {
+        cart = {};
+        updateSummary();
+        const d = dateInput.value;
+        const p = document.getElementById('mealPeriod').value;
+        const res = await fetch(`/api/student/mess/menu?date=${d}&period=${p}`, { credentials: 'same-origin' });
+        const grid = document.getElementById('menuGrid');
+        grid.innerHTML = '';
+        if (!res.ok) return;
+        currentMenu = await res.json();
+
+        if (currentMenu.length === 0) {
+          grid.appendChild(UI.createElement('div', { className: 'card', style: 'grid-column:1/-1;padding:2rem;text-align:center;color:var(--text-muted);' },
+            'No menu items scheduled for this date & period yet.'));
+          return;
+        }
+
+        currentMenu.forEach(m => {
+          const card = UI.createElement('div', { className: 'food-card' });
+          const catBadge = UI.createElement('span', { className: `status-badge badge-food-${m.category.toLowerCase()}` }, m.category.replace('_', ' '));
+          const qtyText = UI.createElement('span', {}, '0');
+          const btnMinus = UI.createElement('button', {
+            type: 'button',
+            onclick: () => {
+              const cur = cart[m.id] || 0;
+              if (cur > 0) {
+                cart[m.id] = cur - 1;
+                qtyText.textContent = String(cart[m.id]);
+                updateSummary();
+              }
+            }
+          }, '-');
+          const btnPlus = UI.createElement('button', {
+            type: 'button',
+            onclick: () => {
+              const cur = cart[m.id] || 0;
+              const limit = Math.min(m.maxPerStudent, m.remainingStock);
+              if (cur < limit) {
+                cart[m.id] = cur + 1;
+                qtyText.textContent = String(cart[m.id]);
+                updateSummary();
+              } else {
+                UI.showToast(`Max ${limit} allowed / available`, 'info');
+              }
+            }
+          }, '+');
+          btnMinus.disabled = !m.bookingOpen;
+          btnPlus.disabled = !m.bookingOpen;
+
+          const stepper = UI.createElement('div', { className: 'qty-stepper' }, btnMinus, qtyText, btnPlus);
+
+          card.append(
+            m.photoUrl ? UI.createElement('img', { src: m.photoUrl, style: 'width:100%;height:130px;object-fit:cover;border-radius:var(--radius-md);' }) : null,
+            UI.createElement('div', { style: 'display:flex;justify-content:space-between;align-items:center;' },
+              UI.createElement('strong', { style: 'font-size:1.05rem;' }, m.foodName),
+              catBadge
+            ),
+            UI.createElement('div', { style: 'display:flex;justify-content:space-between;font-size:0.88rem;color:var(--text-muted);' },
+              UI.createElement('span', {}, `Rs. ${Number(m.price).toFixed(2)}`),
+              UI.createElement('span', {}, `Stock: ${m.remainingStock}/${m.dailyStock} (Max ${m.maxPerStudent})`)
+            ),
+            UI.createElement('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-top:auto;' },
+              m.bookingOpen
+                ? UI.createElement('span', { style: 'font-size:0.8rem;color:#15803d;font-weight:700;' }, 'Open for Booking')
+                : UI.createElement('span', { style: 'font-size:0.8rem;color:#b91c1c;font-weight:700;' }, m.bookingMessage),
+              stepper
+            )
+          );
+          grid.appendChild(card);
+        });
+      }
+
+      async function loadTokens(page = 0) {
+        currentPage = page;
+        timers.forEach(clearInterval);
+        timers = [];
+        const res = await fetch(`/api/student/mess/tokens?tab=${currentSubTab}&page=${page}&size=12`, { credentials: 'same-origin' });
+        const grid = document.getElementById('tokensGrid');
+        grid.innerHTML = '';
+        if (!res.ok) return;
+        const pageData = await res.json();
+        const list = pageData.content || [];
+
+        if (list.length === 0) {
+          grid.appendChild(UI.createElement('div', { className: 'card', style: 'grid-column:1/-1;padding:2rem;text-align:center;color:var(--text-muted);' }, 'No mess tokens in this category.'));
+        } else {
+          let scrollTarget = null;
+          list.forEach(t => {
+            const isHighlighted = highlightTokenCode && t.tokenCode === highlightTokenCode;
+            const card = UI.createElement('div', {
+              className: `token-card${isHighlighted ? ' row-highlight' : ''}`
+            });
+            if (isHighlighted) scrollTarget = card;
+
+            const itemsUl = UI.createElement('ul', { style: 'margin:0;padding-left:1.15rem;font-size:0.88rem;color:var(--text-main);' });
+            (t.items || []).forEach(i => {
+              itemsUl.appendChild(UI.createElement('li', {}, `${i.foodName} x ${i.quantity} (Rs. ${Number(i.lineTotal).toFixed(2)})`));
+            });
+
+            card.append(
+              UI.createElement('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;' },
+                UI.createElement('div', {},
+                  UI.createElement('strong', { style: 'font-size:1.05rem;' }, t.tokenCode),
+                  UI.createElement('div', { style: 'font-size:0.84rem;color:var(--primary);font-weight:700;' }, `${t.menuDate} · ${t.period}`)
+                ),
+                UI.tokenStatusBadge(t.status)
+              ),
+              itemsUl,
+              UI.createElement('div', { style: 'font-weight:800;font-size:0.95rem;' }, `Total: Rs. ${Number(t.totalAmount).toFixed(2)}`)
+            );
+
+            if (t.qrLockedBeforeWindow) {
+              const lockPill = UI.createElement('div', { className: 'countdown-pill', style: 'justify-content:center;' },
+                `QR locked · Opens at ${UI.formatDateTime(t.qrOpensAt)} (${fmtSec(t.secondsUntilQrOpens)})`);
+              card.appendChild(lockPill);
+              let rem = t.secondsUntilQrOpens;
+              const tm = setInterval(() => {
+                rem--;
+                if (rem <= 0) { clearInterval(tm); loadTokens(currentPage); }
+                else lockPill.textContent = `QR opens in ${fmtSec(rem)} (${UI.formatDateTime(t.qrOpensAt)})`;
+              }, 1000);
+              timers.push(tm);
+            } else if (t.qrCurrentlyActive && t.qrToken) {
+              card.appendChild(UI.createElement('button', {
+                className: 'btn btn-success',
+                style: 'width:100%;',
+                onclick: () => openQr(t)
+              }, 'Show Active QR'));
+            }
+
+            if (t.cancellable) {
+              card.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: async () => {
+                  const ok = await UI.showConfirm({ title: 'Cancel Token', message: `Cancel ${t.tokenCode} and release stock?`, confirmText: 'Yes, Cancel' });
+                  if (!ok) return;
+                  const cr = await fetch(`/api/student/mess/tokens/${t.id}/cancel`, { method: 'POST', credentials: 'same-origin' });
+                  if (cr.ok) {
+                    UI.showToast('Token cancelled and stock released.', 'success');
+                    await loadTokens(currentPage);
+                    await loadMenu();
+                  } else {
+                    const err = await cr.json();
+                    UI.showToast(err.message || 'Cannot cancel', 'error');
+                  }
+                }
+              }, 'Cancel Before Cutoff'));
+            }
+            grid.appendChild(card);
+          });
+          if (scrollTarget) {
+            scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            highlightTokenCode = null;
+          }
+        }
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadTokens(p));
+      }
+
+      function openQr(t) {
+        document.getElementById('qrTokenTitle').textContent = t.tokenCode;
+        document.getElementById('qrTokenSub').textContent = `${t.menuDate} · ${t.period}`;
+        document.getElementById('qrPickupCode').textContent = t.pickupCode || '------';
+        const box = document.getElementById('qrRenderBox');
+        box.innerHTML = '';
+        if (typeof QRCode !== 'undefined' && t.qrToken) {
+          new QRCode(box, { text: t.qrToken, width: 220, height: 220 });
+        } else {
+          box.textContent = t.qrToken;
+        }
+        document.getElementById('qrFullscreen').classList.add('active');
+      }
+
+      document.getElementById('btnBookToken').addEventListener('click', async () => {
+        const items = Object.entries(cart)
+          .filter(([, q]) => q > 0)
+          .map(([id, q]) => ({ menuScheduleId: Number(id), quantity: q }));
+        if (items.length === 0) return;
+
+        const btn = document.getElementById('btnBookToken');
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/student/mess/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              menuDate: dateInput.value,
+              period: document.getElementById('mealPeriod').value,
+              items
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            UI.showToast(data.message || 'Booking failed', 'error');
+          } else {
+            UI.showToast(`Token ${data.tokenCode} booked!`, 'success');
+            highlightTokenCode = data.tokenCode;
+            currentSubTab = 'UPCOMING';
+            document.querySelectorAll('#tokenStatusTabs .subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.sub === 'UPCOMING'));
+            await loadMenu();
+            tabsCtrl.switchTo('my-tokens');
+          }
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.querySelectorAll('#tokenStatusTabs .subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#tokenStatusTabs .subtab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentSubTab = btn.dataset.sub;
+          loadTokens(0);
+        });
+      });
+
+      document.getElementById('btnLoadMenu').addEventListener('click', loadMenu);
+      dateInput.addEventListener('change', loadMenu);
+      document.getElementById('mealPeriod').addEventListener('change', loadMenu);
+
+      tabsCtrl = UI.Tabs.init({
+        barSelector: '#messMainTabs',
+        defaultTab: 'book',
+        onChange: (tab) => {
+          if (tab === 'my-tokens') loadTokens(0);
+        }
+      });
+
+      await loadMenu();
+      const initTab = new URLSearchParams(window.location.search).get('tab');
+      if (initTab === 'my-tokens') await loadTokens(0);
+    })();
+  </script>
+</body>
+</html>
+

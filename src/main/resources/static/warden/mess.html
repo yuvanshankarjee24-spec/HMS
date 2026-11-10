@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mess Operations - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Mess Management &amp; Counter Desk</h1>
+            <p class="page-subtitle">Scan student food tokens, monitor kitchen preparation counts, configure menus &amp; timings, and export reports.</p>
+          </div>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <input type="date" id="sumDate" class="form-control" style="width:155px;">
+            <select id="sumPeriod" class="form-control" style="width:145px;">
+              <option value="BREAKFAST">Breakfast</option>
+              <option value="LUNCH" selected>Lunch</option>
+              <option value="SNACKS">Snacks</option>
+              <option value="DINNER">Dinner</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshSummary">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Reusable SummaryCards Strip -->
+        <div id="messSummaryCards"></div>
+
+        <!-- Scrollable URL-synced Tabs -->
+        <div class="portal-tabs" id="wardenMessTabs">
+          <button type="button" class="portal-tab-btn active" data-tab="scan">Scan Token / Serve Food</button>
+          <button type="button" class="portal-tab-btn" data-tab="menu">Menu &amp; Schedule</button>
+          <button type="button" class="portal-tab-btn" data-tab="tokens">Tokens &amp; Reports</button>
+        </div>
+
+        <!-- TAB 1: SCAN TOKEN / SERVE FOOD (Default) -->
+        <section id="panel-scan" data-tab-panel="scan">
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+              <h2 class="card-title">Mess Counter QR Scanner</h2>
+              <div style="display:flex;gap:0.5rem;">
+                <button type="button" class="btn btn-primary btn-sm" id="btnStartCam">Open Camera</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnStopCam" style="display:none;">Stop Camera</button>
+              </div>
+            </div>
+            <div id="qrReaderWrap" style="max-width:400px;margin:0 auto 1rem;display:none;"><div id="qrReader"></div></div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;">
+              <input type="text" id="scanInput" class="form-control" style="flex:1;min-width:240px;" placeholder="Enter QR Token, Token ID (TKN-2026-00001), or 6-digit Pickup Code...">
+              <button type="button" class="btn btn-primary" id="btnVerify">Verify Token</button>
+            </div>
+            <div id="scanResultBox" style="display:none;"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2 class="card-title">Kitchen Preparation Quantities (Selected Date &amp; Period)</h2></div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Food Item</th><th>Category</th><th>Booked Qty</th><th>Delivered Qty</th></tr></thead>
+                <tbody id="kitchenBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: MENU & SCHEDULE -->
+        <section id="panel-menu" data-tab-panel="menu" style="display:none;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem;margin-bottom:1.5rem;">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">Meal Period Timings &amp; Cutoffs</h2></div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead><tr><th>Period</th><th>Window</th><th>Cutoff (m)</th><th>QR Opens (m)</th><th>Save</th></tr></thead>
+                  <tbody id="periodsBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Food Item Catalog</h2>
+                <button type="button" class="btn btn-primary btn-sm" id="btnAddItem">+ Add Food Item</button>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Action</th></tr></thead>
+                  <tbody id="itemsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+              <h2 class="card-title">Daily Menu Schedule &amp; Stock</h2>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <input type="date" id="schedDate" class="form-control" style="width:155px;">
+                <select id="schedPeriod" class="form-control" style="width:140px;">
+                  <option value="BREAKFAST">Breakfast</option>
+                  <option value="LUNCH" selected>Lunch</option>
+                  <option value="SNACKS">Snacks</option>
+                  <option value="DINNER">Dinner</option>
+                </select>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnLoadSched">Load</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnOpenSchedModal">+ Schedule Item</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table">
+                <thead><tr><th>Food Item</th><th>Category</th><th>Daily Stock</th><th>Remaining</th><th>Max/Student</th><th>Special / Closed</th></tr></thead>
+                <tbody id="schedBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: TOKENS & REPORTS -->
+        <section id="panel-tokens" data-tab-panel="tokens" style="display:none;">
+          <div class="card" style="padding:1.25rem;margin-bottom:1.25rem;">
+            <div style="display:flex;gap:0.65rem;flex-wrap:wrap;align-items:end;">
+              <div style="flex:1;min-width:200px;">
+                <label class="form-label">Search Token / Student</label>
+                <input type="text" id="tFilterQuery" class="form-control" placeholder="TKN-2026, REG2026...">
+              </div>
+              <div>
+                <label class="form-label">Status</label>
+                <select id="tFilterStatus" class="form-control" style="width:170px;">
+                  <option value="">All Statuses</option>
+                  <option value="BOOKED">Booked</option>
+                  <option value="QR_ACTIVE">QR Active</option>
+                  <option value="DELIVERED">Delivered</option>
+                  <option value="PARTIALLY_DELIVERED">Partially Delivered</option>
+                  <option value="EXPIRED">Expired</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btnTokenSearch">Filter</button>
+              <a href="#" id="btnExportMessCsv" class="btn btn-secondary btn-sm">Export CSV</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2 class="card-title">Tokens Register</h2></div>
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table">
+                <thead><tr><th>Token ID</th><th>Student</th><th>Date / Period</th><th>Items</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody id="tokensBody"></tbody>
+              </table>
+            </div>
+            <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Food Item Modal -->
+  <div class="modal-overlay" id="foodModal">
+    <div class="modal-dialog">
+      <div class="modal-header"><h3 class="modal-title">Add Food Item</h3><button class="modal-close" onclick="UI.closeModal('foodModal')">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Name *</label><input type="text" id="fName" class="form-control" required></div>
+        <div class="form-group"><label class="form-label">Category *</label>
+          <select id="fCat" class="form-control"><option value="VEG">Veg</option><option value="EGG">Egg</option><option value="NON_VEG">Non-Veg</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Price (Rs.)</label><input type="number" step="0.01" id="fPrice" class="form-control" value="50.00"></div>
+        <div class="form-group"><label class="form-label">Photo (Optional)</label><input type="file" id="fPhoto" class="form-control" accept="image/jpeg,image/png,image/webp"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('foodModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveFood">Save Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Item Modal -->
+  <div class="modal-overlay" id="schedModal">
+    <div class="modal-dialog">
+      <div class="modal-header"><h3 class="modal-title">Assign Item to Date &amp; Period</h3><button class="modal-close" onclick="UI.closeModal('schedModal')">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Food Item *</label><select id="sFoodSelect" class="form-control"></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="form-group"><label class="form-label">Daily Stock *</label><input type="number" id="sStock" class="form-control" value="80" min="1"></div>
+          <div class="form-group"><label class="form-label">Max / Student *</label><input type="number" id="sMax" class="form-control" value="2" min="1"></div>
+        </div>
+        <label style="display:block;margin-bottom:0.5rem;font-weight:600;"><input type="checkbox" id="sSpecial"> Special Day Menu</label>
+        <label style="display:block;font-weight:600;color:#b91c1c;"><input type="checkbox" id="sClosed"> Mark Mess Closed</label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('schedModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveSched">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'mess');
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      document.getElementById('sumDate').value = todayStr;
+      document.getElementById('schedDate').value = todayStr;
+      let html5Qr = null;
+      let activeCardFilter = '';
+      let tabsCtrl = null;
+
+      function updateExportHref() {
+        const d = document.getElementById('sumDate').value || todayStr;
+        document.getElementById('btnExportMessCsv').href = `/api/warden/mess/export?fromDate=${d}&toDate=${d}`;
+      }
+
+      document.getElementById('btnStartCam').addEventListener('click', async () => {
+        if (typeof Html5Qrcode === 'undefined') return;
+        document.getElementById('qrReaderWrap').style.display = 'block';
+        document.getElementById('btnStartCam').style.display = 'none';
+        document.getElementById('btnStopCam').style.display = 'inline-flex';
+        html5Qr = new Html5Qrcode('qrReader');
+        try {
+          await html5Qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } },
+            txt => { document.getElementById('scanInput').value = txt; stopCam(); verify(txt); });
+        } catch (e) { UI.showToast('Camera unavailable', 'error'); stopCam(); }
+      });
+
+      async function stopCam() {
+        if (html5Qr) { try { await html5Qr.stop(); } catch (e) {} html5Qr = null; }
+        document.getElementById('qrReaderWrap').style.display = 'none';
+        document.getElementById('btnStartCam').style.display = 'inline-flex';
+        document.getElementById('btnStopCam').style.display = 'none';
+      }
+      document.getElementById('btnStopCam').addEventListener('click', stopCam);
+
+      async function loadSummaryAndTokens(page = 0) {
+        updateExportHref();
+        const d = document.getElementById('sumDate').value;
+        const p = document.getElementById('sumPeriod').value;
+        const st = document.getElementById('tFilterStatus').value;
+        const q = document.getElementById('tFilterQuery').value.trim();
+
+        const tokParams = new URLSearchParams({ date: d, period: p, page, size: 10 });
+        if (st) tokParams.append('status', st);
+        if (q) tokParams.append('query', q);
+
+        const [sr, tr] = await Promise.all([
+          fetch(`/api/warden/mess/summary?date=${d}&period=${p}`, { credentials: 'same-origin' }),
+          fetch(`/api/warden/mess/tokens?${tokParams.toString()}`, { credentials: 'same-origin' })
+        ]);
+
+        if (sr.ok) {
+          const s = await sr.json();
+          UI.SummaryCards.render('messSummaryCards', {
+            activeKey: activeCardFilter,
+            onSelect: (key) => {
+              activeCardFilter = (activeCardFilter === key) ? '' : key;
+              document.getElementById('tFilterStatus').value = activeCardFilter;
+              tabsCtrl.switchTo('tokens');
+              loadSummaryAndTokens(0);
+            },
+            cards: [
+              { key: '', label: 'Tokens Booked', value: s.totalTokens, accentColor: '#0284c7' },
+              { key: 'DELIVERED', label: 'Delivered', value: s.deliveredTokens, accentColor: '#16a34a', valColor: '#15803d' },
+              { key: 'QR_ACTIVE', label: 'Pending Serve', value: s.pendingTokens, accentColor: '#f59e0b', valColor: '#b45309' },
+              { key: 'EXPIRED', label: 'Expired / No-Show', value: s.expiredTokens, accentColor: '#dc2626', valColor: '#b91c1c' }
+            ],
+            chartTitle: 'Meal Token Fulfillment Breakdown',
+            chartSegments: [
+              { label: 'Delivered', value: s.deliveredTokens, color: '#16a34a' },
+              { label: 'Pending', value: s.pendingTokens, color: '#f59e0b' },
+              { label: 'Expired', value: s.expiredTokens, color: '#dc2626' },
+              { label: 'Cancelled', value: s.cancelledTokens || 0, color: '#94a3b8' }
+            ]
+          });
+
+          const kb = document.getElementById('kitchenBody');
+          kb.innerHTML = '';
+          if (!s.kitchenSummary || s.kitchenSummary.length === 0) {
+            kb.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 4, style: 'text-align:center;color:var(--text-muted);' }, 'No items booked yet.')));
+          } else {
+            s.kitchenSummary.forEach(k => kb.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', {}, UI.createElement('strong', {}, k.foodName)),
+              UI.createElement('td', {}, k.category),
+              UI.createElement('td', {}, String(k.totalBookedQty)),
+              UI.createElement('td', {}, String(k.totalDeliveredQty))
+            )));
+          }
+        }
+
+        if (tr.ok) {
+          const pd = await tr.json();
+          const tb = document.getElementById('tokensBody');
+          tb.innerHTML = '';
+          const list = pd.content || [];
+          if (list.length === 0) {
+            tb.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 6, style: 'text-align:center;padding:1.5rem;color:var(--text-muted);' }, 'No tokens match filters.')));
+          } else {
+            list.forEach(t => {
+              const itemTxt = (t.items || []).map(i => `${i.foodName} x${i.quantity}`).join(', ');
+              tb.appendChild(UI.createElement('tr', {},
+                UI.createElement('td', {}, UI.createElement('strong', {}, t.tokenCode)),
+                UI.createElement('td', {}, `${t.studentName} (${t.studentRegNo})`),
+                UI.createElement('td', {}, `${t.menuDate} ${t.period}`),
+                UI.createElement('td', {}, itemTxt),
+                UI.createElement('td', {}, `Rs. ${Number(t.totalAmount).toFixed(2)}`),
+                UI.createElement('td', {}, UI.tokenStatusBadge(t.status))
+              ));
+            });
+          }
+          MaintUI.renderPagination(document.getElementById('paginationBar'), pd, pg => loadSummaryAndTokens(pg));
+        }
+      }
+
+      async function verify(codeArg) {
+        const q = (codeArg || document.getElementById('scanInput').value).trim();
+        if (!q) return;
+        const res = await fetch(`/api/warden/mess/verify-qr?tokenOrCode=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+        const data = await res.json();
+        const box = document.getElementById('scanResultBox');
+        box.innerHTML = '';
+        box.style.display = 'block';
+
+        if (!res.ok || !data.valid) {
+          box.appendChild(UI.createElement('div', { className: 'lock-alert-banner' },
+            UI.createElement('span', { style: 'font-size:1.6rem;' }, '❌'),
+            UI.createElement('div', {},
+              UI.createElement('strong', {}, 'TOKEN VERIFICATION FAILED'),
+              UI.createElement('div', { style: 'margin-top:0.2rem;' }, data.errorMessage || data.message || 'Invalid token')
+            )
+          ));
+          if (!data.token) return;
+        } else {
+          box.appendChild(UI.createElement('div', {
+            style: 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:0.85rem 1.15rem;border-radius:var(--radius-md);margin-bottom:1rem;font-weight:700;'
+          }, 'Valid Active Token — Ready to Serve Food'));
+        }
+
+        const t = data.token;
+        box.appendChild(UI.createElement('div', { style: 'background:var(--card-bg);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-size:0.9rem;' },
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Token: '), `${t.tokenCode} (${t.menuDate} ${t.period})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Student: '), `${t.studentName} (${t.studentRegNo}) · Room ${t.studentRoom}`)
+        ));
+
+        if (data.valid) {
+          const itemControls = [];
+          const tbl = UI.createElement('table', { className: 'data-table', style: 'margin-bottom:1rem;' });
+          tbl.appendChild(UI.createElement('thead', {}, UI.createElement('tr', {},
+            UI.createElement('th', {}, 'Item'), UI.createElement('th', {}, 'Booked'), UI.createElement('th', {}, 'Serve Qty'), UI.createElement('th', {}, 'Partial Reason (if less)')
+          )));
+          const tb = UI.createElement('tbody');
+          t.items.forEach(i => {
+            const qtyIn = UI.createElement('input', { type: 'number', className: 'form-control', min: 0, max: i.quantity, value: i.quantity, style: 'width:80px;padding:0.35rem;' });
+            const rsnIn = UI.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Reason if partial...', style: 'padding:0.35rem;' });
+            itemControls.push({ tokenItemId: i.id, qtyIn, rsnIn });
+            tb.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', {}, i.foodName),
+              UI.createElement('td', {}, String(i.quantity)),
+              UI.createElement('td', {}, qtyIn),
+              UI.createElement('td', {}, rsnIn)
+            ));
+          });
+          tbl.appendChild(tb);
+          box.appendChild(tbl);
+
+          const remarksIn = UI.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Delivery remarks (optional)', style: 'margin-bottom:0.75rem;' });
+          const btnConfirm = UI.createElement('button', {
+            className: 'btn btn-success',
+            onclick: async () => {
+              const itemDeliveries = itemControls.map(ic => ({
+                tokenItemId: ic.tokenItemId,
+                deliveredQuantity: Number(ic.qtyIn.value),
+                undeliveredReason: ic.rsnIn.value.trim()
+              }));
+              const dRes = await fetch('/api/warden/mess/deliver', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+                body: JSON.stringify({ tokenId: t.id, remarks: remarksIn.value.trim(), itemDeliveries })
+              });
+              const dData = await dRes.json();
+              if (!dRes.ok) UI.showToast(dData.message || 'Delivery failed', 'error');
+              else {
+                UI.showToast(`Food delivered (${dData.tokenCode})!`, 'success');
+                await Promise.all([verify(t.tokenCode), loadSummaryAndTokens(0)]);
+              }
+            }
+          }, 'Confirm Food Delivery');
+          box.append(remarksIn, btnConfirm);
+        }
+      }
+
+      async function loadPeriods() {
+        const res = await fetch('/api/warden/mess/periods', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const tbody = document.getElementById('periodsBody');
+        tbody.innerHTML = '';
+        (await res.json()).forEach(p => {
+          const st = UI.createElement('input', { type: 'time', className: 'form-control', style: 'padding:0.3rem;width:105px;', value: p.startTime.slice(0,5) });
+          const en = UI.createElement('input', { type: 'time', className: 'form-control', style: 'padding:0.3rem;width:105px;', value: p.endTime.slice(0,5) });
+          const cut = UI.createElement('input', { type: 'number', className: 'form-control', style: 'padding:0.3rem;width:70px;', value: p.cutoffMinutesBefore });
+          const qr = UI.createElement('input', { type: 'number', className: 'form-control', style: 'padding:0.3rem;width:65px;', value: p.qrOpenMinutesBefore });
+          const btn = UI.createElement('button', {
+            className: 'btn btn-primary btn-sm',
+            onclick: async () => {
+              const r = await fetch('/api/warden/mess/periods', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+                body: JSON.stringify({
+                  period: p.period, startTime: st.value + ':00', endTime: en.value + ':00',
+                  cutoffMinutesBefore: Number(cut.value), qrOpenMinutesBefore: Number(qr.value)
+                })
+              });
+              UI.showToast(r.ok ? `${p.period} updated` : 'Update failed', r.ok ? 'success' : 'error');
+            }
+          }, 'Save');
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, p.period)),
+            UI.createElement('td', {}, UI.createElement('div', { style: 'display:flex;gap:0.25rem;' }, st, en)),
+            UI.createElement('td', {}, cut),
+            UI.createElement('td', {}, qr),
+            UI.createElement('td', {}, btn)
+          ));
+        });
+      }
+
+      async function loadItems() {
+        const res = await fetch('/api/warden/mess/items', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const list = await res.json();
+        const tbody = document.getElementById('itemsBody');
+        const sel = document.getElementById('sFoodSelect');
+        tbody.innerHTML = '';
+        sel.innerHTML = '';
+        list.forEach(i => {
+          sel.appendChild(UI.createElement('option', { value: i.id }, `${i.name} (Rs. ${i.price})`));
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, i.name)),
+            UI.createElement('td', {}, i.category),
+            UI.createElement('td', {}, `Rs. ${Number(i.price).toFixed(2)}`),
+            UI.createElement('td', {}, UI.createElement('span', { className: `status-badge ${i.active ? 'badge-active' : 'badge-absent'}` }, i.active ? 'Active' : 'Inactive')),
+            UI.createElement('td', {}, UI.createElement('button', {
+              className: 'btn btn-secondary btn-sm',
+              onclick: async () => {
+                await fetch(`/api/warden/mess/items/${i.id}/active?active=${!i.active}`, { method: 'PATCH', credentials: 'same-origin' });
+                loadItems();
+              }
+            }, i.active ? 'Disable' : 'Enable'))
+          ));
+        });
+      }
+
+      async function loadSchedule() {
+        const d = document.getElementById('schedDate').value;
+        const p = document.getElementById('schedPeriod').value;
+        const res = await fetch(`/api/warden/mess/schedule?date=${d}&period=${p}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('schedBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const list = await res.json();
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 6, style: 'text-align:center;color:var(--text-muted);' }, 'No items scheduled for this slot.')));
+          return;
+        }
+        list.forEach(s => {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, s.foodName),
+            UI.createElement('td', {}, s.category),
+            UI.createElement('td', {}, String(s.dailyStock)),
+            UI.createElement('td', {}, String(s.remainingStock)),
+            UI.createElement('td', {}, String(s.maxPerStudent)),
+            UI.createElement('td', {}, s.messClosed ? 'Mess Closed' : (s.specialMenu ? 'Special Menu' : 'Regular'))
+          ));
+        });
+      }
+
+      document.getElementById('btnAddItem').addEventListener('click', () => UI.openModal('foodModal'));
+      document.getElementById('btnSaveFood').addEventListener('click', async () => {
+        const fd = new FormData();
+        fd.append('name', document.getElementById('fName').value.trim());
+        fd.append('category', document.getElementById('fCat').value);
+        fd.append('price', document.getElementById('fPrice').value);
+        const ph = document.getElementById('fPhoto').files[0];
+        if (ph) fd.append('photo', ph);
+        const res = await fetch('/api/warden/mess/items', { method: 'POST', credentials: 'same-origin', body: fd });
+        if (res.ok) { UI.closeModal('foodModal'); UI.showToast('Food item added!', 'success'); loadItems(); }
+        else UI.showToast((await res.json()).message || 'Error', 'error');
+      });
+
+      document.getElementById('btnOpenSchedModal').addEventListener('click', () => UI.openModal('schedModal'));
+      document.getElementById('btnSaveSched').addEventListener('click', async () => {
+        const res = await fetch('/api/warden/mess/schedule', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+          body: JSON.stringify({
+            menuDate: document.getElementById('schedDate').value,
+            period: document.getElementById('schedPeriod').value,
+            foodItemId: Number(document.getElementById('sFoodSelect').value),
+            dailyStock: Number(document.getElementById('sStock').value),
+            maxPerStudent: Number(document.getElementById('sMax').value),
+            specialMenu: document.getElementById('sSpecial').checked,
+            messClosed: document.getElementById('sClosed').checked
+          })
+        });
+        if (res.ok) { UI.closeModal('schedModal'); UI.showToast('Menu scheduled!', 'success'); loadSchedule(); }
+      });
+
+      document.getElementById('btnVerify').addEventListener('click', () => verify());
+      document.getElementById('btnRefreshSummary').addEventListener('click', () => loadSummaryAndTokens(0));
+      document.getElementById('sumDate').addEventListener('change', () => loadSummaryAndTokens(0));
+      document.getElementById('sumPeriod').addEventListener('change', () => loadSummaryAndTokens(0));
+      document.getElementById('btnTokenSearch').addEventListener('click', () => loadSummaryAndTokens(0));
+      document.getElementById('btnLoadSched').addEventListener('click', loadSchedule);
+
+      tabsCtrl = UI.Tabs.init({ barSelector: '#wardenMessTabs', defaultTab: 'scan' });
+      await Promise.all([loadSummaryAndTokens(0), loadPeriods(), loadItems(), loadSchedule()]);
+    })();
+  </script>
+</body>
+</html>
+

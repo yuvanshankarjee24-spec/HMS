@@ -54,6 +54,8 @@
           </div>
         </div>
 
+        <div id="outpassSummaryCards"></div>
+
         <!-- Outpass Section Card -->
         <div class="card">
           <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
@@ -66,6 +68,8 @@
             <div class="filter-bar" id="outpassFilterBar">
               <button class="filter-btn active" data-filter="PENDING">Pending Review</button>
               <button class="filter-btn" data-filter="APPROVED">Approved Passes</button>
+              <button class="filter-btn" data-filter="OUT">Currently Out</button>
+              <button class="filter-btn" data-filter="LATE">Late Returns</button>
               <button class="filter-btn" data-filter="REJECTED">Rejected</button>
               <button class="filter-btn" data-filter="ALL">All Records</button>
             </div>
@@ -119,12 +123,47 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script>
     let currentUser = null;
     let currentOutpassFilter = 'PENDING';
     let pendingDecisionOutpassId = null;
     let pendingDecisionAction = null;
+
+    function syncFilterBar() {
+      document.querySelectorAll('#outpassFilterBar .filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === currentOutpassFilter);
+      });
+    }
+
+    async function loadOutpassSummary() {
+      const res = await fetch('/api/warden/outpasses/summary', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const s = await res.json();
+      UI.SummaryCards.render('outpassSummaryCards', {
+        activeKey: currentOutpassFilter,
+        onSelect: (key) => {
+          currentOutpassFilter = (currentOutpassFilter === key) ? 'ALL' : key;
+          syncFilterBar();
+          loadOutpassSummary();
+          loadOutpasses();
+        },
+        cards: [
+          { key: 'PENDING', label: 'Pending Approval', value: s.pending, accentColor: '#f59e0b', valColor: '#b45309' },
+          { key: 'APPROVED', label: 'Approved', value: s.approved, accentColor: '#16a34a', valColor: '#15803d' },
+          { key: 'OUT', label: 'Currently Out', value: s.currentlyOut, accentColor: '#0284c7' },
+          { key: 'LATE', label: 'Late Returns', value: s.lateReturns, accentColor: '#dc2626', valColor: '#b91c1c' }
+        ],
+        chartTitle: 'Outpass Queue Overview',
+        chartSegments: [
+          { label: 'Pending', value: s.pending, color: '#f59e0b' },
+          { label: 'Approved', value: s.approved, color: '#16a34a' },
+          { label: 'Currently Out', value: s.currentlyOut, color: '#0284c7' },
+          { label: 'Returned', value: s.returned, color: '#64748b' },
+          { label: 'Rejected', value: s.rejected, color: '#dc2626' }
+        ]
+      });
+    }
 
     (async () => {
       currentUser = await Auth.requireAuth(['WARDEN', 'ADMIN']);
@@ -134,9 +173,9 @@
 
       document.querySelectorAll('#outpassFilterBar .filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('#outpassFilterBar .filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
           currentOutpassFilter = btn.dataset.filter;
+          syncFilterBar();
+          loadOutpassSummary();
           loadOutpasses();
         });
       });
@@ -155,6 +194,7 @@
           if (res.ok) {
             UI.showToast(`Outpass successfully ${pendingDecisionAction}d!`, 'success');
             UI.closeModal('outpassDecisionModal');
+            loadOutpassSummary();
             loadOutpasses();
           } else {
             const err = await res.json();
@@ -165,7 +205,7 @@
         }
       });
 
-      await loadOutpasses();
+      await Promise.all([loadOutpassSummary(), loadOutpasses()]);
     })();
 
     async function loadOutpasses() {

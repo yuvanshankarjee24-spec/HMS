@@ -272,7 +272,8 @@ public class MaintenanceService {
         long onHold = requestRepository.countByStatus(MaintenanceRequest.Status.ON_HOLD);
         long resolved = requestRepository.countByStatus(MaintenanceRequest.Status.RESOLVED);
         long total = requestRepository.count();
-        return new WardenStatsResponse(pending, assigned, inProgress, completed, reopened, onHold, resolved, total);
+        long activeWorkers = workerProfileRepository.countByActiveTrue();
+        return new WardenStatsResponse(pending, assigned, inProgress, completed, reopened, onHold, resolved, total, activeWorkers);
     }
 
     public Page<MaintenanceSummaryResponse> searchAllRequests(String statusStr,

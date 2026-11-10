@@ -50,28 +50,7 @@
           </div>
         </div>
 
-        <div class="stats-grid-5">
-          <div class="mini-stat" style="border-left:4px solid #0284c7;">
-            <div class="mini-stat-label">Active Students</div>
-            <div class="mini-stat-val" id="sTotal">0</div>
-          </div>
-          <div class="mini-stat" style="border-left:4px solid #16a34a;">
-            <div class="mini-stat-label">Marked Today</div>
-            <div class="mini-stat-val" style="color:#15803d;" id="sMarked">0</div>
-          </div>
-          <div class="mini-stat" style="border-left:4px solid #f59e0b;">
-            <div class="mini-stat-label">Pending Today</div>
-            <div class="mini-stat-val" style="color:#b45309;" id="sPending">0</div>
-          </div>
-          <div class="mini-stat" style="border-left:4px solid #dc2626;">
-            <div class="mini-stat-label">Missed Today</div>
-            <div class="mini-stat-val" style="color:#b91c1c;" id="sMissed">0</div>
-          </div>
-          <div class="mini-stat" style="border-left:4px solid #7c3aed;">
-            <div class="mini-stat-label">On Outpass / Locked</div>
-            <div class="mini-stat-val" id="sOutLocked">0 / 0</div>
-          </div>
-        </div>
+        <div id="daSummaryCards"></div>
 
         <div class="tab-bar" id="viewTabs">
           <button type="button" class="tab-btn active" data-tab="missed">Missed &amp; Locked Queue</button>
@@ -251,7 +230,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -261,28 +240,51 @@
 
       let missedPage = 0;
 
-      document.querySelectorAll('#viewTabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('#viewTabs .tab-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          ['missed', 'pending', 'sessions', 'report'].forEach(t => {
-            document.getElementById('tab-' + t).style.display = btn.dataset.tab === t ? 'block' : 'none';
-          });
-          if (btn.dataset.tab === 'pending') loadPending();
-          if (btn.dataset.tab === 'sessions') loadSessions();
-          if (btn.dataset.tab === 'report') loadReport();
+      let activeDaCard = null;
+      function activateDaTab(tab) {
+        document.querySelectorAll('#viewTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        ['missed', 'pending', 'sessions', 'report'].forEach(t => {
+          document.getElementById('tab-' + t).style.display = tab === t ? 'block' : 'none';
         });
+        if (tab === 'missed') loadMissed(0);
+        if (tab === 'pending') loadPending();
+        if (tab === 'sessions') loadSessions();
+        if (tab === 'report') loadReport();
+      }
+
+      document.querySelectorAll('#viewTabs .tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => activateDaTab(btn.dataset.tab));
       });
 
       async function loadSummary() {
         const res = await fetch('/api/warden/digital-attendance/summary', { credentials: 'same-origin' });
         if (!res.ok) return;
         const s = await res.json();
-        document.getElementById('sTotal').textContent = s.totalStudents;
-        document.getElementById('sMarked').textContent = s.markedCount;
-        document.getElementById('sPending').textContent = s.pendingCount;
-        document.getElementById('sMissed').textContent = s.missedCount;
-        document.getElementById('sOutLocked').textContent = `${s.onOutpassCount} / ${s.lockedStudentsCount}`;
+        UI.SummaryCards.render('daSummaryCards', {
+          activeKey: activeDaCard,
+          onSelect: (key) => {
+            activeDaCard = key;
+            if (key === 'PENDING') activateDaTab('pending');
+            else if (key === 'MISSED' || key === 'LOCKED') activateDaTab('missed');
+            else if (key === 'TOTAL' || key === 'MARKED' || key === 'ON_OUTPASS') activateDaTab('report');
+            loadSummary();
+          },
+          cards: [
+            { key: 'TOTAL', label: 'Total Students', value: s.totalStudents, accentColor: '#0284c7' },
+            { key: 'MARKED', label: 'Marked Today', value: s.markedCount, accentColor: '#16a34a', valColor: '#15803d' },
+            { key: 'PENDING', label: 'Pending Today', value: s.pendingCount, accentColor: '#f59e0b', valColor: '#b45309' },
+            { key: 'MISSED', label: 'Missed Today', value: s.missedCount, accentColor: '#dc2626', valColor: '#b91c1c' },
+            { key: 'ON_OUTPASS', label: 'On Outpass', value: s.onOutpassCount, accentColor: '#7c3aed' },
+            { key: 'LOCKED', label: 'Locked Outpasses', value: s.lockedStudentsCount, accentColor: '#991b1b', valColor: '#b91c1c' }
+          ],
+          chartTitle: 'Today Attendance Distribution',
+          chartSegments: [
+            { label: 'Marked', value: s.markedCount, color: '#16a34a' },
+            { label: 'Pending', value: s.pendingCount, color: '#f59e0b' },
+            { label: 'Missed', value: s.missedCount, color: '#dc2626' },
+            { label: 'On Outpass', value: s.onOutpassCount, color: '#7c3aed' }
+          ]
+        });
       }
 
       async function loadMissed(page = 0) {

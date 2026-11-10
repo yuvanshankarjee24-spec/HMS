@@ -17,6 +17,7 @@ public interface WorkerProfileRepository extends JpaRepository<WorkerProfile, Lo
     List<WorkerProfile> findByActiveTrueOrderByFullNameAsc();
     List<WorkerProfile> findByActiveTrueAndWorkerTypeOrderByFullNameAsc(WorkerProfile.WorkerType workerType);
     List<WorkerProfile> findAllByOrderByCreatedAtDesc();
+    long countByActiveTrue();
 
     @Query("SELECT w FROM WorkerProfile w WHERE " +
            "(:workerType IS NULL OR w.workerType = :workerType) AND " +

@@ -100,6 +100,11 @@ public class WardenCircularController {
         return ResponseEntity.ok(Map.of("message", "Circular deleted"));
     }
 
+    @GetMapping("/summary")
+    public ResponseEntity<WardenCircularSummaryResponse> getSummary() {
+        return ResponseEntity.ok(circularService.getWardenSummary());
+    }
+
     @GetMapping
     public ResponseEntity<Page<CircularResponse>> list(
             @RequestParam(value = "status", required = false) String status,

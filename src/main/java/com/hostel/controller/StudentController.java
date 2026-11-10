@@ -21,11 +21,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-import com.hostel.dto.OnlineAllocationDtos.*;
 import com.hostel.dto.OutpassDtos.*;
 import com.hostel.entity.Attendance;
 import com.hostel.service.AttendanceService;
-import com.hostel.service.OnlineAllocationService;
 import com.hostel.service.OutpassService;
 
 @RestController
@@ -36,18 +34,15 @@ public class StudentController {
     private final UserRepository userRepository;
     private final OutpassService outpassService;
     private final AttendanceService attendanceService;
-    private final OnlineAllocationService onlineAllocationService;
 
     public StudentController(StudentService studentService,
                              UserRepository userRepository,
                              OutpassService outpassService,
-                             AttendanceService attendanceService,
-                             OnlineAllocationService onlineAllocationService) {
+                             AttendanceService attendanceService) {
         this.studentService = studentService;
         this.userRepository = userRepository;
         this.outpassService = outpassService;
         this.attendanceService = attendanceService;
-        this.onlineAllocationService = onlineAllocationService;
     }
 
     private User getAuthenticatedUser(UserDetails userDetails) {
@@ -147,23 +142,6 @@ public class StudentController {
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = getAuthenticatedUser(userDetails);
         return ResponseEntity.ok(outpassService.getOutpassEligibility(user));
-    }
-
-    @GetMapping("/online-allocation/access")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<OnlineAllocationAccessResponse> getOnlineAllocationAccess(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        User user = getAuthenticatedUser(userDetails);
-        return ResponseEntity.ok(onlineAllocationService.getStudentAllocationAccess(user));
-    }
-
-    @PostMapping("/online-allocation/book")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<GroupBookingResponse> bookRoomWithFriends(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody GroupBookingRequest request) {
-        User user = getAuthenticatedUser(userDetails);
-        return ResponseEntity.ok(onlineAllocationService.bookRoomWithFriends(user, request));
     }
 
     private ResponseEntity<Resource> createResourceResponse(Resource resource) {

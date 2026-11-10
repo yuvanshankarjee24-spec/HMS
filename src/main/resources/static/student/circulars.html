@@ -92,7 +92,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/ui.js?v=4"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -270,7 +270,8 @@
       document.getElementById('btnFilter').addEventListener('click', () => loadCirculars(0));
       await Promise.all([loadBanner(), loadCirculars(0)]);
 
-      const openParam = new URLSearchParams(window.location.search).get('open');
+      const sp = new URLSearchParams(window.location.search);
+      const openParam = sp.get('open') || sp.get('id');
       if (openParam) await openDetail(openParam);
     })();
   </script>

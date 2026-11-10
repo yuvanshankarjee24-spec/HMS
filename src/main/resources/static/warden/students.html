@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students Directory - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Resident Students &amp; Directory</h1>
+            <p class="page-subtitle">Search resident students, view bed allocation status, vacate beds, or review pending room requests.</p>
+          </div>
+          <div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshAll">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Reusable SummaryCards Strip -->
+        <div id="studentsSummaryCards"></div>
+
+        <!-- Pending Room Requests -->
+        <div class="card" id="pendingRoomRequestsCard" style="margin-bottom:1.5rem;">
+          <div class="card-header">
+            <h2 class="card-title">Pending Room Requests</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Req #</th>
+                  <th>Student</th>
+                  <th>Reg No</th>
+                  <th>Preferred Room</th>
+                  <th>Floor</th>
+                  <th>Note</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="roomRequestsBody">
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Resident Student Directory -->
+        <div class="card" id="studentsTableCard">
+          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+            <h2 class="card-title">Hostel Students Directory</h2>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <input type="text" id="studentSearch" class="form-control" style="width:230px;" placeholder="Search name, reg no, dept...">
+              <button type="button" class="btn btn-primary btn-sm" id="btnSearchStudents">Search</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Reg No</th>
+                  <th>Name &amp; Email</th>
+                  <th>Dept / Year</th>
+                  <th>Phone</th>
+                  <th>Room / Bed</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="studentsBody">
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Loading students...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;flex-wrap:wrap;gap:0.75rem;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'students');
+
+      let currentPage = 0;
+      let activeCardFilter = null;
+
+      async function loadSummary() {
+        const res = await fetch('/api/warden/students/summary', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const s = await res.json();
+        UI.SummaryCards.render('studentsSummaryCards', {
+          activeKey: activeCardFilter,
+          onSelect: (key) => {
+            activeCardFilter = (activeCardFilter === key) ? null : key;
+            loadSummary();
+            if (activeCardFilter === 'REQUESTS') {
+              document.getElementById('pendingRoomRequestsCard').scrollIntoView({ behavior: 'smooth' });
+            } else {
+              loadStudents(0);
+            }
+          },
+          cards: [
+            { key: 'ALL', label: 'Total Students', value: s.totalStudents, accentColor: '#0284c7' },
+            { key: 'ALLOCATED', label: 'Allocated', value: s.allocatedStudents, accentColor: '#16a34a', valColor: '#15803d' },
+            { key: 'NOT_ALLOCATED', label: 'Unallocated', value: s.unallocatedStudents, accentColor: '#f59e0b', valColor: '#b45309' },
+            { key: 'REQUESTS', label: 'Pending Room Req', value: s.pendingRoomRequests, accentColor: '#ef4444', valColor: '#b91c1c' }
+          ],
+          chartTitle: 'Hostel Bed Allocation Ratio',
+          chartSegments: [
+            { label: 'Allocated', value: s.allocatedStudents, color: '#16a34a' },
+            { label: 'Unallocated', value: s.unallocatedStudents, color: '#f59e0b' }
+          ]
+        });
+      }
+
+      async function loadRoomRequests() {
+        const res = await fetch('/api/warden/room-requests?status=PENDING', { credentials: 'same-origin' });
+        const tbody = document.getElementById('roomRequestsBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const list = await res.json();
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 7, style: 'text-align:center;color:var(--text-muted);padding:1.25rem;' }, 'No pending room requests.')));
+          return;
+        }
+        list.forEach(r => {
+          const btnApp = UI.createElement('button', {
+            className: 'btn btn-success btn-sm',
+            onclick: async () => {
+              const ar = await fetch(`/api/warden/room-requests/${r.id}/approve`, { method: 'POST', credentials: 'same-origin' });
+              const d = await ar.json();
+              UI.showToast(ar.ok ? `Approved — ${d.roomNumber} Bed #${d.bedNumber}` : (d.message || 'Approve failed'), ar.ok ? 'success' : 'error');
+              if (ar.ok) await refreshAll();
+            }
+          }, 'Approve');
+          const btnRej = UI.createElement('button', {
+            className: 'btn btn-danger btn-sm',
+            onclick: async () => {
+              const reason = prompt('Enter rejection reason:');
+              if (!reason || !reason.trim()) return;
+              const rr = await fetch(`/api/warden/room-requests/${r.id}/reject`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+                body: JSON.stringify({ reason: reason.trim() })
+              });
+              if (rr.ok) { UI.showToast('Request rejected', 'info'); await refreshAll(); }
+            }
+          }, 'Reject');
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, `#${r.id}`),
+            UI.createElement('td', {}, UI.createElement('strong', {}, r.studentName)),
+            UI.createElement('td', {}, r.registerNumber),
+            UI.createElement('td', {}, r.preferredRoomNumber || 'Any'),
+            UI.createElement('td', {}, r.preferredFloor ? `Floor ${r.preferredFloor}` : 'Any'),
+            UI.createElement('td', {}, r.note || '—'),
+            UI.createElement('td', {}, UI.createElement('div', { style: 'display:flex;gap:0.35rem;' }, btnApp, btnRej))
+          ));
+        });
+      }
+
+      async function loadStudents(page = 0) {
+        currentPage = page;
+        const q = document.getElementById('studentSearch').value.trim();
+        const params = new URLSearchParams({ page, size: 12 });
+        if (q) params.append('query', q);
+        const res = await fetch(`/api/warden/students?${params.toString()}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('studentsBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const pd = await res.json();
+        let list = pd.content || [];
+        if (activeCardFilter === 'ALLOCATED') list = list.filter(s => s.allocationStatus === 'ALLOCATED');
+        else if (activeCardFilter === 'NOT_ALLOCATED') list = list.filter(s => s.allocationStatus !== 'ALLOCATED');
+
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 7, style: 'text-align:center;color:var(--text-muted);padding:2rem;' }, 'No students found.')));
+        } else {
+          list.forEach(s => {
+            const act = s.allocationStatus === 'ALLOCATED'
+              ? UI.createElement('button', {
+                  className: 'btn btn-danger btn-sm',
+                  onclick: async () => {
+                    const ok = await UI.showConfirm({ title: 'Vacate Student', message: `Vacate ${s.fullName} from Room ${s.roomNumber}?`, confirmText: 'Vacate' });
+                    if (!ok) return;
+                    const vr = await fetch(`/api/warden/students/${s.id}/vacate`, { method: 'POST', credentials: 'same-origin' });
+                    if (vr.ok) { UI.showToast('Student vacated and bed released.', 'success'); await refreshAll(); }
+                  }
+                }, 'Vacate Bed')
+              : UI.createElement('span', { style: 'color:var(--text-muted);font-size:0.82rem;' }, '—');
+
+            tbody.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', { dataset: { label: 'Reg No' } }, UI.createElement('strong', {}, s.registerNumber)),
+              UI.createElement('td', { dataset: { label: 'Name' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, s.fullName),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, s.email)
+              ),
+              UI.createElement('td', { dataset: { label: 'Dept/Yr' } }, `${s.department} · Yr ${s.year}`),
+              UI.createElement('td', { dataset: { label: 'Phone' } }, s.phone),
+              UI.createElement('td', { dataset: { label: 'Room' } }, s.roomNumber ? `${s.roomNumber} / Bed #${s.bedNumber}` : 'Unallocated'),
+              UI.createElement('td', { dataset: { label: 'Status' } }, UI.createElement('span', { className: `status-badge ${s.allocationStatus === 'ALLOCATED' ? 'badge-allocated' : 'badge-pending'}` }, s.allocationStatus)),
+              UI.createElement('td', { dataset: { label: 'Action' } }, act)
+            ));
+          });
+        }
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pd, p => loadStudents(p));
+      }
+
+      async function refreshAll() {
+        await Promise.all([loadSummary(), loadRoomRequests(), loadStudents(currentPage)]);
+      }
+
+      document.getElementById('btnSearchStudents').addEventListener('click', () => loadStudents(0));
+      document.getElementById('studentSearch').addEventListener('keydown', e => { if (e.key === 'Enter') loadStudents(0); });
+      document.getElementById('btnRefreshAll').addEventListener('click', refreshAll);
+
+      await refreshAll();
+    })();
+  </script>
+</body>
+</html>
+
