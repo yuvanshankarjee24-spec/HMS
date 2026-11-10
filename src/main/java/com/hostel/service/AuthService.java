@@ -4,10 +4,12 @@ import com.hostel.dto.AuthDtos.*;
 import com.hostel.entity.StaffProfile;
 import com.hostel.entity.Student;
 import com.hostel.entity.User;
+import com.hostel.entity.WorkerProfile;
 import com.hostel.exception.CustomExceptions.*;
 import com.hostel.repository.StaffProfileRepository;
 import com.hostel.repository.StudentRepository;
 import com.hostel.repository.UserRepository;
+import com.hostel.repository.WorkerProfileRepository;
 import com.hostel.security.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,23 +27,26 @@ public class AuthService {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final StaffProfileRepository staffProfileRepository;
+    private final WorkerProfileRepository workerProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuditService auditService;
 
     private static final List<String> STAFF_ROLES = Arrays.asList(
-            "SECURITY", "CLEANING_WORKER", "MAINTENANCE_STAFF", "MESS_STAFF", "VENDING_MANAGER"
+            "SECURITY", "WORKER", "CLEANING_WORKER", "MAINTENANCE_STAFF", "MESS_STAFF", "VENDING_MANAGER"
     );
 
     public AuthService(UserRepository userRepository,
                        StudentRepository studentRepository,
                        StaffProfileRepository staffProfileRepository,
+                       WorkerProfileRepository workerProfileRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        AuditService auditService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.staffProfileRepository = staffProfileRepository;
+        this.workerProfileRepository = workerProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.auditService = auditService;
@@ -172,6 +177,8 @@ public class AuthService {
             return "ADMIN".equals(actualRole);
         } else if ("SECURITY".equals(tab)) {
             return "SECURITY".equals(actualRole);
+        } else if ("WORKER".equals(tab)) {
+            return "WORKER".equals(actualRole);
         } else if ("STAFF".equals(tab)) {
             return STAFF_ROLES.contains(actualRole);
         }
@@ -182,6 +189,10 @@ public class AuthService {
         if ("STUDENT".equals(user.getRole())) {
             return studentRepository.findByUserId(user.getId())
                     .map(Student::getFullName)
+                    .orElse(user.getEmail());
+        } else if ("WORKER".equals(user.getRole())) {
+            return workerProfileRepository.findByUserId(user.getId())
+                    .map(WorkerProfile::getFullName)
                     .orElse(user.getEmail());
         } else {
             return staffProfileRepository.findByUserId(user.getId())

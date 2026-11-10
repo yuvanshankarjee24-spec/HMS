@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Maintenance &amp; Reports - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .mini-stat {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+    }
+    .mini-stat-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .mini-stat-val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 0.25rem;
+    }
+    .report-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Hostel Maintenance Analytics &amp; Directory</h1>
+            <p class="page-subtitle">Cross-hostel maintenance visibility, resolution SLA (>48h pending), category volume, and worker performance.</p>
+          </div>
+          <div>
+            <a href="/warden/workers.html" class="btn btn-secondary btn-sm">Manage Workers</a>
+          </div>
+        </div>
+
+        <div class="stats-grid-4">
+          <div class="mini-stat" style="border-left: 4px solid #0284c7;">
+            <div class="mini-stat-label">Total Requests</div>
+            <div class="mini-stat-val" id="repTotal">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #f59e0b;">
+            <div class="mini-stat-label">Open / Active</div>
+            <div class="mini-stat-val" id="repOpen">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #10b981;">
+            <div class="mini-stat-label">Avg Resolution Time</div>
+            <div class="mini-stat-val" id="repAvgHours">0h</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #dc2626;">
+            <div class="mini-stat-label">Pending &gt; 48 Hours</div>
+            <div class="mini-stat-val" id="repOver48">0</div>
+          </div>
+        </div>
+
+        <div class="report-grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Requests Per Category</h2>
+            </div>
+            <div id="categoryBreakdownBody" style="display: flex; flex-direction: column; gap: 0.6rem;"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Pending Older Than 48 Hours</h2>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Room</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody id="over48Body">
+                  <tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <h2 class="card-title">Worker Performance Report</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Employee ID</th>
+                  <th>Worker Name</th>
+                  <th>Skill</th>
+                  <th>Status</th>
+                  <th>Active Tasks</th>
+                  <th>Completed Tasks</th>
+                  <th>Avg Rating</th>
+                </tr>
+              </thead>
+              <tbody id="workerPerfBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+            <h2 class="card-title">All Hostel Maintenance Requests</h2>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <input type="text" id="allSearch" class="form-control" style="width:200px;" placeholder="Search ID, student, block...">
+              <select id="allStatus" class="form-control" style="width:160px;">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="ON_HOLD">On Hold</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="REOPENED">Reopened</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+              <button type="button" class="btn btn-primary btn-sm" id="btnAllSearch">Filter</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Student</th>
+                  <th>Block / Room</th>
+                  <th>Category &amp; Title</th>
+                  <th>Priority</th>
+                  <th>Worker</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="allRequestsBody"></tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 0; flex-wrap: wrap; gap: 0.75rem;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'admin-maintenance');
+
+      async function loadReport() {
+        const res = await fetch('/api/admin/maintenance/reports', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const rep = await res.json();
+
+        document.getElementById('repTotal').textContent = rep.totalRequests;
+        document.getElementById('repOpen').textContent = rep.openRequests;
+        document.getElementById('repAvgHours').textContent = `${rep.averageResolutionHours}h`;
+        document.getElementById('repOver48').textContent = rep.pendingOver48HoursCount;
+
+        const catBody = document.getElementById('categoryBreakdownBody');
+        catBody.innerHTML = '';
+        const maxCat = Math.max(1, ...Object.values(rep.categoryCounts || {}));
+        Object.entries(rep.categoryCounts || {}).forEach(([cat, count]) => {
+          const pct = Math.round((count / maxCat) * 100);
+          const row = UI.createElement('div', {},
+            UI.createElement('div', { style: 'display:flex;justify-content:space-between;font-size:0.86rem;font-weight:600;' },
+              UI.createElement('span', {}, UI.categoryLabel(cat)),
+              UI.createElement('span', {}, String(count))
+            ),
+            UI.createElement('div', { className: 'progress-bar-container', style: 'width:100%;height:8px;' },
+              UI.createElement('div', { className: 'progress-bar-fill green', style: `width:${pct}%;` })
+            )
+          );
+          catBody.appendChild(row);
+        });
+
+        const overBody = document.getElementById('over48Body');
+        overBody.innerHTML = '';
+        if (!rep.pendingOver48Hours || rep.pendingOver48Hours.length === 0) {
+          overBody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 5, style: 'text-align:center;color:var(--text-muted);' }, 'No requests pending > 48 hours.')));
+        } else {
+          rep.pendingOver48Hours.forEach(r => {
+            overBody.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', {}, UI.createElement('strong', {}, r.requestCode)),
+              UI.createElement('td', {}, r.title),
+              UI.createElement('td', {}, `${r.hostelBlock}/${r.roomNumber}`),
+              UI.createElement('td', {}, UI.statusBadge(r.status)),
+              UI.createElement('td', { style: 'font-size:0.78rem;' }, UI.formatDateTime(r.createdAt))
+            ));
+          });
+        }
+
+        const perfBody = document.getElementById('workerPerfBody');
+        perfBody.innerHTML = '';
+        (rep.workerPerformance || []).forEach(w => {
+          perfBody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', { dataset: { label: 'Emp ID' } }, UI.createElement('strong', {}, w.employeeId)),
+            UI.createElement('td', { dataset: { label: 'Worker' } }, w.fullName),
+            UI.createElement('td', { dataset: { label: 'Skill' } }, UI.workerSkillLabel(w.workerType)),
+            UI.createElement('td', { dataset: { label: 'Status' } },
+              UI.createElement('span', { className: `status-badge ${w.active ? 'badge-active' : 'badge-absent'}` }, w.active ? 'Active' : 'Inactive')
+            ),
+            UI.createElement('td', { dataset: { label: 'Active' } }, String(w.activeTasks)),
+            UI.createElement('td', { dataset: { label: 'Completed' } }, String(w.tasksCompleted)),
+            UI.createElement('td', { dataset: { label: 'Avg Rating' } }, w.averageRating ? `${w.averageRating} / 5 (${w.ratingCount})` : 'No ratings yet')
+          ));
+        });
+      }
+
+      async function loadAllRequests(page = 0) {
+        const params = new URLSearchParams({ page, size: 10 });
+        const q = document.getElementById('allSearch').value.trim();
+        const st = document.getElementById('allStatus').value;
+        if (q) params.append('query', q);
+        if (st) params.append('status', st);
+
+        const res = await fetch(`/api/admin/maintenance?${params.toString()}`, { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const pageData = await res.json();
+        const tbody = document.getElementById('allRequestsBody');
+        tbody.innerHTML = '';
+        const list = pageData.content || [];
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 8, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No requests found.')));
+        } else {
+          list.forEach(r => {
+            tbody.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', { dataset: { label: 'ID' } }, UI.createElement('strong', {}, r.requestCode)),
+              UI.createElement('td', { dataset: { label: 'Student' } }, `${r.studentName} (${r.studentRegNo})`),
+              UI.createElement('td', { dataset: { label: 'Location' } }, `${r.hostelBlock} / ${r.roomNumber}`),
+              UI.createElement('td', { dataset: { label: 'Title' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, r.title),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, UI.categoryLabel(r.category))
+              ),
+              UI.createElement('td', { dataset: { label: 'Priority' } }, UI.priorityBadge(r.priority)),
+              UI.createElement('td', { dataset: { label: 'Worker' } }, r.assignedWorkerName || '—'),
+              UI.createElement('td', { dataset: { label: 'Status' } }, UI.statusBadge(r.status)),
+              UI.createElement('td', { dataset: { label: 'Submitted' }, style: 'font-size:0.8rem;' }, UI.formatDateTime(r.createdAt))
+            ));
+          });
+        }
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadAllRequests(p));
+      }
+
+      document.getElementById('btnAllSearch').addEventListener('click', () => loadAllRequests(0));
+      await Promise.all([loadReport(), loadAllRequests(0)]);
+    })();
+  </script>
+</body>
+</html>
+

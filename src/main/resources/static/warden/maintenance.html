@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance Requests - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-5 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .mini-stat {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+    }
+    .mini-stat-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .mini-stat-val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Maintenance Requests Desk</h1>
+            <p class="page-subtitle">Review student queries, assign skilled workers, track work progress, and handle escalations.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <a href="/warden/workers.html" class="btn btn-secondary btn-sm">Manage Workers</a>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="stats-grid-5">
+          <div class="mini-stat" style="border-left: 4px solid #f59e0b;">
+            <div class="mini-stat-label">Pending</div>
+            <div class="mini-stat-val" id="statPending">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #3b82f6;">
+            <div class="mini-stat-label">Assigned</div>
+            <div class="mini-stat-val" id="statAssigned">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #6366f1;">
+            <div class="mini-stat-label">In Progress</div>
+            <div class="mini-stat-val" id="statInProgress">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #10b981;">
+            <div class="mini-stat-label">Completed</div>
+            <div class="mini-stat-val" id="statCompleted">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #f97316;">
+            <div class="mini-stat-label">Reopened</div>
+            <div class="mini-stat-val" id="statReopened">0</div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: end;">
+            <div style="flex: 1; min-width: 200px;">
+              <label class="form-label">Search (ID / Student / Title)</label>
+              <input type="text" id="filterQuery" class="form-control" placeholder="e.g. REQ-2026 or Aarav">
+            </div>
+            <div>
+              <label class="form-label">Status</label>
+              <select id="filterStatus" class="form-control" style="width: 155px;">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="ON_HOLD">On Hold (Materials)</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="REOPENED">Reopened</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Category</label>
+              <select id="filterCategory" class="form-control" style="width: 165px;">
+                <option value="">All Categories</option>
+                <option value="ROOM_CLEANING">Room Cleaning</option>
+                <option value="ELECTRICAL">Electrical</option>
+                <option value="PLUMBING">Plumbing</option>
+                <option value="FURNITURE_CARPENTRY">Carpentry</option>
+                <option value="INTERNET_WIFI">Internet / WiFi</option>
+                <option value="BATHROOM_WASHROOM">Washroom</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Priority</label>
+              <select id="filterPriority" class="form-control" style="width: 125px;">
+                <option value="">All</option>
+                <option value="URGENT">Urgent</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Room</label>
+              <input type="text" id="filterRoom" class="form-control" style="width: 100px;" placeholder="e.g. 101">
+            </div>
+            <div>
+              <label class="form-label">From Date</label>
+              <input type="date" id="filterFrom" class="form-control" style="width: 145px;">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnApplyFilter">Search</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnResetFilter">Reset</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Student</th>
+                  <th>Location</th>
+                  <th>Category &amp; Title</th>
+                  <th>Priority</th>
+                  <th>Assigned To</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="wardenMaintBody">
+                <tr><td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 0; flex-wrap: wrap; gap: 0.75rem;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-dialog" style="max-width: 760px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detailModalTitle">Request Detail</h3>
+        <button class="modal-close" onclick="UI.closeModal('detailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="detailModalBody"></div>
+      <div class="modal-footer" id="detailModalFooter">
+        <button class="btn btn-secondary" onclick="UI.closeModal('detailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign / Reassign Modal -->
+  <div class="modal-overlay" id="assignModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="assignModalTitle">Assign Worker</h3>
+        <button class="modal-close" onclick="UI.closeModal('assignModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="assignReqId">
+        <div class="form-group">
+          <label class="form-label" for="assignWorkerSelect">Select Worker (Filtered by matching skill) *</label>
+          <select id="assignWorkerSelect" class="form-control" required></select>
+          <div style="margin-top: 0.35rem;">
+            <label style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+              <input type="checkbox" id="chkShowAllWorkers"> Show all active workers (any skill)
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="assignExpectedDate">Expected Completion Date (Optional)</label>
+          <input type="date" id="assignExpectedDate" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="assignInstruction">Instruction Note for Worker (Optional)</label>
+          <textarea id="assignInstruction" class="form-control" rows="3" maxlength="500" placeholder="e.g. Check MCB and bring replacement capacitor..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('assignModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnConfirmAssign">Assign Worker</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" id="rejectModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Reject Request</h3>
+        <button class="modal-close" onclick="UI.closeModal('rejectModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rejectReqId">
+        <div class="form-group">
+          <label class="form-label" for="rejectReasonInput">Mandatory Rejection Reason *</label>
+          <textarea id="rejectReasonInput" class="form-control" rows="3" maxlength="500" required placeholder="e.g. Duplicate request or out of hostel scope..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('rejectModal')">Cancel</button>
+        <button class="btn btn-danger" id="btnConfirmReject">Reject Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Priority Modal -->
+  <div class="modal-overlay" id="priorityModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Change Request Priority</h3>
+        <button class="modal-close" onclick="UI.closeModal('priorityModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="prioReqId">
+        <div class="form-group">
+          <label class="form-label" for="prioSelect">Priority *</label>
+          <select id="prioSelect" class="form-control">
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="prioRemarks">Note (Optional)</label>
+          <input type="text" id="prioRemarks" class="form-control" maxlength="500" placeholder="Reason for priority update...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('priorityModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnConfirmPrio">Save Priority</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'maintenance');
+
+      let currentPage = 0;
+      let currentAssignCategory = null;
+
+      async function loadStats() {
+        const res = await fetch('/api/warden/maintenance/stats', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('statPending').textContent = s.pending;
+        document.getElementById('statAssigned').textContent = s.assigned;
+        document.getElementById('statInProgress').textContent = s.inProgress;
+        document.getElementById('statCompleted').textContent = s.completed;
+        document.getElementById('statReopened').textContent = s.reopened;
+      }
+
+      async function loadRequests(page = 0) {
+        currentPage = page;
+        const params = new URLSearchParams({ page, size: 10 });
+        const q = document.getElementById('filterQuery').value.trim();
+        const st = document.getElementById('filterStatus').value;
+        const cat = document.getElementById('filterCategory').value;
+        const prio = document.getElementById('filterPriority').value;
+        const room = document.getElementById('filterRoom').value.trim();
+        const from = document.getElementById('filterFrom').value;
+        if (q) params.append('query', q);
+        if (st) params.append('status', st);
+        if (cat) params.append('category', cat);
+        if (prio) params.append('priority', prio);
+        if (room) params.append('room', room);
+        if (from) params.append('fromDate', from);
+
+        const res = await fetch(`/api/warden/maintenance?${params.toString()}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('wardenMaintBody');
+        tbody.innerHTML = '';
+        if (!res.ok) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 9, style: 'text-align:center;color:var(--danger);' }, 'Failed to load requests')));
+          return;
+        }
+        const pageData = await res.json();
+        const list = pageData.content || [];
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 9, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No maintenance requests found.')));
+        } else {
+          list.forEach(r => {
+            const actionCell = UI.createElement('td', { dataset: { label: 'Actions' } });
+            const wrap = UI.createElement('div', { style: 'display:flex;gap:0.35rem;flex-wrap:wrap;' });
+            wrap.appendChild(UI.createElement('button', {
+              className: 'btn btn-secondary btn-sm',
+              onclick: () => openDetail(r.id)
+            }, 'View'));
+
+            if (['PENDING', 'ASSIGNED', 'ON_HOLD', 'REOPENED'].includes(r.status)) {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-primary btn-sm',
+                onclick: () => openAssignModal(r.id, r.category, r.assignedWorkerId)
+              }, r.assignedWorkerId ? 'Reassign' : 'Assign'));
+            }
+            if (['PENDING', 'REOPENED', 'ON_HOLD'].includes(r.status)) {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: () => openRejectModal(r.id)
+              }, 'Reject'));
+            }
+            actionCell.appendChild(wrap);
+
+            const tr = UI.createElement('tr', {},
+              UI.createElement('td', { dataset: { label: 'Request ID' } }, UI.createElement('strong', {}, r.requestCode)),
+              UI.createElement('td', { dataset: { label: 'Student' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, r.studentName),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, r.studentRegNo)
+              ),
+              UI.createElement('td', { dataset: { label: 'Location' } }, `${r.hostelBlock} / ${r.roomNumber}`),
+              UI.createElement('td', { dataset: { label: 'Title' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, r.title),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, UI.categoryLabel(r.category))
+              ),
+              UI.createElement('td', { dataset: { label: 'Priority' } }, UI.priorityBadge(r.priority)),
+              UI.createElement('td', { dataset: { label: 'Assigned' } }, r.assignedWorkerName || '—'),
+              UI.createElement('td', { dataset: { label: 'Status' } }, UI.statusBadge(r.status)),
+              UI.createElement('td', { dataset: { label: 'Submitted' }, style: 'font-size:0.8rem;' }, UI.formatDateTime(r.createdAt)),
+              actionCell
+            );
+            tbody.appendChild(tr);
+          });
+        }
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadRequests(p));
+      }
+
+      async function populateWorkerDropdown(category, showAll) {
+        const url = showAll ? '/api/warden/workers?active=true' : `/api/warden/workers/matching?category=${encodeURIComponent(category || '')}`;
+        const res = await fetch(url, { credentials: 'same-origin' });
+        const sel = document.getElementById('assignWorkerSelect');
+        sel.innerHTML = '';
+        if (!res.ok) return;
+        const workers = await res.json();
+        if (workers.length === 0) {
+          sel.appendChild(UI.createElement('option', { value: '' }, 'No active workers found'));
+          return;
+        }
+        workers.forEach(w => {
+          sel.appendChild(UI.createElement('option', { value: w.id }, `${w.fullName} (${w.employeeId} - ${UI.workerSkillLabel(w.workerType)})`));
+        });
+      }
+
+      document.getElementById('chkShowAllWorkers').addEventListener('change', (e) => {
+        populateWorkerDropdown(currentAssignCategory, e.target.checked);
+      });
+
+      async function openAssignModal(id, category, existingWorkerId) {
+        currentAssignCategory = category;
+        document.getElementById('assignReqId').value = id;
+        document.getElementById('assignModalTitle').textContent = existingWorkerId ? 'Reassign Worker' : 'Assign Worker';
+        document.getElementById('assignInstruction').value = '';
+        document.getElementById('assignExpectedDate').value = '';
+        document.getElementById('chkShowAllWorkers').checked = false;
+        await populateWorkerDropdown(category, false);
+        UI.openModal('assignModal');
+      }
+
+      document.getElementById('btnConfirmAssign').addEventListener('click', async () => {
+        const id = document.getElementById('assignReqId').value;
+        const workerId = document.getElementById('assignWorkerSelect').value;
+        if (!workerId) {
+          UI.showToast('Please select a worker', 'error');
+          return;
+        }
+        const instruction = document.getElementById('assignInstruction').value.trim();
+        const expectedCompletionDate = document.getElementById('assignExpectedDate').value || null;
+
+        const res = await fetch(`/api/warden/maintenance/${id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ workerId: Number(workerId), instruction, expectedCompletionDate })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Assignment failed', 'error');
+        } else {
+          UI.closeModal('assignModal');
+          UI.showToast('Worker assigned and notifications sent.', 'success');
+          await Promise.all([loadStats(), loadRequests(currentPage)]);
+        }
+      });
+
+      function openRejectModal(id) {
+        document.getElementById('rejectReqId').value = id;
+        document.getElementById('rejectReasonInput').value = '';
+        UI.openModal('rejectModal');
+      }
+
+      document.getElementById('btnConfirmReject').addEventListener('click', async () => {
+        const id = document.getElementById('rejectReqId').value;
+        const reason = document.getElementById('rejectReasonInput').value.trim();
+        if (!reason) {
+          UI.showToast('Rejection reason is mandatory', 'error');
+          return;
+        }
+        const res = await fetch(`/api/warden/maintenance/${id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Reject failed', 'error');
+        } else {
+          UI.closeModal('rejectModal');
+          UI.showToast('Request rejected.', 'info');
+          await Promise.all([loadStats(), loadRequests(currentPage)]);
+        }
+      });
+
+      function openPriorityModal(id, currentPrio) {
+        document.getElementById('prioReqId').value = id;
+        document.getElementById('prioSelect').value = currentPrio;
+        document.getElementById('prioRemarks').value = '';
+        UI.openModal('priorityModal');
+      }
+
+      document.getElementById('btnConfirmPrio').addEventListener('click', async () => {
+        const id = document.getElementById('prioReqId').value;
+        const priority = document.getElementById('prioSelect').value;
+        const remarks = document.getElementById('prioRemarks').value.trim();
+        const res = await fetch(`/api/warden/maintenance/${id}/priority`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ priority, remarks })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Priority update failed', 'error');
+        } else {
+          UI.closeModal('priorityModal');
+          UI.showToast('Priority updated.', 'success');
+          await loadRequests(currentPage);
+        }
+      });
+
+      async function openDetail(id) {
+        const res = await fetch(`/api/warden/maintenance/${id}`, { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('detailModalTitle').textContent = `${d.requestCode} — ${d.title}`;
+        const body = document.getElementById('detailModalBody');
+        body.innerHTML = '';
+
+        const badges = UI.createElement('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;' },
+          UI.statusBadge(d.status),
+          UI.priorityBadge(d.priority),
+          UI.createElement('span', { className: 'status-badge', style: 'background:#f1f5f9;color:#334155;' }, UI.categoryLabel(d.category))
+        );
+
+        const info = UI.createElement('div', { style: 'background:var(--card-bg);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-size:0.9rem;' },
+          UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Student: '), `${d.studentName} (${d.studentRegNo}) — ${d.studentPhone}`),
+          UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Location: '), `${d.hostelBlock}, Room ${d.roomNumber}`),
+          UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Description: '), d.description),
+          d.preferredTimeSlot ? UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Preferred Slot: '), d.preferredTimeSlot) : null,
+          d.assignedWorkerName ? UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Assigned Worker: '), `${d.assignedWorkerName} (${d.assignedWorkerEmployeeId})`) : null,
+          d.wardenInstruction ? UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Warden Instruction: '), d.wardenInstruction) : null,
+          d.onHoldReason ? UI.createElement('p', { style: 'margin-bottom:0.35rem;color:#86198f;' }, UI.createElement('strong', {}, 'Worker On-Hold / Materials Note: '), d.onHoldReason) : null,
+          d.workerRemarks ? UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Worker Completion Remarks: '), d.workerRemarks) : null,
+          d.reopenReason ? UI.createElement('p', { style: 'margin-bottom:0.35rem;color:#c2410c;' }, UI.createElement('strong', {}, 'Reopen Reason: '), d.reopenReason) : null,
+          d.rejectionReason ? UI.createElement('p', { style: 'margin-bottom:0;color:#b91c1c;' }, UI.createElement('strong', {}, 'Rejection Reason: '), d.rejectionReason) : null
+        );
+
+        body.append(
+          badges,
+          info,
+          UI.createElement('h4', { style: 'margin-bottom:0.35rem;font-size:0.95rem;' }, 'Attachments'),
+          MaintUI.renderAttachments(d.attachments),
+          UI.createElement('h4', { style: 'margin:1rem 0 0.35rem;font-size:0.95rem;' }, 'Status History'),
+          MaintUI.renderTimeline(d.history)
+        );
+
+        const footer = document.getElementById('detailModalFooter');
+        footer.innerHTML = '';
+        footer.appendChild(UI.createElement('button', {
+          className: 'btn btn-secondary btn-sm',
+          onclick: () => { UI.closeModal('detailModal'); openPriorityModal(d.id, d.priority); }
+        }, 'Change Priority'));
+
+        if (!['CANCELLED', 'REJECTED', 'RESOLVED'].includes(d.status)) {
+          footer.appendChild(UI.createElement('button', {
+            className: 'btn btn-success btn-sm',
+            onclick: async () => {
+              const ok = await UI.showConfirm({ title: 'Close Request', message: `Mark ${d.requestCode} as Resolved?`, confirmText: 'Close Request' });
+              if (!ok) return;
+              const r = await fetch(`/api/warden/maintenance/${d.id}/close`, { method: 'POST', credentials: 'same-origin' });
+              if (r.ok) {
+                UI.closeModal('detailModal');
+                UI.showToast('Request closed.', 'success');
+                await Promise.all([loadStats(), loadRequests(currentPage)]);
+              }
+            }
+          }, 'Close as Resolved'));
+        }
+
+        if (['COMPLETED', 'RESOLVED', 'REJECTED'].includes(d.status)) {
+          footer.appendChild(UI.createElement('button', {
+            className: 'btn btn-danger btn-sm',
+            onclick: async () => {
+              const reason = prompt('Enter reason for reopening this request:');
+              if (!reason || !reason.trim()) return;
+              const r = await fetch(`/api/warden/maintenance/${d.id}/reopen`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ reason: reason.trim() })
+              });
+              if (r.ok) {
+                UI.closeModal('detailModal');
+                UI.showToast('Request reopened.', 'info');
+                await Promise.all([loadStats(), loadRequests(currentPage)]);
+              }
+            }
+          }, 'Reopen'));
+        }
+
+        footer.appendChild(UI.createElement('button', {
+          className: 'btn btn-secondary',
+          onclick: () => UI.closeModal('detailModal')
+        }, 'Close'));
+
+        UI.openModal('detailModal');
+      }
+
+      document.getElementById('btnApplyFilter').addEventListener('click', () => loadRequests(0));
+      document.getElementById('btnResetFilter').addEventListener('click', () => {
+        document.getElementById('filterQuery').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterCategory').value = '';
+        document.getElementById('filterPriority').value = '';
+        document.getElementById('filterRoom').value = '';
+        document.getElementById('filterFrom').value = '';
+        loadRequests(0);
+      });
+
+      await Promise.all([loadStats(), loadRequests(0)]);
+    })();
+  </script>
+</body>
+</html>
+

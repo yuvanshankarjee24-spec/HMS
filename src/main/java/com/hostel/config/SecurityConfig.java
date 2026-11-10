@@ -94,6 +94,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Security only
                         .requestMatchers("/api/security/**").hasRole("SECURITY")
+                        // Worker only
+                        .requestMatchers("/api/worker/**").hasRole("WORKER")
+                        // Notifications & attachments (authenticated; service enforces ownership/RBAC)
+                        .requestMatchers("/api/notifications/**", "/api/maintenance/**").authenticated()
                         // Dashboard HTML files can be accessed via browser; JS auth guard will enforce RBAC
                         .requestMatchers(
                                 "/student/**",

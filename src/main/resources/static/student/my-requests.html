@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Maintenance Requests - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">My Maintenance Requests</h1>
+            <p class="page-subtitle">Track complaint status, view timelines, cancel pending requests, or confirm &amp; rate completed work.</p>
+          </div>
+          <div>
+            <a href="/student/raise-request.html" class="btn btn-primary btn-sm">+ Raise Request</a>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end;">
+            <div>
+              <label class="form-label">Status</label>
+              <select id="filterStatus" class="form-control" style="width: 170px;">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="ON_HOLD">On Hold (Materials)</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="REOPENED">Reopened</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Category</label>
+              <select id="filterCategory" class="form-control" style="width: 190px;">
+                <option value="">All Categories</option>
+                <option value="ROOM_CLEANING">Room Cleaning</option>
+                <option value="ELECTRICAL">Electrical</option>
+                <option value="PLUMBING">Plumbing</option>
+                <option value="FURNITURE_CARPENTRY">Furniture / Carpentry</option>
+                <option value="INTERNET_WIFI">Internet / WiFi</option>
+                <option value="BATHROOM_WASHROOM">Bathroom / Washroom</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">From Date</label>
+              <input type="date" id="filterFrom" class="form-control" style="width: 155px;">
+            </div>
+            <div>
+              <label class="form-label">To Date</label>
+              <input type="date" id="filterTo" class="form-control" style="width: 155px;">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnApplyFilter">Filter</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnResetFilter">Reset</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Category &amp; Title</th>
+                  <th>Location</th>
+                  <th>Priority</th>
+                  <th>Assigned Worker</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="requestsBody">
+                <tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 0; flex-wrap: wrap; gap: 0.75rem;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail & Timeline Modal -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detailModalTitle">Request Details</h3>
+        <button class="modal-close" onclick="UI.closeModal('detailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="detailModalBody"></div>
+      <div class="modal-footer" id="detailModalFooter">
+        <button class="btn btn-secondary" onclick="UI.closeModal('detailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm & Rate Modal -->
+  <div class="modal-overlay" id="confirmRateModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Confirm Resolved &amp; Rate Work</h3>
+        <button class="modal-close" onclick="UI.closeModal('confirmRateModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="confirmRateForm">
+          <input type="hidden" id="rateReqId">
+          <div class="form-group">
+            <label class="form-label">Rate Service Quality (1 to 5 Stars) *</label>
+            <div class="star-rating-picker" id="starPicker">
+              <button type="button" class="star-btn active" data-val="1">&#9733;</button>
+              <button type="button" class="star-btn active" data-val="2">&#9733;</button>
+              <button type="button" class="star-btn active" data-val="3">&#9733;</button>
+              <button type="button" class="star-btn active" data-val="4">&#9733;</button>
+              <button type="button" class="star-btn active" data-val="5">&#9733;</button>
+            </div>
+            <input type="hidden" id="ratingValue" value="5">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ratingFeedback">Feedback (Optional)</label>
+            <textarea id="ratingFeedback" class="form-control" rows="3" maxlength="500" placeholder="Share your experience..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('confirmRateModal')">Cancel</button>
+        <button class="btn btn-success" id="btnSubmitConfirmRate">Confirm &amp; Submit Rating</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reopen Modal -->
+  <div class="modal-overlay" id="reopenModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Reopen Maintenance Request</h3>
+        <button class="modal-close" onclick="UI.closeModal('reopenModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="reopenReqId">
+        <div class="form-group">
+          <label class="form-label" for="reopenReason">Reason for Reopening *</label>
+          <textarea id="reopenReason" class="form-control" rows="3" maxlength="500" required placeholder="Explain why the issue is not resolved..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('reopenModal')">Cancel</button>
+        <button class="btn btn-danger" id="btnSubmitReopen">Submit Reopen</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['STUDENT']);
+      if (!user) return;
+      UI.renderLayout(user, 'my-requests');
+
+      let currentPage = 0;
+
+      // Star picker interaction
+      document.querySelectorAll('#starPicker .star-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = parseInt(btn.dataset.val, 10);
+          document.getElementById('ratingValue').value = val;
+          document.querySelectorAll('#starPicker .star-btn').forEach(b => {
+            b.classList.toggle('active', parseInt(b.dataset.val, 10) <= val);
+          });
+        });
+      });
+
+      async function loadRequests(page = 0) {
+        currentPage = page;
+        const params = new URLSearchParams({ page, size: 10 });
+        const st = document.getElementById('filterStatus').value;
+        const cat = document.getElementById('filterCategory').value;
+        const from = document.getElementById('filterFrom').value;
+        const to = document.getElementById('filterTo').value;
+        if (st) params.append('status', st);
+        if (cat) params.append('category', cat);
+        if (from) params.append('fromDate', from);
+        if (to) params.append('toDate', to);
+
+        const res = await fetch(`/api/student/maintenance?${params.toString()}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('requestsBody');
+        tbody.innerHTML = '';
+        if (!res.ok) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 8, style: 'text-align:center;color:var(--danger);' }, 'Failed to load requests')));
+          return;
+        }
+        const pageData = await res.json();
+        const list = pageData.content || [];
+
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 8, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No maintenance requests match your filters.')));
+        } else {
+          list.forEach(r => {
+            const actionCell = UI.createElement('td', { dataset: { label: 'Actions' } });
+            const wrap = UI.createElement('div', { style: 'display:flex;gap:0.4rem;flex-wrap:wrap;' });
+            wrap.appendChild(UI.createElement('button', {
+              className: 'btn btn-secondary btn-sm',
+              onclick: () => openDetail(r.id)
+            }, 'Details'));
+
+            if (r.status === 'PENDING') {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: () => cancelReq(r.id, r.requestCode)
+              }, 'Cancel'));
+            }
+            if (r.status === 'COMPLETED') {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-success btn-sm',
+                onclick: () => openConfirmRate(r.id)
+              }, 'Confirm & Rate'));
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: () => openReopen(r.id)
+              }, 'Reopen'));
+            }
+            actionCell.appendChild(wrap);
+
+            const tr = UI.createElement('tr', {},
+              UI.createElement('td', { dataset: { label: 'Request ID' } }, UI.createElement('strong', {}, r.requestCode)),
+              UI.createElement('td', { dataset: { label: 'Title' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, r.title),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, UI.categoryLabel(r.category))
+              ),
+              UI.createElement('td', { dataset: { label: 'Location' } }, `${r.hostelBlock} / ${r.roomNumber}`),
+              UI.createElement('td', { dataset: { label: 'Priority' } }, UI.priorityBadge(r.priority)),
+              UI.createElement('td', { dataset: { label: 'Worker' } }, r.assignedWorkerName || 'Unassigned'),
+              UI.createElement('td', { dataset: { label: 'Status' } }, UI.statusBadge(r.status)),
+              UI.createElement('td', { dataset: { label: 'Submitted' }, style: 'font-size:0.82rem;' }, UI.formatDateTime(r.createdAt)),
+              actionCell
+            );
+            tbody.appendChild(tr);
+          });
+        }
+
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, (p) => loadRequests(p));
+      }
+
+      async function openDetail(id) {
+        const res = await fetch(`/api/student/maintenance/${id}`, { credentials: 'same-origin' });
+        if (!res.ok) {
+          UI.showToast('Unable to load request details', 'error');
+          return;
+        }
+        const d = await res.json();
+        document.getElementById('detailModalTitle').textContent = `${d.requestCode} — ${d.title}`;
+        const body = document.getElementById('detailModalBody');
+        body.innerHTML = '';
+
+        const headerBadges = UI.createElement('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;' },
+          UI.statusBadge(d.status),
+          UI.priorityBadge(d.priority),
+          UI.createElement('span', { className: 'status-badge', style: 'background:#f1f5f9;color:#334155;' }, UI.categoryLabel(d.category))
+        );
+
+        const info = UI.createElement('div', { style: 'background:var(--card-bg);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-size:0.9rem;' },
+          UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Location: '), `${d.hostelBlock}, Room ${d.roomNumber}`),
+          UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Description: '), d.description),
+          d.preferredTimeSlot ? UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Preferred Slot: '), d.preferredTimeSlot) : null,
+          d.assignedWorkerName ? UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Assigned Worker: '), `${d.assignedWorkerName} (${UI.workerSkillLabel(d.assignedWorkerType)})`) : null,
+          d.expectedCompletionDate ? UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Expected Completion: '), UI.formatDate(d.expectedCompletionDate)) : null,
+          d.wardenInstruction ? UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Warden Note: '), d.wardenInstruction) : null,
+          d.workerRemarks ? UI.createElement('p', { style: 'margin-bottom:0.4rem;' }, UI.createElement('strong', {}, 'Worker Remarks: '), d.workerRemarks) : null,
+          d.onHoldReason ? UI.createElement('p', { style: 'margin-bottom:0.4rem;color:#86198f;' }, UI.createElement('strong', {}, 'On Hold Reason: '), d.onHoldReason) : null,
+          d.rejectionReason ? UI.createElement('p', { style: 'margin-bottom:0.4rem;color:#b91c1c;' }, UI.createElement('strong', {}, 'Rejection Reason: '), d.rejectionReason) : null,
+          d.rating ? UI.createElement('p', { style: 'margin-bottom:0;color:#b45309;' }, UI.createElement('strong', {}, 'Your Rating: '), `${d.rating.rating}/5 Stars` + (d.rating.feedback ? ` — "${d.rating.feedback}"` : '')) : null
+        );
+
+        body.append(
+          headerBadges,
+          info,
+          UI.createElement('h4', { style: 'margin-bottom:0.35rem;font-size:0.95rem;' }, 'Photos'),
+          MaintUI.renderAttachments(d.attachments),
+          UI.createElement('h4', { style: 'margin:1rem 0 0.35rem;font-size:0.95rem;' }, 'Status Timeline'),
+          MaintUI.renderTimeline(d.history)
+        );
+
+        UI.openModal('detailModal');
+      }
+
+      async function cancelReq(id, code) {
+        const ok = await UI.showConfirm({
+          title: 'Cancel Request',
+          message: `Are you sure you want to cancel request ${code}?`,
+          confirmText: 'Yes, Cancel'
+        });
+        if (!ok) return;
+        const res = await fetch(`/api/student/maintenance/${id}/cancel`, { method: 'POST', credentials: 'same-origin' });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to cancel', 'error');
+        } else {
+          UI.showToast(`Request ${code} cancelled`, 'success');
+          await loadRequests(currentPage);
+        }
+      }
+
+      function openConfirmRate(id) {
+        document.getElementById('rateReqId').value = id;
+        document.getElementById('ratingFeedback').value = '';
+        document.getElementById('ratingValue').value = 5;
+        document.querySelectorAll('#starPicker .star-btn').forEach(b => b.classList.add('active'));
+        UI.openModal('confirmRateModal');
+      }
+
+      function openReopen(id) {
+        document.getElementById('reopenReqId').value = id;
+        document.getElementById('reopenReason').value = '';
+        UI.openModal('reopenModal');
+      }
+
+      document.getElementById('btnSubmitConfirmRate').addEventListener('click', async () => {
+        const id = document.getElementById('rateReqId').value;
+        const rating = parseInt(document.getElementById('ratingValue').value, 10);
+        const feedback = document.getElementById('ratingFeedback').value.trim();
+
+        const res = await fetch(`/api/student/maintenance/${id}/confirm-resolved`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ rating, feedback })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to confirm resolution', 'error');
+        } else {
+          UI.closeModal('confirmRateModal');
+          UI.showToast('Thank you! Request confirmed as Resolved.', 'success');
+          await loadRequests(currentPage);
+        }
+      });
+
+      document.getElementById('btnSubmitReopen').addEventListener('click', async () => {
+        const id = document.getElementById('reopenReqId').value;
+        const reason = document.getElementById('reopenReason').value.trim();
+        if (!reason) {
+          UI.showToast('Please enter a reason for reopening', 'error');
+          return;
+        }
+        const res = await fetch(`/api/student/maintenance/${id}/reopen`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to reopen request', 'error');
+        } else {
+          UI.closeModal('reopenModal');
+          UI.showToast('Request reopened and warden/worker notified.', 'info');
+          await loadRequests(currentPage);
+        }
+      });
+
+      document.getElementById('btnApplyFilter').addEventListener('click', () => loadRequests(0));
+      document.getElementById('btnResetFilter').addEventListener('click', () => {
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterCategory').value = '';
+        document.getElementById('filterFrom').value = '';
+        document.getElementById('filterTo').value = '';
+        loadRequests(0);
+      });
+
+      await loadRequests(0);
+    })();
+  </script>
+</body>
+</html>
+

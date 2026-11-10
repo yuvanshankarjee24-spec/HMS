@@ -20,21 +20,24 @@ public class AdminService {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final StaffProfileRepository staffProfileRepository;
+    private final WorkerProfileRepository workerProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
     private static final List<String> VALID_STAFF_ROLES = Arrays.asList(
-            "WARDEN", "SECURITY", "CLEANING_WORKER", "MAINTENANCE_STAFF", "MESS_STAFF", "VENDING_MANAGER"
+            "WARDEN", "SECURITY", "WORKER", "CLEANING_WORKER", "MAINTENANCE_STAFF", "MESS_STAFF", "VENDING_MANAGER"
     );
 
     public AdminService(UserRepository userRepository,
                         StudentRepository studentRepository,
                         StaffProfileRepository staffProfileRepository,
+                        WorkerProfileRepository workerProfileRepository,
                         PasswordEncoder passwordEncoder,
                         AuditService auditService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.staffProfileRepository = staffProfileRepository;
+        this.workerProfileRepository = workerProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
     }
@@ -134,6 +137,8 @@ public class AdminService {
             String name = u.getEmail();
             if ("STUDENT".equals(u.getRole())) {
                 name = studentRepository.findByUserId(u.getId()).map(Student::getFullName).orElse(u.getEmail());
+            } else if ("WORKER".equals(u.getRole())) {
+                name = workerProfileRepository.findByUserId(u.getId()).map(WorkerProfile::getFullName).orElse(u.getEmail());
             } else {
                 name = staffProfileRepository.findByUserId(u.getId()).map(StaffProfile::getFullName).orElse(u.getEmail());
             }

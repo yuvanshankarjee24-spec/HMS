@@ -52,6 +52,7 @@ const Auth = {
       'WARDEN': '/warden/dashboard.html',
       'ADMIN': '/admin/dashboard.html',
       'SECURITY': '/security/dashboard.html',
+      'WORKER': '/worker/dashboard.html',
       'CLEANING_WORKER': '/worker/dashboard.html',
       'MAINTENANCE_STAFF': '/maintenance/dashboard.html',
       'MESS_STAFF': '/mess/dashboard.html',

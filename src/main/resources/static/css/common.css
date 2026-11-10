@@ -941,3 +941,200 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 1.5rem;
 }
 
+
+/* Notifications Navbar Bell & Dropdown */
+.notif-wrapper {
+  position: relative;
+}
+
+.notif-bell-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-main);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.notif-bell-btn:hover {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.notif-badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  max-width: 90vw;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+  z-index: 120;
+  display: none;
+  overflow: hidden;
+}
+
+.notif-dropdown.open {
+  display: block;
+}
+
+.notif-header {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+}
+
+.notif-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+}
+
+.notif-item.unread {
+  background: #eff6ff;
+  border-left: 3px solid var(--primary);
+}
+
+.notif-item-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.2rem;
+}
+
+.notif-item-msg {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.notif-item-time {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-top: 0.3rem;
+}
+
+/* Maintenance Badges */
+.badge-maint-pending    { background: #fef3c7; color: #b45309; }
+.badge-maint-assigned   { background: #dbeafe; color: #1d4ed8; }
+.badge-maint-in_progress { background: #e0e7ff; color: #4338ca; }
+.badge-maint-completed  { background: #dcfce7; color: #15803d; }
+.badge-maint-resolved   { background: #d1fae5; color: #065f46; }
+.badge-maint-rejected   { background: #fee2e2; color: #b91c1c; }
+.badge-maint-cancelled  { background: #f1f5f9; color: #475569; }
+.badge-maint-reopened   { background: #ffedd5; color: #c2410c; }
+.badge-maint-on_hold    { background: #fae8ff; color: #86198f; }
+
+.badge-prio-low    { background: #f1f5f9; color: #475569; }
+.badge-prio-medium { background: #e0f2fe; color: #0369a1; }
+.badge-prio-high   { background: #ffedd5; color: #c2410c; }
+.badge-prio-urgent { background: #fee2e2; color: #dc2626; font-weight: 800; }
+
+/* Maintenance Timeline & Attachments */
+.maint-timeline {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  border-left: 2px solid var(--border-light);
+}
+
+.maint-timeline-item {
+  position: relative;
+  margin-bottom: 1rem;
+  padding-bottom: 0.25rem;
+}
+
+.maint-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.85rem;
+  top: 0.25rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 2px var(--primary-subtle);
+}
+
+.photo-thumb-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.photo-thumb {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.photo-thumb:hover {
+  transform: scale(1.04);
+}
+
+.star-rating-picker {
+  display: inline-flex;
+  gap: 0.35rem;
+  font-size: 1.75rem;
+  cursor: pointer;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  cursor: pointer;
+  color: #cbd5e1;
+  padding: 0;
+  line-height: 1;
+}
+
+.star-btn.active {
+  color: #f59e0b;
+}

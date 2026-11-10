@@ -3,8 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Housekeeping - Smart Hostel</title>
+  <title>Worker Task Portal - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
   <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .mini-stat {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+    }
+    .mini-stat-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .mini-stat-val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 0.25rem;
+    }
+  </style>
 </head>
 <body>
   <div id="app-layout" class="app-container">
@@ -12,49 +39,318 @@
       <div class="page-body">
         <div class="welcome-card">
           <div class="welcome-text">
-            <h1 id="welcomeUser">Housekeeping & Sanitization Portal</h1>
-            <p>Daily room sanitization schedules, corridor cleaning checklists, and waste management.</p>
+            <h1 id="welcomeUser">Worker Task Desk</h1>
+            <p>View assigned hostel maintenance tasks, update progress, and upload completion photos.</p>
           </div>
           <div>
-            <span class="status-badge badge-active">On Shift</span>
+            <span class="status-badge badge-active">On Duty</span>
+          </div>
+        </div>
+
+        <div class="stats-grid-4">
+          <div class="mini-stat" style="border-left: 4px solid #3b82f6;">
+            <div class="mini-stat-label">Assigned Tasks</div>
+            <div class="mini-stat-val" id="statAssigned">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #6366f1;">
+            <div class="mini-stat-label">In Progress</div>
+            <div class="mini-stat-val" id="statInProgress">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #10b981;">
+            <div class="mini-stat-label">Completed Today</div>
+            <div class="mini-stat-val" id="statCompletedToday">0</div>
+          </div>
+          <div class="mini-stat" style="border-left: 4px solid #f59e0b;">
+            <div class="mini-stat-label">Average Rating</div>
+            <div class="mini-stat-val" id="statAvgRating">N/A</div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Housekeeping Operations</h2>
+          <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+            <h2 class="card-title">My Assigned Maintenance Tasks</h2>
+            <select id="statusFilter" class="form-control" style="width: 190px;">
+              <option value="">All My Tasks</option>
+              <option value="ASSIGNED">Assigned</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="ON_HOLD">On Hold (Materials)</option>
+              <option value="REOPENED">Reopened</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="RESOLVED">Resolved</option>
+            </select>
           </div>
-          <div class="coming-soon-grid">
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              </div>
-              <h3>Room Cleaning Queue</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">Floor-by-floor cleaning assignments</p>
-              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
-            </div>
-            <div class="coming-soon-card">
-              <div class="coming-soon-icon">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-              </div>
-              <h3>Student Rating & Feedback</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">Hygiene and cleanliness scores per wing</p>
-              <span class="coming-soon-badge">Coming soon (Phase 2)</span>
-            </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Location</th>
+                  <th>Issue</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tasksBody">
+                <tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading tasks...</td></tr>
+              </tbody>
+            </table>
           </div>
+          <div id="paginationBar" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0 0; flex-wrap: wrap; gap: 0.75rem;"></div>
         </div>
       </div>
     </main>
   </div>
 
+  <!-- Task Detail Modal -->
+  <div class="modal-overlay" id="taskDetailModal">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="taskModalTitle">Task Detail</h3>
+        <button class="modal-close" onclick="UI.closeModal('taskDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="taskModalBody"></div>
+      <div class="modal-footer" id="taskModalFooter">
+        <button class="btn btn-secondary" onclick="UI.closeModal('taskDetailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete Work Modal -->
+  <div class="modal-overlay" id="completeModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Mark Work Completed</h3>
+        <button class="modal-close" onclick="UI.closeModal('completeModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="completeReqId">
+        <div class="form-group">
+          <label class="form-label" for="completeRemarks">Completion Remarks (Optional)</label>
+          <textarea id="completeRemarks" class="form-control" rows="3" maxlength="500" placeholder="Describe what was fixed..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="afterPhotoInput">Upload "After Work" Photo (Optional, JPG/PNG/WebP &le; 2MB)</label>
+          <input type="file" id="afterPhotoInput" class="form-control" accept="image/jpeg,image/png,image/webp">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('completeModal')">Cancel</button>
+        <button class="btn btn-success" id="btnSubmitComplete">Complete Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Need Materials Modal -->
+  <div class="modal-overlay" id="materialsModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Unable to Complete / Need Materials</h3>
+        <button class="modal-close" onclick="UI.closeModal('materialsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="materialsReqId">
+        <div class="form-group">
+          <label class="form-label" for="materialsReason">Mandatory Reason / Materials Needed *</label>
+          <textarea id="materialsReason" class="form-control" rows="3" maxlength="500" required placeholder="e.g. Need new 2.5uF fan capacitor from store..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('materialsModal')">Cancel</button>
+        <button class="btn btn-danger" id="btnSubmitMaterials">Send to Warden</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=2"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
-      const user = await Auth.requireAuth(['CLEANING_WORKER', 'ADMIN']);
+      const user = await Auth.requireAuth(['WORKER', 'CLEANING_WORKER', 'ADMIN']);
       if (!user) return;
       document.getElementById('welcomeUser').textContent = `Welcome, ${user.name}`;
       UI.renderLayout(user, 'dashboard');
+
+      let currentPage = 0;
+
+      async function loadStats() {
+        const res = await fetch('/api/worker/maintenance/stats', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('statAssigned').textContent = s.assigned;
+        document.getElementById('statInProgress').textContent = s.inProgress;
+        document.getElementById('statCompletedToday').textContent = s.completedToday;
+        document.getElementById('statAvgRating').textContent = s.averageRating ? `${s.averageRating} / 5` : 'N/A';
+      }
+
+      async function loadTasks(page = 0) {
+        currentPage = page;
+        const params = new URLSearchParams({ page, size: 10 });
+        const st = document.getElementById('statusFilter').value;
+        if (st) params.append('status', st);
+
+        const res = await fetch(`/api/worker/maintenance?${params.toString()}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('tasksBody');
+        tbody.innerHTML = '';
+        if (!res.ok) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 7, style: 'text-align:center;color:var(--text-muted);' }, 'No worker tasks available for this role.')));
+          return;
+        }
+        const pageData = await res.json();
+        const list = pageData.content || [];
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 7, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No assigned tasks found.')));
+        } else {
+          list.forEach(r => {
+            const actionCell = UI.createElement('td', { dataset: { label: 'Actions' } });
+            const wrap = UI.createElement('div', { style: 'display:flex;gap:0.35rem;flex-wrap:wrap;' });
+            wrap.appendChild(UI.createElement('button', {
+              className: 'btn btn-secondary btn-sm',
+              onclick: () => openTaskDetail(r.id)
+            }, 'Details'));
+
+            if (['ASSIGNED', 'REOPENED', 'ON_HOLD'].includes(r.status)) {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-primary btn-sm',
+                onclick: () => startTask(r.id, r.requestCode)
+              }, 'Start Work'));
+            }
+            if (r.status === 'IN_PROGRESS') {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-success btn-sm',
+                onclick: () => openCompleteModal(r.id)
+              }, 'Complete'));
+            }
+            if (['ASSIGNED', 'IN_PROGRESS', 'REOPENED'].includes(r.status)) {
+              wrap.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: () => openMaterialsModal(r.id)
+              }, 'Need Materials'));
+            }
+            actionCell.appendChild(wrap);
+
+            const tr = UI.createElement('tr', {},
+              UI.createElement('td', { dataset: { label: 'Request ID' } }, UI.createElement('strong', {}, r.requestCode)),
+              UI.createElement('td', { dataset: { label: 'Location' } }, `${r.hostelBlock} / Room ${r.roomNumber}`),
+              UI.createElement('td', { dataset: { label: 'Issue' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, r.title),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, UI.categoryLabel(r.category))
+              ),
+              UI.createElement('td', { dataset: { label: 'Priority' } }, UI.priorityBadge(r.priority)),
+              UI.createElement('td', { dataset: { label: 'Due Date' } }, UI.formatDate(r.expectedCompletionDate)),
+              UI.createElement('td', { dataset: { label: 'Status' } }, UI.statusBadge(r.status)),
+              actionCell
+            );
+            tbody.appendChild(tr);
+          });
+        }
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadTasks(p));
+      }
+
+      async function openTaskDetail(id) {
+        const res = await fetch(`/api/worker/maintenance/${id}`, { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('taskModalTitle').textContent = `${d.requestCode} — ${d.title}`;
+        const body = document.getElementById('taskModalBody');
+        body.innerHTML = '';
+
+        const info = UI.createElement('div', { style: 'background:var(--card-bg);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-size:0.9rem;' },
+          UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Location: '), `${d.hostelBlock}, Room ${d.roomNumber}`),
+          UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Student: '), `${d.studentName} (${d.studentPhone})`),
+          UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Description: '), d.description),
+          d.preferredTimeSlot ? UI.createElement('p', { style: 'margin-bottom:0.35rem;' }, UI.createElement('strong', {}, 'Preferred Visit Slot: '), d.preferredTimeSlot) : null,
+          d.wardenInstruction ? UI.createElement('p', { style: 'margin-bottom:0.35rem;color:#1d4ed8;' }, UI.createElement('strong', {}, 'Warden Instructions: '), d.wardenInstruction) : null,
+          d.reopenReason ? UI.createElement('p', { style: 'margin-bottom:0;color:#c2410c;' }, UI.createElement('strong', {}, 'Reopen Reason: '), d.reopenReason) : null
+        );
+
+        body.append(
+          UI.createElement('div', { style: 'display:flex;gap:0.5rem;margin-bottom:1rem;' }, UI.statusBadge(d.status), UI.priorityBadge(d.priority)),
+          info,
+          UI.createElement('h4', { style: 'margin-bottom:0.35rem;font-size:0.95rem;' }, 'Photos'),
+          MaintUI.renderAttachments(d.attachments),
+          UI.createElement('h4', { style: 'margin:1rem 0 0.35rem;font-size:0.95rem;' }, 'History'),
+          MaintUI.renderTimeline(d.history)
+        );
+        UI.openModal('taskDetailModal');
+      }
+
+      async function startTask(id, code) {
+        const res = await fetch(`/api/worker/maintenance/${id}/start`, { method: 'POST', credentials: 'same-origin' });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Could not start work', 'error');
+        } else {
+          UI.showToast(`Started work on ${code}`, 'success');
+          await Promise.all([loadStats(), loadTasks(currentPage)]);
+        }
+      }
+
+      function openCompleteModal(id) {
+        document.getElementById('completeReqId').value = id;
+        document.getElementById('completeRemarks').value = '';
+        document.getElementById('afterPhotoInput').value = '';
+        UI.openModal('completeModal');
+      }
+
+      document.getElementById('btnSubmitComplete').addEventListener('click', async () => {
+        const id = document.getElementById('completeReqId').value;
+        const remarks = document.getElementById('completeRemarks').value.trim();
+        const file = document.getElementById('afterPhotoInput').files[0];
+
+        const fd = new FormData();
+        if (remarks) fd.append('remarks', remarks);
+        if (file) fd.append('afterPhoto', file);
+
+        const res = await fetch(`/api/worker/maintenance/${id}/complete`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to complete work', 'error');
+        } else {
+          UI.closeModal('completeModal');
+          UI.showToast('Task marked as Completed! Student & Warden notified.', 'success');
+          await Promise.all([loadStats(), loadTasks(currentPage)]);
+        }
+      });
+
+      function openMaterialsModal(id) {
+        document.getElementById('materialsReqId').value = id;
+        document.getElementById('materialsReason').value = '';
+        UI.openModal('materialsModal');
+      }
+
+      document.getElementById('btnSubmitMaterials').addEventListener('click', async () => {
+        const id = document.getElementById('materialsReqId').value;
+        const reason = document.getElementById('materialsReason').value.trim();
+        if (!reason) {
+          UI.showToast('Reason / required materials note is required', 'error');
+          return;
+        }
+        const res = await fetch(`/api/worker/maintenance/${id}/need-materials`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to update status', 'error');
+        } else {
+          UI.closeModal('materialsModal');
+          UI.showToast('Marked On Hold — Warden notified.', 'info');
+          await Promise.all([loadStats(), loadTasks(currentPage)]);
+        }
+      });
+
+      document.getElementById('statusFilter').addEventListener('change', () => loadTasks(0));
+
+      await Promise.all([loadStats(), loadTasks(0)]);
     })();
   </script>
 </body>
