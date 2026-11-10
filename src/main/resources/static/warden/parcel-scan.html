@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan QR / Deliver Parcel - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Scan QR &amp; Deliver Parcel</h1>
+            <p class="page-subtitle">Scan student's pickup QR code via camera or enter Parcel ID / 6-digit pickup code manually.</p>
+          </div>
+          <div>
+            <a href="/warden/parcels.html" class="btn btn-secondary btn-sm">Back to Parcel Register</a>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+            <h2 class="card-title">Camera Scanner &amp; Manual Lookup</h2>
+            <div style="display:flex;gap:0.5rem;">
+              <button type="button" class="btn btn-primary btn-sm" id="btnStartCam">Open Camera Scanner</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnStopCam" style="display:none;">Stop Camera</button>
+            </div>
+          </div>
+
+          <div id="qrReaderWrap" style="max-width:400px;margin:0 auto 1rem;display:none;">
+            <div id="qrReader" style="width:100%;"></div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <input type="text" id="manualCodeInput" class="form-control" style="flex:1;min-width:240px;" placeholder="Enter QR Token, Parcel ID (PRC-2026-0001), or 6-digit Pickup Code...">
+            <button type="button" class="btn btn-primary" id="btnVerifyCode">Verify Parcel</button>
+          </div>
+        </div>
+
+        <div id="scanResultBox" style="display:none;" class="card"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'parcel-scan');
+
+      let html5Qr = null;
+
+      document.getElementById('btnStartCam').addEventListener('click', async () => {
+        if (typeof Html5Qrcode === 'undefined') {
+          UI.showToast('Camera library unavailable; use manual code input.', 'info');
+          return;
+        }
+        document.getElementById('qrReaderWrap').style.display = 'block';
+        document.getElementById('btnStartCam').style.display = 'none';
+        document.getElementById('btnStopCam').style.display = 'inline-flex';
+        html5Qr = new Html5Qrcode('qrReader');
+        try {
+          await html5Qr.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 240, height: 240 } },
+            (decodedText) => {
+              document.getElementById('manualCodeInput').value = decodedText;
+              stopCamera();
+              verifyToken(decodedText);
+            }
+          );
+        } catch (err) {
+          UI.showToast('Camera permission denied or unavailable on this device.', 'error');
+          stopCamera();
+        }
+      });
+
+      async function stopCamera() {
+        if (html5Qr) {
+          try { await html5Qr.stop(); } catch (e) {}
+          html5Qr = null;
+        }
+        document.getElementById('qrReaderWrap').style.display = 'none';
+        document.getElementById('btnStartCam').style.display = 'inline-flex';
+        document.getElementById('btnStopCam').style.display = 'none';
+      }
+
+      document.getElementById('btnStopCam').addEventListener('click', stopCamera);
+
+      async function verifyToken(codeArg) {
+        const code = (codeArg || document.getElementById('manualCodeInput').value).trim();
+        if (!code) {
+          UI.showToast('Enter QR token, Parcel ID, or 6-digit pickup code', 'error');
+          return;
+        }
+        const res = await fetch(`/api/warden/parcels/verify-qr?tokenOrCode=${encodeURIComponent(code)}`, { credentials: 'same-origin' });
+        const data = await res.json();
+        const box = document.getElementById('scanResultBox');
+        box.innerHTML = '';
+        box.style.display = 'block';
+
+        if (!res.ok || !data.valid) {
+          box.appendChild(UI.createElement('div', { className: 'lock-alert-banner' },
+            UI.createElement('span', { style: 'font-size:1.75rem;' }, '❌'),
+            UI.createElement('div', {},
+              UI.createElement('strong', { style: 'font-size:1.05rem;' }, 'VERIFICATION FAILED'),
+              UI.createElement('div', { style: 'margin-top:0.25rem;' }, data.errorMessage || data.message || 'Invalid QR or parcel cannot be delivered')
+            )
+          ));
+          if (!data.parcel) return;
+        } else {
+          box.appendChild(UI.createElement('div', {
+            style: 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:0.9rem 1.25rem;border-radius:var(--radius-md);margin-bottom:1.25rem;font-weight:700;'
+          }, 'Valid Parcel Verified — Ready for Delivery Confirmation'));
+        }
+
+        const p = data.parcel;
+        const details = UI.createElement('div', {
+          style: 'background:var(--card-bg);padding:1.25rem;border-radius:var(--radius-md);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-bottom:1.25rem;font-size:0.92rem;'
+        },
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Parcel ID: '), p.parcelCode),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Student: '), `${p.studentName} (${p.studentRegNo})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Room / Block: '), `Room ${p.studentRoom} (${p.hostelBlock})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Courier & Type: '), `${p.courierName} (${p.parcelType})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Shelf: '), p.storageLocation || '—'),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Description: '), p.description || '—'),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'COD Status: '), p.cod ? `Rs. ${p.codAmount} (${p.codPaymentPending ? 'Pending' : 'Collected'})` : 'Prepaid'),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Current Status: '), p.status)
+        );
+        box.appendChild(details);
+
+        if (p.attachments && p.attachments.length > 0) {
+          const grid = UI.createElement('div', { className: 'photo-thumb-grid', style: 'margin-bottom:1rem;' });
+          p.attachments.forEach(a => grid.appendChild(UI.createElement('img', { src: a.url, className: 'photo-thumb' })));
+          box.appendChild(grid);
+        }
+
+        if (data.valid) {
+          const form = UI.createElement('div', { style: 'display:flex;flex-direction:column;gap:0.85rem;' });
+          let chkCod = null;
+          if (p.cod && p.codPaymentPending) {
+            chkCod = UI.createElement('input', { type: 'checkbox', id: 'chkCodPaid' });
+            form.appendChild(UI.createElement('label', {
+              style: 'background:#fef2f2;border:1px solid #fecaca;padding:0.75rem 1rem;border-radius:var(--radius-md);font-weight:700;color:#b91c1c;cursor:pointer;display:flex;align-items:center;gap:0.5rem;'
+            }, chkCod, ` Confirm COD Payment Collected: Rs. ${p.codAmount}`));
+          }
+
+          const chkFriend = UI.createElement('input', { type: 'checkbox', id: 'chkFriend' });
+          const friendWrap = UI.createElement('div', { style: 'display:none;grid-template-columns:1fr 1fr;gap:0.75rem;' });
+          const friendName = UI.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Receiver (Friend) Name *' });
+          const friendReason = UI.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Reason for friend handover *' });
+          friendWrap.append(friendName, friendReason);
+          chkFriend.addEventListener('change', () => {
+            friendWrap.style.display = chkFriend.checked ? 'grid' : 'none';
+          });
+
+          const remarksInput = UI.createElement('input', { type: 'text', className: 'form-control', placeholder: 'Delivery remarks (optional)' });
+          const btnDeliver = UI.createElement('button', {
+            type: 'button',
+            className: 'btn btn-success',
+            onclick: async () => {
+              if (chkCod && !chkCod.checked) {
+                UI.showToast('Please confirm COD payment was collected before delivering', 'error');
+                return;
+              }
+              const resDel = await fetch('/api/warden/parcels/deliver', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                  parcelId: p.id,
+                  paymentCollected: chkCod ? chkCod.checked : true,
+                  remarks: remarksInput.value.trim(),
+                  handoverToName: chkFriend.checked ? friendName.value.trim() : null,
+                  handoverReason: chkFriend.checked ? friendReason.value.trim() : null
+                })
+              });
+              const delData = await resDel.json();
+              if (!resDel.ok) {
+                UI.showToast(delData.message || 'Delivery confirmation failed', 'error');
+              } else {
+                UI.showToast(`Parcel ${delData.parcelCode} delivered & student notified!`, 'success');
+                await verifyToken(p.parcelCode);
+              }
+            }
+          }, 'Confirm Delivery');
+
+          form.append(
+            UI.createElement('label', { style: 'font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;' }, chkFriend, ' Handing over on behalf of student (Friend)'),
+            friendWrap,
+            remarksInput,
+            btnDeliver
+          );
+          box.appendChild(form);
+        }
+      }
+
+      document.getElementById('btnVerifyCode').addEventListener('click', () => verifyToken());
+      document.getElementById('manualCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyToken(); });
+
+      const urlCode = new URLSearchParams(window.location.search).get('code');
+      if (urlCode) {
+        document.getElementById('manualCodeInput').value = urlCode;
+        await verifyToken(urlCode);
+      }
+    })();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Circulars - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">College-Wide Circulars &amp; Events</h1>
+            <p class="page-subtitle">View all hostel circulars, broadcast college-wide notices, and audit student acknowledgements.</p>
+          </div>
+          <div>
+            <a href="/warden/circulars.html" class="btn btn-primary btn-sm">Manage &amp; Publish Circulars</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr><th>Code</th><th>Title</th><th>Type</th><th>Priority</th><th>Audience</th><th>Read / Ack</th><th>Status</th></tr>
+              </thead>
+              <tbody id="adminCircBody"></tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'admin-circulars');
+
+      async function loadAll(page = 0) {
+        const res = await fetch(`/api/admin/circulars?page=${page}&size=10`, { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const pageData = await res.json();
+        const tbody = document.getElementById('adminCircBody');
+        tbody.innerHTML = '';
+        (pageData.content || []).forEach(c => {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, c.circularCode)),
+            UI.createElement('td', {}, c.title),
+            UI.createElement('td', {}, c.type),
+            UI.createElement('td', {}, c.priority),
+            UI.createElement('td', {}, `${c.targetScope} (${c.hostelBlock || 'ALL'})`),
+            UI.createElement('td', {}, `${c.readCount}/${c.totalTargetedCount} read · ${c.acknowledgedCount} ack`),
+            UI.createElement('td', {}, c.status)
+          ));
+        });
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadAll(p));
+      }
+      await loadAll(0);
+    })();
+  </script>
+</body>
+</html>
+

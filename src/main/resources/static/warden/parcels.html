@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parcel Register - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-5 { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .mini-stat { background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1rem 1.25rem; }
+    .mini-stat-label { font-size:0.78rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); }
+    .mini-stat-val { font-size:1.65rem; font-weight:800; margin-top:0.25rem; }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Hostel Parcel Desk</h1>
+            <p class="page-subtitle">Register incoming student parcels, generate pickup QR codes, track COD items, and export logs.</p>
+          </div>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <a href="/api/warden/parcels/export" class="btn btn-secondary btn-sm">Export CSV</a>
+            <a href="/warden/parcel-scan.html" class="btn btn-success btn-sm">Scan QR / Deliver</a>
+            <button type="button" class="btn btn-primary btn-sm" id="btnOpenAddParcel">+ Add Parcel</button>
+          </div>
+        </div>
+
+        <div class="stats-grid-5">
+          <div class="mini-stat" style="border-left:4px solid #0284c7;">
+            <div class="mini-stat-label">Received Today</div>
+            <div class="mini-stat-val" id="pRecToday">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #f59e0b;">
+            <div class="mini-stat-label">Waiting Pickup</div>
+            <div class="mini-stat-val" style="color:#b45309;" id="pWaiting">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #16a34a;">
+            <div class="mini-stat-label">Delivered Today</div>
+            <div class="mini-stat-val" style="color:#15803d;" id="pDelToday">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #dc2626;">
+            <div class="mini-stat-label">Long-Pending (&gt;7d)</div>
+            <div class="mini-stat-val" style="color:#b91c1c;" id="pLongPending">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #7c3aed;">
+            <div class="mini-stat-label">COD Pending</div>
+            <div class="mini-stat-val" id="pCodPending">0</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:1.25rem;margin-bottom:1.25rem;">
+          <div style="display:flex;gap:0.65rem;flex-wrap:wrap;align-items:end;">
+            <div style="flex:1;min-width:200px;">
+              <label class="form-label">Search (Parcel ID / Student / Courier)</label>
+              <input type="text" id="filterQuery" class="form-control" placeholder="PRC-2026, REG202609, Amazon...">
+            </div>
+            <div>
+              <label class="form-label">Status</label>
+              <select id="filterStatus" class="form-control" style="width:170px;">
+                <option value="">All Statuses</option>
+                <option value="NOTIFIED">Waiting for Pickup</option>
+                <option value="RECEIVED">Received</option>
+                <option value="DELIVERED">Delivered</option>
+                <option value="RETURNED_TO_SENDER">Returned to Sender</option>
+                <option value="UNCLAIMED">Unclaimed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Courier</label>
+              <input type="text" id="filterCourier" class="form-control" style="width:130px;" placeholder="Amazon...">
+            </div>
+            <div>
+              <label class="form-label">From Date</label>
+              <input type="date" id="filterFrom" class="form-control" style="width:145px;">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnFilter">Search</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnLongPendingFilter">Long-Pending</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Parcel ID</th>
+                  <th>Student &amp; Room</th>
+                  <th>Courier &amp; Type</th>
+                  <th>COD</th>
+                  <th>Shelf</th>
+                  <th>Received</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="parcelsBody">
+                <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading parcels...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;flex-wrap:wrap;gap:0.75rem;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Parcel Modal -->
+  <div class="modal-overlay" id="addParcelModal">
+    <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Register Arrived Parcel</h3>
+        <button class="modal-close" onclick="UI.closeModal('addParcelModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addParcelForm">
+          <div class="form-group">
+            <label class="form-label">Find Student (Name / Roll No / Room) *</label>
+            <div style="display:flex;gap:0.5rem;margin-bottom:0.4rem;">
+              <input type="text" id="studentSearchBox" class="form-control" placeholder="Type name, roll no, or room to filter...">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnFindStudent">Find</button>
+            </div>
+            <select id="studentSelect" class="form-control" required></select>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Courier / Sender *</label>
+              <input type="text" id="pCourier" class="form-control" list="courierPresets" required placeholder="e.g. Amazon, Flipkart">
+              <datalist id="courierPresets">
+                <option value="Amazon">
+                <option value="Flipkart">
+                <option value="Myntra">
+                <option value="BlueDart">
+                <option value="Delhivery">
+                <option value="India Post">
+              </datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Parcel Type / Size *</label>
+              <select id="pType" class="form-control" required>
+                <option value="SMALL">Small</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="LARGE">Large</option>
+                <option value="FRAGILE">Fragile</option>
+                <option value="COD">Cash on Delivery (COD)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Tracking / AWB (Optional)</label>
+              <input type="text" id="pTracking" class="form-control" placeholder="e.g. AWB123456">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Storage Shelf (Optional)</label>
+              <input type="text" id="pShelf" class="form-control" placeholder="e.g. Shelf A-04">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="font-weight:700;cursor:pointer;">
+              <input type="checkbox" id="pIsCod"> Cash-on-Delivery (Payment Pending)
+            </label>
+            <input type="number" step="0.01" min="1" id="pCodAmount" class="form-control" style="margin-top:0.4rem;display:none;" placeholder="Enter COD Amount (Rs.)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description / Remarks (Optional)</label>
+            <input type="text" id="pDesc" class="form-control" maxlength="500" placeholder="e.g. Medium cardboard box">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Parcel Photo (Optional, JPG/PNG/WebP &le; 2MB)</label>
+            <input type="file" id="pPhoto" class="form-control" accept="image/jpeg,image/png,image/webp">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('addParcelModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitParcel">Register &amp; Notify Student</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'parcels');
+
+      let currentPage = 0;
+
+      document.getElementById('pIsCod').addEventListener('change', e => {
+        document.getElementById('pCodAmount').style.display = e.target.checked ? 'block' : 'none';
+      });
+      document.getElementById('pType').addEventListener('change', e => {
+        if (e.target.value === 'COD') {
+          document.getElementById('pIsCod').checked = true;
+          document.getElementById('pCodAmount').style.display = 'block';
+        }
+      });
+
+      async function loadStudents(q = '') {
+        const res = await fetch(`/api/warden/parcels/students?query=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
+        const sel = document.getElementById('studentSelect');
+        sel.innerHTML = '';
+        if (!res.ok) return;
+        const list = await res.json();
+        list.forEach(s => {
+          sel.appendChild(UI.createElement('option', { value: s.id }, `${s.fullName} (${s.registerNumber}) — Room ${s.roomNumber}`));
+        });
+      }
+
+      async function loadSummary() {
+        const res = await fetch('/api/warden/parcels/summary', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('pRecToday').textContent = s.receivedToday;
+        document.getElementById('pWaiting').textContent = s.waitingForPickup;
+        document.getElementById('pDelToday').textContent = s.deliveredToday;
+        document.getElementById('pLongPending').textContent = s.longPending;
+        document.getElementById('pCodPending').textContent = s.codPending;
+      }
+
+      async function loadParcels(page = 0) {
+        currentPage = page;
+        const params = new URLSearchParams({ page, size: 10 });
+        const q = document.getElementById('filterQuery').value.trim();
+        const st = document.getElementById('filterStatus').value;
+        const c = document.getElementById('filterCourier').value.trim();
+        const f = document.getElementById('filterFrom').value;
+        if (q) params.append('query', q);
+        if (st) params.append('status', st);
+        if (c) params.append('courier', c);
+        if (f) params.append('fromDate', f);
+
+        const res = await fetch(`/api/warden/parcels?${params.toString()}`, { credentials: 'same-origin' });
+        renderParcelRows(await res.json(), true);
+      }
+
+      function renderParcelRows(pageOrList, isPage) {
+        const tbody = document.getElementById('parcelsBody');
+        tbody.innerHTML = '';
+        const list = isPage ? (pageOrList.content || []) : pageOrList;
+        if (list.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 8, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No parcels found.')));
+        } else {
+          list.forEach(p => {
+            const act = UI.createElement('div', { style: 'display:flex;gap:0.35rem;flex-wrap:wrap;' });
+            if (p.status === 'RECEIVED' || p.status === 'NOTIFIED') {
+              act.appendChild(UI.createElement('a', {
+                href: `/warden/parcel-scan.html?code=${encodeURIComponent(p.parcelCode)}`,
+                className: 'btn btn-primary btn-sm'
+              }, 'Deliver'));
+              act.appendChild(UI.createElement('button', {
+                className: 'btn btn-secondary btn-sm',
+                onclick: () => markStatus(p.id, 'return-sender', 'Return to Sender', p.parcelCode)
+              }, 'Return'));
+              act.appendChild(UI.createElement('button', {
+                className: 'btn btn-danger btn-sm',
+                onclick: () => markStatus(p.id, 'unclaimed', 'Mark Unclaimed', p.parcelCode)
+              }, 'Unclaimed'));
+            }
+            tbody.appendChild(UI.createElement('tr', {},
+              UI.createElement('td', { dataset: { label: 'ID' } },
+                UI.createElement('strong', {}, p.parcelCode),
+                p.longPending ? UI.createElement('div', { style: 'font-size:0.72rem;color:#dc2626;font-weight:700;' }, `Long-pending (${p.daysWaiting}d)`) : null
+              ),
+              UI.createElement('td', { dataset: { label: 'Student' } },
+                UI.createElement('div', { style: 'font-weight:600;' }, p.studentName),
+                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, `${p.studentRegNo} · Room ${p.studentRoom}`)
+              ),
+              UI.createElement('td', { dataset: { label: 'Courier' } }, `${p.courierName} (${p.parcelType})`),
+              UI.createElement('td', { dataset: { label: 'COD' } }, p.cod ? `Rs. ${p.codAmount}` : 'Prepaid'),
+              UI.createElement('td', { dataset: { label: 'Shelf' } }, p.storageLocation || '—'),
+              UI.createElement('td', { dataset: { label: 'Received' }, style: 'font-size:0.8rem;' }, UI.formatDateTime(p.receivedAt)),
+              UI.createElement('td', { dataset: { label: 'Status' } }, UI.parcelStatusBadge(p.status)),
+              UI.createElement('td', { dataset: { label: 'Actions' } }, act)
+            ));
+          });
+        }
+        if (isPage) {
+          MaintUI.renderPagination(document.getElementById('paginationBar'), pageOrList, p => loadParcels(p));
+        } else {
+          document.getElementById('paginationBar').innerHTML = '';
+        }
+      }
+
+      async function markStatus(id, endpoint, label, code) {
+        const reason = prompt(`Enter mandatory reason to ${label} for ${code}:`);
+        if (!reason || !reason.trim()) return;
+        const res = await fetch(`/api/warden/parcels/${id}/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ reason: reason.trim() })
+        });
+        if (res.ok) {
+          UI.showToast(`Parcel ${code} updated.`, 'success');
+          await Promise.all([loadSummary(), loadParcels(currentPage)]);
+        }
+      }
+
+      document.getElementById('btnOpenAddParcel').addEventListener('click', async () => {
+        document.getElementById('addParcelForm').reset();
+        document.getElementById('pCodAmount').style.display = 'none';
+        await loadStudents('');
+        UI.openModal('addParcelModal');
+      });
+
+      document.getElementById('btnFindStudent').addEventListener('click', () => {
+        loadStudents(document.getElementById('studentSearchBox').value.trim());
+      });
+
+      document.getElementById('btnSubmitParcel').addEventListener('click', async () => {
+        const sid = document.getElementById('studentSelect').value;
+        const courier = document.getElementById('pCourier').value.trim();
+        if (!sid || !courier) {
+          UI.showToast('Student and courier name are required', 'error');
+          return;
+        }
+        const fd = new FormData();
+        fd.append('studentId', sid);
+        fd.append('courierName', courier);
+        fd.append('parcelType', document.getElementById('pType').value);
+        const trk = document.getElementById('pTracking').value.trim();
+        if (trk) fd.append('trackingNumber', trk);
+        const shelf = document.getElementById('pShelf').value.trim();
+        if (shelf) fd.append('storageLocation', shelf);
+        const desc = document.getElementById('pDesc').value.trim();
+        if (desc) fd.append('description', desc);
+        const isCod = document.getElementById('pIsCod').checked;
+        fd.append('cod', isCod ? 'true' : 'false');
+        if (isCod) {
+          fd.append('codAmount', document.getElementById('pCodAmount').value);
+        }
+        const photo = document.getElementById('pPhoto').files[0];
+        if (photo) fd.append('photo', photo);
+
+        const res = await fetch('/api/warden/parcels', {
+          method: 'POST', credentials: 'same-origin', body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to register parcel', 'error');
+        } else {
+          UI.closeModal('addParcelModal');
+          UI.showToast(`Registered ${data.parcelCode} & notified ${data.studentName}`, 'success');
+          await Promise.all([loadSummary(), loadParcels(0)]);
+        }
+      });
+
+      document.getElementById('btnFilter').addEventListener('click', () => loadParcels(0));
+      document.getElementById('btnLongPendingFilter').addEventListener('click', async () => {
+        const res = await fetch('/api/warden/parcels/long-pending', { credentials: 'same-origin' });
+        if (res.ok) renderParcelRows(await res.json(), false);
+      });
+
+      await Promise.all([loadSummary(), loadParcels(0)]);
+    })();
+  </script>
+</body>
+</html>
+

@@ -90,6 +90,7 @@
   <div id="app-layout" class="app-container">
     <main class="main-content">
       <div class="page-body">
+        <div id="circularBannerSlot"></div>
 
         <!-- Welcome Banner -->
         <div class="welcome-card">
@@ -1094,11 +1095,41 @@
       }
     }
 
+        async function loadCircularBanner() {
+      try {
+        const res = await fetch('/api/student/circulars/banner-summary', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const slot = document.getElementById('circularBannerSlot');
+        if (!slot) return;
+        slot.innerHTML = '';
+        const target = data.urgentBanner || data.importantBanner;
+        if (!target) return;
+        const isUrgent = target.priority === 'URGENT';
+        const banner = UI.createElement('div', {
+          className: isUrgent ? 'circular-urgent-banner' : 'circular-important-banner'
+        },
+          UI.createElement('div', {},
+            UI.createElement('div', { style: 'font-weight:800;font-size:0.95rem;' },
+              `${isUrgent ? 'URGENT NOTICE' : 'IMPORTANT CIRCULAR'}: ${target.title}`),
+            UI.createElement('div', { style: 'font-size:0.84rem;margin-top:0.2rem;' },
+              `${target.circularCode} - Published ${UI.formatDateTime(target.publishedAt)}`)
+          ),
+          UI.createElement('a', {
+            href: `/student/circulars.html?open=${target.id}`,
+            className: isUrgent ? 'btn btn-danger btn-sm' : 'btn btn-primary btn-sm'
+          }, 'Read & Acknowledge')
+        );
+        slot.appendChild(banner);
+      } catch (e) {}
+    }
+
     // Guard & Initialize
     (async () => {
       const user = await Auth.requireAuth(['STUDENT']);
       if (!user) return;
       UI.renderLayout(user, 'dashboard');
+      loadCircularBanner();
       loadStudentData();
       loadOutpasses();
       loadOutpassEligibility();

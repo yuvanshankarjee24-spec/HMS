@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Mess Reports - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .mini-stat { background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1rem 1.25rem; }
+    .mini-stat-label { font-size:0.78rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); }
+    .mini-stat-val { font-size:1.65rem; font-weight:800; margin-top:0.25rem; }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Cross-Hostel Mess Consumption &amp; Revenue Reports</h1>
+            <p class="page-subtitle">Track 30-day token volume, no-show expiration rate, revenue, and item-wise food demand.</p>
+          </div>
+          <div style="display:flex;gap:0.6rem;">
+            <a href="/warden/mess-menu.html" class="btn btn-secondary btn-sm">Manage Default Menu</a>
+            <a href="/warden/mess-scan.html" class="btn btn-secondary btn-sm">Open Scan Desk</a>
+          </div>
+        </div>
+
+        <div class="stats-grid-4">
+          <div class="mini-stat" style="border-left:4px solid #0284c7;"><div class="mini-stat-label">Tokens (30d)</div><div class="mini-stat-val" id="aTotal">0</div></div>
+          <div class="mini-stat" style="border-left:4px solid #16a34a;"><div class="mini-stat-label">Delivered</div><div class="mini-stat-val" id="aDel">0</div></div>
+          <div class="mini-stat" style="border-left:4px solid #dc2626;"><div class="mini-stat-label">No-Show Rate</div><div class="mini-stat-val" id="aNoShow">0%</div></div>
+          <div class="mini-stat" style="border-left:4px solid #059669;"><div class="mini-stat-label">Revenue (30d)</div><div class="mini-stat-val" id="aRev">Rs. 0</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Item-Wise Consumption</h2></div>
+          <div class="table-responsive">
+            <table class="data-table"><thead><tr><th>Food Item</th><th>Delivered Quantity</th></tr></thead><tbody id="consBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'admin-mess');
+
+      const res = await fetch('/api/admin/mess/reports', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const r = await res.json();
+      document.getElementById('aTotal').textContent = r.totalTokens30Days;
+      document.getElementById('aDel').textContent = r.deliveredCount;
+      document.getElementById('aNoShow').textContent = `${r.noShowRatePercentage}%`;
+      document.getElementById('aRev').textContent = `Rs. ${Number(r.totalRevenue30Days || 0).toFixed(2)}`;
+
+      const cb = document.getElementById('consBody');
+      const entries = Object.entries(r.itemConsumption || {});
+      if (entries.length === 0) {
+        cb.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 2, style: 'text-align:center;color:var(--text-muted);' }, 'No consumption data yet.')));
+      } else {
+        entries.forEach(([k, v]) => cb.appendChild(UI.createElement('tr', {}, UI.createElement('td', {}, k), UI.createElement('td', {}, String(v)))));
+      }
+    })();
+  </script>
+</body>
+</html>
+

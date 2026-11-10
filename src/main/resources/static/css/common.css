@@ -1198,3 +1198,115 @@ h1, h2, h3, h4, h5, h6 {
 .badge-da-pending        { background: #fef3c7; color: #b45309; }
 .badge-da-missed         { background: #fee2e2; color: #b91c1c; }
 .badge-da-on_outpass     { background: #ede9fe; color: #6d28d9; }
+
+/* Parcel Management Badges & Bright QR View */
+.badge-prc-received           { background: #e0f2fe; color: #0369a1; }
+.badge-prc-notified           { background: #fef3c7; color: #b45309; }
+.badge-prc-delivered          { background: #dcfce7; color: #15803d; }
+.badge-prc-returned_to_sender { background: #fee2e2; color: #b91c1c; }
+.badge-prc-cancelled          { background: #f1f5f9; color: #475569; }
+.badge-prc-unclaimed          { background: #fae8ff; color: #86198f; }
+
+.qr-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  z-index: 250;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.qr-fullscreen-overlay.active {
+  display: flex;
+}
+
+.qr-box-bright {
+  background: #ffffff;
+  border: 3px solid #0f172a;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-parcel-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-full);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* Circulars & Mess Badges */
+.circular-urgent-banner {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #dc2626;
+  border-radius: var(--radius-lg);
+  padding: 1.15rem 1.4rem;
+  margin-bottom: 1.25rem;
+  color: #991b1b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.circular-important-banner {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.35rem;
+  margin-bottom: 1.25rem;
+  color: #92400e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.badge-food-veg     { background: #dcfce7; color: #15803d; }
+.badge-food-egg     { background: #fef3c7; color: #b45309; }
+.badge-food-non_veg { background: #fee2e2; color: #b91c1c; }
+
+.badge-tkn-booked              { background: #e0f2fe; color: #0369a1; }
+.badge-tkn-qr_active           { background: #dcfce7; color: #15803d; font-weight: 800; }
+.badge-tkn-delivered           { background: #d1fae5; color: #065f46; }
+.badge-tkn-partially_delivered { background: #ffedd5; color: #c2410c; }
+.badge-tkn-cancelled           { background: #f1f5f9; color: #475569; }
+.badge-tkn-expired             { background: #fee2e2; color: #b91c1c; }
+
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #ffffff;
+}
+.qty-stepper button {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: var(--card-bg);
+  font-weight: 800;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.qty-stepper span {
+  min-width: 36px;
+  text-align: center;
+  font-weight: 700;
+}

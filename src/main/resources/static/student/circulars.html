@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circulars &amp; Events - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .circ-card {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    .circ-card:hover { border-color: var(--primary); }
+    .circ-card.unread { border-left: 4px solid var(--primary); background: #f8fbff; }
+    .circ-card.urgent { border-left: 4px solid #dc2626; background: #fffafa; }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Circulars, Rules &amp; Hostel Events</h1>
+            <p class="page-subtitle">Read hostel announcements, download attachments, acknowledge rules, and RSVP for upcoming events.</p>
+          </div>
+        </div>
+
+        <div id="urgentStickyArea"></div>
+
+        <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="display:flex;gap:0.65rem;flex-wrap:wrap;align-items:end;">
+            <div style="flex:1;min-width:200px;">
+              <label class="form-label">Search</label>
+              <input type="text" id="filterQuery" class="form-control" placeholder="Search title, circular ID, description...">
+            </div>
+            <div>
+              <label class="form-label">Type</label>
+              <select id="filterType" class="form-control" style="width:165px;">
+                <option value="">All Types</option>
+                <option value="CIRCULAR">Circular / Notice</option>
+                <option value="EVENT">Event</option>
+                <option value="REGULATION">Regulation / Rule</option>
+                <option value="EMERGENCY">Emergency / Urgent</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Status</label>
+              <select id="filterRead" class="form-control" style="width:140px;">
+                <option value="ALL">All</option>
+                <option value="UNREAD">Unread</option>
+                <option value="READ">Read</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">From Date</label>
+              <input type="date" id="filterFrom" class="form-control" style="width:145px;">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnFilter">Search</button>
+          </div>
+        </div>
+
+        <div id="circularsList"></div>
+        <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="circDetailModal">
+    <div class="modal-dialog" style="max-width:720px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="circModalTitle">Circular</h3>
+        <button class="modal-close" onclick="UI.closeModal('circDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="circModalBody"></div>
+      <div class="modal-footer" id="circModalFooter">
+        <button class="btn btn-secondary" onclick="UI.closeModal('circDetailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['STUDENT']);
+      if (!user) return;
+      UI.renderLayout(user, 'circulars');
+
+      let currentPage = 0;
+
+      async function loadBanner() {
+        const res = await fetch('/api/student/circulars/banner-summary', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const area = document.getElementById('urgentStickyArea');
+        area.innerHTML = '';
+        if (data.urgentBanner) {
+          const u = data.urgentBanner;
+          area.appendChild(UI.createElement('div', { className: 'circular-urgent-banner' },
+            UI.createElement('div', {},
+              UI.createElement('strong', {}, `🚨 URGENT UNREAD: ${u.title}`),
+              UI.createElement('div', { style: 'font-size:0.85rem;margin-top:0.2rem;' }, `${u.circularCode} — Click to open and acknowledge`)
+            ),
+            UI.createElement('button', { className: 'btn btn-danger btn-sm', onclick: () => openDetail(u.id) }, 'Open Now')
+          ));
+        }
+        UI.refreshCircularBadge();
+      }
+
+      async function loadCirculars(page = 0) {
+        currentPage = page;
+        const params = new URLSearchParams({ page, size: 10 });
+        const q = document.getElementById('filterQuery').value.trim();
+        const tp = document.getElementById('filterType').value;
+        const rf = document.getElementById('filterRead').value;
+        const fr = document.getElementById('filterFrom').value;
+        if (q) params.append('query', q);
+        if (tp) params.append('type', tp);
+        if (rf) params.append('readFilter', rf);
+        if (fr) params.append('fromDate', fr);
+
+        const res = await fetch(`/api/student/circulars?${params.toString()}`, { credentials: 'same-origin' });
+        const listEl = document.getElementById('circularsList');
+        listEl.innerHTML = '';
+        if (!res.ok) return;
+        const pageData = await res.json();
+        const items = pageData.content || [];
+
+        if (items.length === 0) {
+          listEl.appendChild(UI.createElement('div', { className: 'card', style: 'padding:2rem;text-align:center;color:var(--text-muted);' }, 'No circulars found.'));
+        } else {
+          items.forEach(c => {
+            const cls = `circ-card ${!c.read ? 'unread' : ''} ${c.priority === 'URGENT' ? 'urgent' : ''}`;
+            const card = UI.createElement('div', { className: cls, onclick: () => openDetail(c.id) },
+              UI.createElement('div', { style: 'flex:1;' },
+                UI.createElement('div', { style: 'display:flex;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.4rem;align-items:center;' },
+                  UI.createElement('strong', { style: 'font-size:0.84rem;color:var(--text-muted);' }, c.circularCode),
+                  UI.createElement('span', { className: `status-badge ${c.priority === 'URGENT' ? 'badge-prio-urgent' : (c.priority === 'IMPORTANT' ? 'badge-prio-high' : 'badge-prio-low')}` }, c.priority),
+                  UI.createElement('span', { className: 'status-badge', style: 'background:#f1f5f9;color:#334155;' }, c.type),
+                  c.updatedFlag ? UI.createElement('span', { className: 'status-badge badge-maint-assigned' }, `Updated v${c.version}`) : null,
+                  !c.read ? UI.createElement('span', { className: 'status-badge badge-maint-pending' }, 'Unread') : null,
+                  c.acknowledged ? UI.createElement('span', { className: 'status-badge badge-active' }, 'Acknowledged') : null
+                ),
+                UI.createElement('h3', { style: 'font-size:1.1rem;margin-bottom:0.35rem;' }, c.title),
+                UI.createElement('p', { style: 'font-size:0.88rem;color:var(--text-muted);margin:0;' },
+                  c.description.length > 160 ? c.description.slice(0, 160) + '...' : c.description)
+              ),
+              UI.createElement('div', { style: 'text-align:right;font-size:0.8rem;color:var(--text-light);' },
+                UI.createElement('div', {}, UI.formatDateTime(c.publishedAt || c.createdAt)),
+                c.eventDateTime ? UI.createElement('div', { style: 'color:var(--primary);font-weight:700;margin-top:0.25rem;' }, `Event: ${UI.formatDateTime(c.eventDateTime)}`) : null
+              )
+            );
+            listEl.appendChild(card);
+          });
+        }
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadCirculars(p));
+      }
+
+      async function openDetail(id) {
+        const res = await fetch(`/api/student/circulars/${id}`, { credentials: 'same-origin' });
+        if (!res.ok) {
+          UI.showToast('Unable to open circular', 'error');
+          return;
+        }
+        const c = await res.json();
+        document.getElementById('circModalTitle').textContent = `${c.circularCode} — ${c.title}`;
+        const body = document.getElementById('circModalBody');
+        body.innerHTML = '';
+
+        const meta = UI.createElement('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;' },
+          UI.createElement('span', { className: `status-badge ${c.priority === 'URGENT' ? 'badge-prio-urgent' : 'badge-prio-medium'}` }, c.priority),
+          UI.createElement('span', { className: 'status-badge', style: 'background:#f1f5f9;color:#334155;' }, c.type),
+          c.updatedFlag ? UI.createElement('span', { className: 'status-badge badge-maint-assigned' }, `Updated (v${c.version})`) : null
+        );
+        body.appendChild(meta);
+
+        if (c.type === 'EVENT' && c.eventDateTime) {
+          const evBox = UI.createElement('div', { style: 'background:#eff6ff;border:1px solid #bfdbfe;padding:0.9rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;' },
+            UI.createElement('div', {}, UI.createElement('strong', {}, 'Event Date & Time: '), UI.formatDateTime(c.eventDateTime)),
+            c.venue ? UI.createElement('div', { style: 'margin-top:0.25rem;' }, UI.createElement('strong', {}, 'Venue: '), c.venue) : null,
+            UI.createElement('div', { style: 'margin-top:0.65rem;display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;' },
+              UI.createElement('a', { href: `/api/student/circulars/${c.id}/calendar.ics`, className: 'btn btn-secondary btn-sm' }, 'Add to Calendar (.ics)'),
+              UI.createElement('button', {
+                className: `btn btn-sm ${c.myRsvpStatus === 'ATTENDING' ? 'btn-success' : 'btn-secondary'}`,
+                onclick: () => sendRsvp(c.id, 'ATTENDING')
+              }, `Attending (${c.attendingCount})`),
+              UI.createElement('button', {
+                className: `btn btn-sm ${c.myRsvpStatus === 'NOT_ATTENDING' ? 'btn-danger' : 'btn-secondary'}`,
+                onclick: () => sendRsvp(c.id, 'NOT_ATTENDING')
+              }, 'Not Attending')
+            )
+          );
+          body.appendChild(evBox);
+        }
+
+        body.appendChild(UI.createElement('div', { style: 'white-space:pre-wrap;font-size:0.94rem;line-height:1.55;margin-bottom:1rem;' }, c.description));
+
+        if (c.rulesAndRegulations) {
+          body.appendChild(UI.createElement('div', {
+            style: 'background:#fffbeb;border:1px solid #fde68a;padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;'
+          },
+            UI.createElement('div', { style: 'font-weight:800;color:#92400e;margin-bottom:0.35rem;' }, 'Rules & Regulations'),
+            UI.createElement('div', { style: 'white-space:pre-wrap;font-size:0.9rem;color:#78350f;' }, c.rulesAndRegulations)
+          ));
+        }
+
+        if (c.attachments && c.attachments.length > 0) {
+          const attList = UI.createElement('div', { style: 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;' });
+          c.attachments.forEach(a => {
+            attList.appendChild(UI.createElement('a', {
+              href: a.url, target: '_blank', className: 'btn btn-secondary btn-sm'
+            }, `📎 ${a.originalFilename}`));
+          });
+          body.append(UI.createElement('h4', { style: 'margin-bottom:0.35rem;' }, 'Attachments'), attList);
+        }
+
+        const footer = document.getElementById('circModalFooter');
+        footer.innerHTML = '';
+        if (c.requireAcknowledgement) {
+          if (c.acknowledged) {
+            footer.appendChild(UI.createElement('span', { className: 'status-badge badge-active' },
+              `Acknowledged on ${UI.formatDateTime(c.acknowledgedAt)}`));
+          } else {
+            footer.appendChild(UI.createElement('button', {
+              className: 'btn btn-success',
+              onclick: async () => {
+                const ackRes = await fetch(`/api/student/circulars/${c.id}/acknowledge`, { method: 'POST', credentials: 'same-origin' });
+                if (ackRes.ok) {
+                  UI.showToast('Circular acknowledged!', 'success');
+                  await openDetail(c.id);
+                  await Promise.all([loadBanner(), loadCirculars(currentPage)]);
+                }
+              }
+            }, 'I have read and agree (Acknowledge)'));
+          }
+        }
+        footer.appendChild(UI.createElement('button', { className: 'btn btn-secondary', onclick: () => UI.closeModal('circDetailModal') }, 'Close'));
+
+        UI.openModal('circDetailModal');
+        await Promise.all([loadBanner(), loadCirculars(currentPage)]);
+      }
+
+      async function sendRsvp(id, rsvpStatus) {
+        const res = await fetch(`/api/student/circulars/${id}/rsvp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ rsvpStatus })
+        });
+        if (res.ok) {
+          UI.showToast('Event RSVP updated!', 'success');
+          await openDetail(id);
+        }
+      }
+
+      document.getElementById('btnFilter').addEventListener('click', () => loadCirculars(0));
+      await Promise.all([loadBanner(), loadCirculars(0)]);
+
+      const openParam = new URLSearchParams(window.location.search).get('open');
+      if (openParam) await openDetail(openParam);
+    })();
+  </script>
+</body>
+</html>
+

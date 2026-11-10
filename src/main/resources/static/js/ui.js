@@ -205,6 +205,22 @@ const UI = {
     });
 
     const rightNav = this.createElement('div', { className: 'navbar-user' },
+      currentUser.role === 'STUDENT'
+        ? this.createElement('a', {
+            href: '/student/circulars.html',
+            className: 'nav-parcel-pill',
+            id: 'navCircularBadge',
+            style: 'display:none;background:#fee2e2;color:#b91c1c;border-color:#fca5a5;'
+          }, '📢 0 Unread')
+        : null,
+      currentUser.role === 'STUDENT'
+        ? this.createElement('a', {
+            href: '/student/my-parcels.html',
+            className: 'nav-parcel-pill',
+            id: 'navParcelBadge',
+            style: 'display:none;'
+          }, '📦 0 Parcels')
+        : null,
       notifWrapper,
       userBadge,
       logoutBtn
@@ -222,7 +238,11 @@ const UI = {
     const menuItemsByRole = {
       'STUDENT': [
         { key: 'dashboard', label: 'My Dashboard', href: '/student/dashboard.html' },
+        { key: 'circulars', label: 'Circulars & Events', href: '/student/circulars.html' },
+        { key: 'mess-booking', label: 'Mess Token Booking', href: '/student/mess-booking.html' },
+        { key: 'my-tokens', label: 'My Mess Tokens', href: '/student/my-tokens.html' },
         { key: 'attendance', label: 'Attendance', href: '/student/attendance.html' },
+        { key: 'my-parcels', label: 'My Parcels', href: '/student/my-parcels.html' },
         { key: 'booking', label: 'Online Room Booking', href: '/student/booking.html' },
         { key: 'outpasses', label: 'My Outpasses', href: '/student/outpasses.html' },
         { key: 'raise-request', label: 'Raise Request', href: '/student/raise-request.html' },
@@ -232,9 +252,14 @@ const UI = {
       ],
       'WARDEN': [
         { key: 'dashboard', label: 'Warden Overview', href: '/warden/dashboard.html' },
+        { key: 'circulars', label: 'Circulars & Events', href: '/warden/circulars.html' },
+        { key: 'mess-menu', label: 'Mess Menu', href: '/warden/mess-menu.html' },
+        { key: 'mess-scan', label: 'Scan Token / Serve', href: '/warden/mess-scan.html' },
         { key: 'digital-attendance', label: 'Digital Attendance', href: '/warden/digital-attendance.html' },
         { key: 'attendance', label: 'Manual Roll Call', href: '/warden/attendance.html' },
         { key: 'outpasses', label: 'Outpass Requests', href: '/warden/outpasses.html' },
+        { key: 'parcels', label: 'Parcels', href: '/warden/parcels.html' },
+        { key: 'parcel-scan', label: 'Scan QR / Deliver', href: '/warden/parcel-scan.html' },
         { key: 'maintenance', label: 'Maintenance Requests', href: '/warden/maintenance.html' },
         { key: 'workers', label: 'Manage Workers', href: '/warden/workers.html' },
         { key: 'whitelist', label: 'Online Allocation Whitelist', href: '/warden/whitelist.html' },
@@ -245,7 +270,10 @@ const UI = {
         { key: 'warden-overview', label: 'Hostel Overview', href: '/warden/dashboard.html' },
         { key: 'rooms', label: 'Room Management', href: '/warden/rooms.html' },
         { key: 'admin-dashboard', label: 'Admin Dashboard', href: '/admin/dashboard.html' },
+        { key: 'admin-circulars', label: 'Circulars & Events', href: '/admin/circulars.html' },
+        { key: 'admin-mess', label: 'Mess Reports', href: '/admin/mess.html' },
         { key: 'admin-attendance', label: 'Digital Attendance', href: '/admin/attendance.html' },
+        { key: 'admin-parcels', label: 'Parcels & Reports', href: '/admin/parcels.html' },
         { key: 'admin-maintenance', label: 'Maintenance & Reports', href: '/admin/maintenance.html' },
         { key: 'workers', label: 'Manage Workers', href: '/warden/workers.html' },
         { key: 'users', label: 'User Directory', href: '/admin/users.html' },
@@ -296,9 +324,41 @@ const UI = {
     appContainer.insertBefore(sidebar, appContainer.firstChild);
 
     this.refreshUnreadCount();
+    if (currentUser.role === 'STUDENT') {
+      this.refreshParcelBadge();
+      this.refreshCircularBadge();
+    }
     if (!this._notifPoller) {
       this._notifPoller = setInterval(() => this.refreshUnreadCount(), 30000);
     }
+  },
+
+  async refreshCircularBadge() {
+    try {
+      const res = await fetch('/api/student/circulars/banner-summary', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const pill = document.getElementById('navCircularBadge');
+      if (pill) {
+        const c = data.unreadCount || 0;
+        pill.textContent = `📢 ${c} Unread Circular${c === 1 ? '' : 's'}`;
+        pill.style.display = c > 0 ? 'inline-flex' : 'none';
+      }
+    } catch (e) {}
+  },
+
+  async refreshParcelBadge() {
+    try {
+      const res = await fetch('/api/student/parcels/waiting-count', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const pill = document.getElementById('navParcelBadge');
+      if (pill) {
+        const c = data.waitingCount || 0;
+        pill.textContent = `📦 ${c} Waiting Parcel${c === 1 ? '' : 's'}`;
+        pill.style.display = c > 0 ? 'inline-flex' : 'none';
+      }
+    } catch (e) {}
   },
 
   async refreshUnreadCount() {
@@ -419,6 +479,32 @@ const UI = {
       'LOCKED': 'Locked'
     };
     const cls = `status-badge badge-da-${(status || '').toLowerCase()}`;
+    return this.createElement('span', { className: cls }, labelMap[status] || status);
+  },
+
+  parcelStatusBadge(status) {
+    const labelMap = {
+      'RECEIVED': 'Received',
+      'NOTIFIED': 'Waiting for Pickup',
+      'DELIVERED': 'Delivered',
+      'RETURNED_TO_SENDER': 'Returned to Sender',
+      'CANCELLED': 'Cancelled',
+      'UNCLAIMED': 'Unclaimed'
+    };
+    const cls = `status-badge badge-prc-${(status || '').toLowerCase()}`;
+    return this.createElement('span', { className: cls }, labelMap[status] || status);
+  },
+
+  tokenStatusBadge(status) {
+    const labelMap = {
+      'BOOKED': 'Booked',
+      'QR_ACTIVE': 'QR Active',
+      'DELIVERED': 'Delivered',
+      'PARTIALLY_DELIVERED': 'Partially Delivered',
+      'CANCELLED': 'Cancelled',
+      'EXPIRED': 'Expired'
+    };
+    const cls = `status-badge badge-tkn-${(status || '').toLowerCase()}`;
     return this.createElement('span', { className: cls }, labelMap[status] || status);
   }
 };

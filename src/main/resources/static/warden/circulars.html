@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publish Circulars &amp; Events - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Circulars, Regulations &amp; Events</h1>
+            <p class="page-subtitle">Draft, schedule, and publish hostel notices; track student reads, acknowledgements, and event RSVPs.</p>
+          </div>
+          <div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnOpenCreate">+ Create Circular</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+            <h2 class="card-title">Published &amp; Draft Circulars</h2>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <input type="text" id="filterQuery" class="form-control" style="width:190px;" placeholder="Search title or code...">
+              <select id="filterStatus" class="form-control" style="width:140px;">
+                <option value="">All Statuses</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="SCHEDULED">Scheduled</option>
+                <option value="DRAFT">Draft</option>
+                <option value="ARCHIVED">Archived</option>
+              </select>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnFilter">Search</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Title &amp; Type</th>
+                  <th>Priority</th>
+                  <th>Audience</th>
+                  <th>Reads / Acks</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="circularsBody"></tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Circular Modal -->
+  <div class="modal-overlay" id="createCircularModal">
+    <div class="modal-dialog" style="max-width:720px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Circular / Event Notice</h3>
+        <button class="modal-close" onclick="UI.closeModal('createCircularModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="circularForm">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Type *</label>
+              <select id="cType" class="form-control" required>
+                <option value="CIRCULAR">Circular / Notice</option>
+                <option value="EVENT">Event</option>
+                <option value="REGULATION">Regulation / Rule</option>
+                <option value="EMERGENCY">Emergency / Urgent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Priority *</label>
+              <select id="cPriority" class="form-control" required>
+                <option value="NORMAL">Normal</option>
+                <option value="IMPORTANT">Important</option>
+                <option value="URGENT">Urgent (Red Highlight)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Title *</label>
+            <input type="text" id="cTitle" class="form-control" maxlength="200" required placeholder="e.g. Hostel Day Celebration &amp; Guidelines">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description *</label>
+            <textarea id="cDesc" class="form-control" rows="3" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Rules &amp; Regulations (Optional)</label>
+            <textarea id="cRules" class="form-control" rows="2" placeholder="List mandatory rules students must agree to..."></textarea>
+          </div>
+
+          <div id="eventFields" style="display:none;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Event Date &amp; Time</label>
+              <input type="datetime-local" id="cEventDt" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Venue</label>
+              <input type="text" id="cVenue" class="form-control" placeholder="e.g. Main Auditorium">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Target Audience *</label>
+              <select id="cScope" class="form-control">
+                <option value="BLOCK">Hostel / Block</option>
+                <option value="YEAR_DEPT">Year / Department</option>
+                <option value="ALL">All Hostels (Admin Only)</option>
+              </select>
+            </div>
+            <div class="form-group" id="blockGroup">
+              <label class="form-label">Hostel Block</label>
+              <input type="text" id="cBlock" class="form-control" value="Main Block" placeholder="Main Block / Floor 1">
+            </div>
+          </div>
+
+          <div id="yearDeptGroup" style="display:none;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <input type="text" id="cDept" class="form-control" placeholder="e.g. Computer Science & Engineering">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Study Year</label>
+              <input type="number" id="cYear" class="form-control" min="1" max="5">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Publish Mode</label>
+              <select id="cAction" class="form-control">
+                <option value="PUBLISH">Publish Now</option>
+                <option value="DRAFT">Save as Draft</option>
+                <option value="SCHEDULE">Schedule Later</option>
+              </select>
+            </div>
+            <div class="form-group" id="schedGroup" style="display:none;">
+              <label class="form-label">Scheduled Publish At</label>
+              <input type="datetime-local" id="cSchedAt" class="form-control">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Expiry Date/Time (Optional)</label>
+              <input type="datetime-local" id="cExpiresAt" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Attachments (Max 5 PDF/Images)</label>
+              <input type="file" id="cFiles" class="form-control" accept="application/pdf,image/jpeg,image/png,image/webp" multiple>
+            </div>
+          </div>
+
+          <label style="font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+            <input type="checkbox" id="cReqAck"> Require Student Acknowledgement ("I have read and agree")
+          </label>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="UI.closeModal('createCircularModal')">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitCircular">Save Circular</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracking Modal -->
+  <div class="modal-overlay" id="trackingModal">
+    <div class="modal-dialog" style="max-width:780px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="trackTitle">Read &amp; Acknowledgement Tracking</h3>
+        <button class="modal-close" onclick="UI.closeModal('trackingModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="trackBody"></div>
+      <div class="modal-footer" id="trackFooter"></div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['WARDEN', 'ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, user.role === 'ADMIN' ? 'admin-circulars' : 'circulars');
+
+      let currentPage = 0;
+
+      document.getElementById('cType').addEventListener('change', e => {
+        document.getElementById('eventFields').style.display = e.target.value === 'EVENT' ? 'grid' : 'none';
+      });
+      document.getElementById('cScope').addEventListener('change', e => {
+        document.getElementById('blockGroup').style.display = e.target.value === 'BLOCK' ? 'flex' : 'none';
+        document.getElementById('yearDeptGroup').style.display = e.target.value === 'YEAR_DEPT' ? 'grid' : 'none';
+      });
+      document.getElementById('cAction').addEventListener('change', e => {
+        document.getElementById('schedGroup').style.display = e.target.value === 'SCHEDULE' ? 'flex' : 'none';
+      });
+
+      async function loadCirculars(page = 0) {
+        currentPage = page;
+        const params = new URLSearchParams({ page, size: 10 });
+        const q = document.getElementById('filterQuery').value.trim();
+        const st = document.getElementById('filterStatus').value;
+        if (q) params.append('query', q);
+        if (st) params.append('status', st);
+
+        const res = await fetch(`/api/warden/circulars?${params.toString()}`, { credentials: 'same-origin' });
+        const tbody = document.getElementById('circularsBody');
+        tbody.innerHTML = '';
+        if (!res.ok) return;
+        const pageData = await res.json();
+        (pageData.content || []).forEach(c => {
+          const act = UI.createElement('div', { style: 'display:flex;gap:0.35rem;flex-wrap:wrap;' },
+            UI.createElement('button', { className: 'btn btn-secondary btn-sm', onclick: () => openTracking(c.id) }, 'Tracking')
+          );
+          if (c.status !== 'PUBLISHED') {
+            act.appendChild(UI.createElement('button', {
+              className: 'btn btn-success btn-sm',
+              onclick: async () => {
+                await fetch(`/api/warden/circulars/${c.id}/publish`, { method: 'POST', credentials: 'same-origin' });
+                UI.showToast('Circular published!', 'success');
+                loadCirculars(currentPage);
+              }
+            }, 'Publish'));
+          }
+          if (c.status !== 'ARCHIVED') {
+            act.appendChild(UI.createElement('button', {
+              className: 'btn btn-danger btn-sm',
+              onclick: async () => {
+                await fetch(`/api/warden/circulars/${c.id}/archive`, { method: 'POST', credentials: 'same-origin' });
+                UI.showToast('Circular archived.', 'info');
+                loadCirculars(currentPage);
+              }
+            }, 'Archive'));
+          }
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, c.circularCode)),
+            UI.createElement('td', {},
+              UI.createElement('div', { style: 'font-weight:700;' }, c.title),
+              UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, `${c.type} · v${c.version}`)
+            ),
+            UI.createElement('td', {}, UI.createElement('span', { className: `status-badge ${c.priority === 'URGENT' ? 'badge-prio-urgent' : 'badge-prio-medium'}` }, c.priority)),
+            UI.createElement('td', {}, `${c.targetScope} (${c.hostelBlock || 'ALL'})`),
+            UI.createElement('td', {}, `${c.readCount}/${c.totalTargetedCount} read · ${c.acknowledgedCount} ack`),
+            UI.createElement('td', {}, UI.createElement('span', { className: 'status-badge', style: 'background:#f1f5f9;color:#334155;' }, c.status)),
+            UI.createElement('td', {}, act)
+          ));
+        });
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadCirculars(p));
+      }
+
+      async function openTracking(id) {
+        const res = await fetch(`/api/warden/circulars/${id}/tracking`, { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const tr = await res.json();
+        document.getElementById('trackTitle').textContent = `Tracking: ${tr.circularCode} — ${tr.title}`;
+        const body = document.getElementById('trackBody');
+        body.innerHTML = '';
+        body.appendChild(UI.createElement('div', { style: 'margin-bottom:1rem;font-weight:700;' },
+          `Targeted: ${tr.totalTargeted} | Read: ${tr.readCount} | Acknowledged: ${tr.acknowledgedCount} | Attending RSVP: ${tr.attendingCount}`));
+
+        const tbl = UI.createElement('table', { className: 'data-table' });
+        const thead = UI.createElement('thead', {}, UI.createElement('tr', {},
+          UI.createElement('th', {}, 'Reg No'),
+          UI.createElement('th', {}, 'Student'),
+          UI.createElement('th', {}, 'Read'),
+          UI.createElement('th', {}, 'Acknowledged'),
+          UI.createElement('th', {}, 'RSVP')
+        ));
+        const tb = UI.createElement('tbody');
+        tr.students.forEach(s => {
+          tb.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, s.registerNumber),
+            UI.createElement('td', {}, s.fullName),
+            UI.createElement('td', {}, s.read ? UI.formatDateTime(s.readAt) : 'Not Read'),
+            UI.createElement('td', {}, s.acknowledged ? UI.formatDateTime(s.acknowledgedAt) : 'Pending'),
+            UI.createElement('td', {}, s.rsvpStatus || '—')
+          ));
+        });
+        tbl.append(thead, tb);
+        body.appendChild(UI.createElement('div', { className: 'table-responsive' }, tbl));
+
+        const foot = document.getElementById('trackFooter');
+        foot.innerHTML = '';
+        foot.append(
+          UI.createElement('a', { href: `/api/warden/circulars/${id}/tracking/export`, className: 'btn btn-secondary btn-sm' }, 'Export CSV'),
+          UI.createElement('button', {
+            className: 'btn btn-primary btn-sm',
+            onclick: async () => {
+              const r = await fetch(`/api/warden/circulars/${id}/remind`, { method: 'POST', credentials: 'same-origin' });
+              const d = await r.json();
+              UI.showToast(d.message || 'Reminders sent', 'success');
+            }
+          }, 'Send Reminder to Unread/Unacked'),
+          UI.createElement('button', { className: 'btn btn-secondary', onclick: () => UI.closeModal('trackingModal') }, 'Close')
+        );
+        UI.openModal('trackingModal');
+      }
+
+      document.getElementById('btnOpenCreate').addEventListener('click', () => {
+        document.getElementById('circularForm').reset();
+        if (user.role === 'ADMIN') document.getElementById('cScope').value = 'ALL';
+        UI.openModal('createCircularModal');
+      });
+
+      document.getElementById('btnSubmitCircular').addEventListener('click', async () => {
+        const fd = new FormData();
+        fd.append('type', document.getElementById('cType').value);
+        fd.append('priority', document.getElementById('cPriority').value);
+        fd.append('title', document.getElementById('cTitle').value.trim());
+        fd.append('description', document.getElementById('cDesc').value.trim());
+        const rules = document.getElementById('cRules').value.trim();
+        if (rules) fd.append('rulesAndRegulations', rules);
+        const evDt = document.getElementById('cEventDt').value;
+        if (evDt) fd.append('eventDateTime', evDt);
+        const venue = document.getElementById('cVenue').value.trim();
+        if (venue) fd.append('venue', venue);
+        fd.append('targetScope', document.getElementById('cScope').value);
+        fd.append('hostelBlock', document.getElementById('cBlock').value.trim());
+        const dept = document.getElementById('cDept').value.trim();
+        if (dept) fd.append('department', dept);
+        const yr = document.getElementById('cYear').value;
+        if (yr) fd.append('studyYear', yr);
+        fd.append('requireAcknowledgement', document.getElementById('cReqAck').checked ? 'true' : 'false');
+        fd.append('publishAction', document.getElementById('cAction').value);
+        const sched = document.getElementById('cSchedAt').value;
+        if (sched) fd.append('scheduledPublishAt', sched);
+        const exp = document.getElementById('cExpiresAt').value;
+        if (exp) fd.append('expiresAt', exp);
+        Array.from(document.getElementById('cFiles').files || []).forEach(f => fd.append('files', f));
+
+        const res = await fetch('/api/warden/circulars', { method: 'POST', credentials: 'same-origin', body: fd });
+        const data = await res.json();
+        if (!res.ok) {
+          UI.showToast(data.message || 'Failed to save circular', 'error');
+        } else {
+          UI.closeModal('createCircularModal');
+          UI.showToast(`Circular ${data.circularCode} saved (${data.status})!`, 'success');
+          loadCirculars(0);
+        }
+      });
+
+      document.getElementById('btnFilter').addEventListener('click', () => loadCirculars(0));
+      await loadCirculars(0);
+    })();
+  </script>
+</body>
+</html>
+

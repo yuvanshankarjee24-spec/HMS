@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Parcels &amp; Reports - PSG iTech Hostel</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .stats-grid-4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+    .mini-stat { background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1rem 1.25rem; }
+    .mini-stat-label { font-size:0.78rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); }
+    .mini-stat-val { font-size:1.7rem; font-weight:800; margin-top:0.25rem; }
+  </style>
+</head>
+<body>
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Cross-Hostel Parcels &amp; Pickup Reports</h1>
+            <p class="page-subtitle">Monitor parcel throughput, average pickup time, unclaimed counts per block, and full parcel directory.</p>
+          </div>
+          <div>
+            <a href="/warden/parcels.html" class="btn btn-secondary btn-sm">Open Warden Parcel Desk</a>
+          </div>
+        </div>
+
+        <div class="stats-grid-4">
+          <div class="mini-stat" style="border-left:4px solid #0284c7;">
+            <div class="mini-stat-label">Total Parcels</div>
+            <div class="mini-stat-val" id="repTotal">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #f59e0b;">
+            <div class="mini-stat-label">Waiting Pickup</div>
+            <div class="mini-stat-val" id="repWaiting">0</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #16a34a;">
+            <div class="mini-stat-label">Avg Pickup Time</div>
+            <div class="mini-stat-val" id="repAvgHours">0h</div>
+          </div>
+          <div class="mini-stat" style="border-left:4px solid #86198f;">
+            <div class="mini-stat-label">Unclaimed</div>
+            <div class="mini-stat-val" id="repUnclaimed">0</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-bottom:1.5rem;">
+          <div class="card">
+            <div class="card-header"><h2 class="card-title">Parcels Arrived (Last 7 Days)</h2></div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Date</th><th>Parcels Received</th></tr></thead>
+                <tbody id="dailyBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h2 class="card-title">Unclaimed Parcels by Block</h2></div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead><tr><th>Block</th><th>Unclaimed Count</th></tr></thead>
+                <tbody id="unclaimedBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+            <h2 class="card-title">All Parcels Directory</h2>
+            <div style="display:flex;gap:0.5rem;">
+              <input type="text" id="allSearch" class="form-control" style="width:200px;" placeholder="Search ID, student, courier...">
+              <button type="button" class="btn btn-primary btn-sm" id="btnAllSearch">Filter</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table mobile-collapse-table">
+              <thead>
+                <tr>
+                  <th>Parcel ID</th>
+                  <th>Student</th>
+                  <th>Block / Room</th>
+                  <th>Courier</th>
+                  <th>COD</th>
+                  <th>Status</th>
+                  <th>Received</th>
+                </tr>
+              </thead>
+              <tbody id="allParcelsBody"></tbody>
+            </table>
+          </div>
+          <div id="paginationBar" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;flex-wrap:wrap;gap:0.75rem;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/ui.js?v=3"></script>
+  <script src="/js/maintenance-ui.js"></script>
+  <script>
+    (async () => {
+      const user = await Auth.requireAuth(['ADMIN']);
+      if (!user) return;
+      UI.renderLayout(user, 'admin-parcels');
+
+      async function loadReport() {
+        const res = await fetch('/api/admin/parcels/reports', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const r = await res.json();
+        document.getElementById('repTotal').textContent = r.totalParcels;
+        document.getElementById('repWaiting').textContent = r.waitingCount;
+        document.getElementById('repAvgHours').textContent = `${r.averagePickupHours}h`;
+        document.getElementById('repUnclaimed').textContent = r.unclaimedCount;
+
+        const db = document.getElementById('dailyBody');
+        db.innerHTML = '';
+        (r.dailyCounts || []).forEach(d => {
+          db.appendChild(UI.createElement('tr', {}, UI.createElement('td', {}, d.period), UI.createElement('td', {}, String(d.count))));
+        });
+
+        const ub = document.getElementById('unclaimedBody');
+        ub.innerHTML = '';
+        const entries = Object.entries(r.unclaimedByBlock || {});
+        if (entries.length === 0) {
+          ub.appendChild(UI.createElement('tr', {}, UI.createElement('td', { colSpan: 2, style: 'text-align:center;color:var(--text-muted);' }, 'No unclaimed parcels.')));
+        } else {
+          entries.forEach(([blk, cnt]) => ub.appendChild(UI.createElement('tr', {}, UI.createElement('td', {}, blk), UI.createElement('td', {}, String(cnt)))));
+        }
+      }
+
+      async function loadAll(page = 0) {
+        const q = document.getElementById('allSearch').value.trim();
+        const params = new URLSearchParams({ page, size: 10 });
+        if (q) params.append('query', q);
+        const res = await fetch(`/api/admin/parcels?${params.toString()}`, { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const pageData = await res.json();
+        const tbody = document.getElementById('allParcelsBody');
+        tbody.innerHTML = '';
+        (pageData.content || []).forEach(p => {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', {}, UI.createElement('strong', {}, p.parcelCode)),
+            UI.createElement('td', {}, `${p.studentName} (${p.studentRegNo})`),
+            UI.createElement('td', {}, `${p.hostelBlock} / ${p.studentRoom}`),
+            UI.createElement('td', {}, `${p.courierName} (${p.parcelType})`),
+            UI.createElement('td', {}, p.cod ? `Rs. ${p.codAmount}` : 'Prepaid'),
+            UI.createElement('td', {}, UI.parcelStatusBadge(p.status)),
+            UI.createElement('td', { style: 'font-size:0.8rem;' }, UI.formatDateTime(p.receivedAt))
+          ));
+        });
+        MaintUI.renderPagination(document.getElementById('paginationBar'), pageData, p => loadAll(p));
+      }
+
+      document.getElementById('btnAllSearch').addEventListener('click', () => loadAll(0));
+      await Promise.all([loadReport(), loadAll(0)]);
+    })();
+  </script>
+</body>
+</html>
+
