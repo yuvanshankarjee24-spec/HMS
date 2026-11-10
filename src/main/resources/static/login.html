@@ -154,7 +154,7 @@
     /* Pill-style Role Switcher */
     .role-pills {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 0.4rem;
       background: #e4edf8;
       padding: 0.35rem;
@@ -360,6 +360,7 @@
         <button type="button" class="role-pill-btn active" data-role="STUDENT">Student</button>
         <button type="button" class="role-pill-btn" data-role="WARDEN">Warden</button>
         <button type="button" class="role-pill-btn" data-role="ADMIN">Admin</button>
+        <button type="button" class="role-pill-btn" data-role="SECURITY">Security</button>
         <button type="button" class="role-pill-btn" data-role="STAFF">Staff</button>
       </div>
 
@@ -432,6 +433,10 @@
           </button>
           <button type="button" onclick="fillCredentials('ADMIN', 'admin@hostel.edu', 'Hostel@123')" style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: left; cursor: pointer; color: #1e3a8a; font-size: 0.82rem; font-family: inherit; display: flex; justify-content: space-between; align-items: center;">
             <span>⚙️ <strong>Admin:</strong> <code>admin@hostel.edu</code></span>
+            <span style="color: #2563eb; font-weight: 600; font-size: 0.75rem;">Fill &rarr;</span>
+          </button>
+          <button type="button" onclick="fillCredentials('SECURITY', 'security@hostel.edu', 'Hostel@123')" style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: left; cursor: pointer; color: #1e3a8a; font-size: 0.82rem; font-family: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <span>&#128737;&#65039; <strong>Security:</strong> <code>security@hostel.edu</code></span>
             <span style="color: #2563eb; font-weight: 600; font-size: 0.75rem;">Fill &rarr;</span>
           </button>
         </div>

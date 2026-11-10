@@ -92,6 +92,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/warden/**").hasAnyRole("WARDEN", "ADMIN")
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Security only
+                        .requestMatchers("/api/security/**").hasRole("SECURITY")
                         // Dashboard HTML files can be accessed via browser; JS auth guard will enforce RBAC
                         .requestMatchers(
                                 "/student/**",

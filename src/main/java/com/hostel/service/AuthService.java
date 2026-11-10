@@ -170,6 +170,8 @@ public class AuthService {
             return "WARDEN".equals(actualRole);
         } else if ("ADMIN".equals(tab)) {
             return "ADMIN".equals(actualRole);
+        } else if ("SECURITY".equals(tab)) {
+            return "SECURITY".equals(actualRole);
         } else if ("STAFF".equals(tab)) {
             return STAFF_ROLES.contains(actualRole);
         }
