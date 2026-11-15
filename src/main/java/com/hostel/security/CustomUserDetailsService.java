@@ -24,10 +24,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByIdentifier(identifier)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with identifier: " + identifier));
 
+        boolean enabled = user.getStatus() == User.Status.ACTIVE && user.isActive() && user.getDeletedAt() == null;
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPasswordHash(),
-                user.getStatus() == User.Status.ACTIVE,
+                enabled,
                 true,
                 true,
                 user.getStatus() != User.Status.LOCKED,

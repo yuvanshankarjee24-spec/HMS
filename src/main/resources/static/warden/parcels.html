@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Parcels - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
@@ -186,8 +186,8 @@
     </main>
   </div>
 
-  <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -422,12 +422,15 @@
             const isNew = highlightCode && p.parcelCode === highlightCode;
             const tr = UI.createElement('tr', { className: isNew ? 'row-highlight' : '' },
               UI.createElement('td', { dataset: { label: 'ID' } },
-                UI.createElement('strong', {}, p.parcelCode),
+                UI.createElement('strong', { className: 'parcel-id' }, p.parcelCode),
                 p.longPending ? UI.createElement('div', { style: 'font-size:0.72rem;color:#dc2626;font-weight:700;' }, `Long-pending (${p.daysWaiting}d)`) : null
               ),
               UI.createElement('td', { dataset: { label: 'Student' } },
                 UI.createElement('div', { style: 'font-weight:600;' }, p.studentName),
-                UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, `${p.studentRegNo} · Room ${p.studentRoom}`)
+                UI.createElement('div', { style: 'font-size:var(--font-size-helper);color:var(--text-muted);' },
+                  UI.createElement('span', { className: 'reg-no-code' }, p.studentRegNo),
+                  ` · Room ${p.studentRoom}`
+                )
               ),
               UI.createElement('td', { dataset: { label: 'Courier' } }, `${p.courierName} (${p.parcelType})`),
               UI.createElement('td', { dataset: { label: 'COD' } }, p.cod ? `Rs. ${p.codAmount}` : 'Prepaid'),
@@ -499,9 +502,28 @@
       });
 
       tabsCtrl = UI.Tabs.init({ barSelector: '#parcelMainTabs', defaultTab: 'scan' });
-      await Promise.all([loadSummary(), loadStudents(''), loadParcels(0)]);
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlStatus = (searchParams.get('status') || '').trim().toUpperCase();
+      const urlFilter = (searchParams.get('filter') || '').trim().toLowerCase();
+      const urlCod = searchParams.get('cod');
 
-      const urlCode = new URLSearchParams(window.location.search).get('code');
+      if (urlFilter === 'long-pending') {
+        activeCardFilter = 'LONG_PENDING';
+        await Promise.all([loadSummary(), loadStudents('')]);
+        const lpRes = await fetch('/api/warden/parcels/long-pending', { credentials: 'same-origin' });
+        if (lpRes.ok) renderParcelRows(await lpRes.json(), false);
+      } else {
+        if (urlStatus) {
+          document.getElementById('filterStatus').value = urlStatus;
+          activeCardFilter = urlStatus;
+        } else if (urlCod === 'true') {
+          document.getElementById('filterStatus').value = 'NOTIFIED';
+          activeCardFilter = 'COD';
+        }
+        await Promise.all([loadSummary(), loadStudents(''), loadParcels(0)]);
+      }
+
+      const urlCode = searchParams.get('code');
       if (urlCode) {
         document.getElementById('manualCodeInput').value = urlCode;
         tabsCtrl.switchTo('scan');

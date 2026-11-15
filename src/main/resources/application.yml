@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     session:
       cookie:
@@ -12,11 +12,12 @@ spring:
     name: smart-hostel-management
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/hostel_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata&characterEncoding=UTF-8}
-    username: ${DB_USERNAME:root}
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:hostel_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=${DB_TIMEZONE:UTC}&characterEncoding=UTF-8}
+    username: ${DB_USER:${DB_USERNAME:root}}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
+      pool-name: HostelSharedHikariPool
       maximum-pool-size: 15
       minimum-idle: 5
       connection-timeout: 30000
@@ -30,7 +31,7 @@ spring:
       hibernate:
         format_sql: false
         jdbc:
-          time_zone: Asia/Kolkata
+          time_zone: ${DB_TIMEZONE:UTC}
 
   flyway:
     enabled: true
@@ -44,9 +45,10 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:smartHostelManagementSecretKeyForSigningJwtsMustBeLongEnoughAtLeast256Bits2026!}
+    secret: ${JWT_SECRET:devFallbackJwtSecretMustBeChangedInProductionEnvironment2026!}
     expiration-ms: 86400000 # 24 hours
     cookie-name: hostel_jwt
   upload:
     dir: ${UPLOAD_DIR:./storage/photos}
-  timezone: Asia/Kolkata
+  timezone: ${APP_DISPLAY_TIMEZONE:Asia/Kolkata}
+  db-timezone: ${DB_TIMEZONE:UTC}

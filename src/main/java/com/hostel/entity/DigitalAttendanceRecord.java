@@ -16,6 +16,11 @@ public class DigitalAttendanceRecord {
         MANUAL_PRESENT
     }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,7 +36,7 @@ public class DigitalAttendanceRecord {
     @Column(name = "attendance_date", nullable = false)
     private LocalDate attendanceDate;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false, length = 30)
     private Status status = Status.PENDING;
 

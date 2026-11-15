@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Publish Circulars &amp; Events - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
 </head>
 <body>
   <div id="app-layout" class="app-container">
@@ -191,8 +191,8 @@
     </div>
   </div>
 
-  <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -284,10 +284,10 @@
             }, 'Archive'));
           }
           tbody.appendChild(UI.createElement('tr', {},
-            UI.createElement('td', {}, UI.createElement('strong', {}, c.circularCode)),
+            UI.createElement('td', {}, UI.createElement('strong', { className: 'tech-code' }, c.circularCode)),
             UI.createElement('td', {},
-              UI.createElement('div', { style: 'font-weight:700;' }, c.title),
-              UI.createElement('div', { style: 'font-size:0.78rem;color:var(--text-muted);' }, `${c.type} · v${c.version}`)
+              UI.createElement('div', { style: 'font-weight:600;' }, c.title),
+              UI.createElement('div', { style: 'font-size:var(--font-size-helper);color:var(--text-muted);' }, `${c.type} · v${c.version}`)
             ),
             UI.createElement('td', {}, UI.createElement('span', { className: `status-badge ${c.priority === 'URGENT' ? 'badge-prio-urgent' : 'badge-prio-medium'}` }, c.priority)),
             UI.createElement('td', {}, `${c.targetScope} (${c.hostelBlock || 'ALL'})`),
@@ -391,6 +391,11 @@
       });
 
       document.getElementById('btnFilter').addEventListener('click', () => loadCirculars(0));
+      const urlCircStatus = (new URLSearchParams(window.location.search).get('status') || '').trim().toUpperCase();
+      if (urlCircStatus) {
+        document.getElementById('filterStatus').value = urlCircStatus;
+        activeCircCard = urlCircStatus;
+      }
       await Promise.all([loadCircSummary(), loadCirculars(0)]);
     })();
   </script>

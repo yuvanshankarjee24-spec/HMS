@@ -25,6 +25,11 @@ public class Parcel {
         UNCLAIMED
     }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,6 +43,10 @@ public class Parcel {
 
     @Column(name = "hostel_block", nullable = false, length = 100)
     private String hostelBlock = "Main Block";
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
 
     @Column(name = "courier_name", nullable = false, length = 100)
     private String courierName;
@@ -67,7 +76,7 @@ public class Parcel {
     @Column(name = "storage_location", length = 100)
     private String storageLocation;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false, length = 40)
     private Status status = Status.RECEIVED;
 
@@ -193,5 +202,8 @@ public class Parcel {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
 }
 

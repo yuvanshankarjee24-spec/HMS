@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Outpass Requests - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <style>
     .filter-bar {
       display: flex;
@@ -122,8 +122,8 @@
     </div>
   </div>
 
-  <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script>
     let currentUser = null;
     let currentOutpassFilter = 'PENDING';
@@ -170,6 +170,12 @@
       if (!currentUser) return;
 
       UI.renderLayout(currentUser, 'outpasses');
+
+      const urlStatus = (new URLSearchParams(window.location.search).get('status') || '').trim().toUpperCase();
+      if (urlStatus && document.querySelector(`#outpassFilterBar .filter-btn[data-filter="${urlStatus}"]`)) {
+        currentOutpassFilter = urlStatus;
+        syncFilterBar();
+      }
 
       document.querySelectorAll('#outpassFilterBar .filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -242,6 +248,7 @@
         // Pass #
         const tdId = document.createElement('td');
         tdId.setAttribute('data-label', 'Pass #');
+        tdId.className = 'outpass-id';
         tdId.textContent = `#OP-${op.id}`;
         tdId.style.fontWeight = '700';
 
@@ -249,10 +256,11 @@
         const tdStudent = document.createElement('td');
         tdStudent.setAttribute('data-label', 'Student');
         const nameDiv = document.createElement('div');
-        nameDiv.style.fontWeight = '700';
+        nameDiv.style.fontWeight = '600';
         nameDiv.textContent = op.studentName;
         const regDiv = document.createElement('div');
-        regDiv.style.fontSize = '0.8rem';
+        regDiv.className = 'reg-no-code';
+        regDiv.style.fontSize = 'var(--font-size-helper)';
         regDiv.style.color = 'var(--text-muted)';
         regDiv.textContent = op.registerNumber;
         tdStudent.append(nameDiv, regDiv);

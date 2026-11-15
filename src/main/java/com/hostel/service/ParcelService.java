@@ -4,27 +4,15 @@ import com.hostel.dto.ParcelDtos.*;
 import com.hostel.entity.*;
 import com.hostel.exception.CustomExceptions.*;
 import com.hostel.repository.*;
-import org.springframework.beans.factory.annotation.Value;
+import com.hostel.util.StatusConstants;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,7 +27,6 @@ public class ParcelService {
 
     private static final long MAX_IMAGE_BYTES = 2 * 1024 * 1024;
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a");
 
     private final ParcelRepository parcelRepository;
@@ -49,15 +36,12 @@ public class ParcelService {
     private final StudentRepository studentRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final BedRepository bedRepository;
+    private final HostelRepository hostelRepository;
     private final SystemSettingRepository settingRepository;
+    private final QrTokenService qrTokenService;
+    private final AttachmentStorageService attachmentStorageService;
     private final NotificationService notificationService;
     private final AuditService auditService;
-
-    @Value("${app.jwt.secret}")
-    private String hmacSecret;
-
-    @Value("${app.upload.dir:./storage/photos}")
-    private String uploadDir;
 
     public ParcelService(ParcelRepository parcelRepository,
                          ParcelQrTokenRepository qrTokenRepository,
@@ -66,7 +50,10 @@ public class ParcelService {
                          StudentRepository studentRepository,
                          StaffProfileRepository staffProfileRepository,
                          BedRepository bedRepository,
+                         HostelRepository hostelRepository,
                          SystemSettingRepository settingRepository,
+                         QrTokenService qrTokenService,
+                         AttachmentStorageService attachmentStorageService,
                          NotificationService notificationService,
                          AuditService auditService) {
         this.parcelRepository = parcelRepository;
@@ -76,7 +63,10 @@ public class ParcelService {
         this.studentRepository = studentRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.bedRepository = bedRepository;
+        this.hostelRepository = hostelRepository;
         this.settingRepository = settingRepository;
+        this.qrTokenService = qrTokenService;
+        this.attachmentStorageService = attachmentStorageService;
         this.notificationService = notificationService;
         this.auditService = auditService;
     }
@@ -88,7 +78,9 @@ public class ParcelService {
     public List<StudentSearchItem> searchStudents(String query) {
         String q = (query != null && !query.isBlank()) ? query.trim().toLowerCase() : null;
         return studentRepository.findAll().stream()
-                .filter(s -> s.getUser() != null && s.getUser().getStatus() == User.Status.ACTIVE)
+                .filter(s -> s.isActive() && s.getDeletedAt() == null
+                        && s.getUser() != null && s.getUser().getStatus() == User.Status.ACTIVE
+                        && s.getUser().isActive() && s.getUser().getDeletedAt() == null)
                 .map(s -> {
                     Optional<Bed> bedOpt = bedRepository.findByStudentId(s.getId());
                     String room = bedOpt.map(b -> b.getRoom().getRoomNumber()).orElse("-");
@@ -145,6 +137,11 @@ public class ParcelService {
         parcel.setParcelCode(generateUniqueParcelCode());
         parcel.setStudent(student);
         parcel.setHostelBlock(block);
+        bedRepository.findByStudentId(student.getId())
+                .map(b -> b.getRoom().getHostel())
+                .or(() -> Optional.ofNullable(student.getHostel()))
+                .or(() -> hostelRepository.findByCodeIgnoreCase("MAIN"))
+                .ifPresent(parcel::setHostel);
         parcel.setCourierName(courierName.trim());
         parcel.setTrackingNumber(trackingNumber != null && !trackingNumber.isBlank() ? trackingNumber.trim() : null);
         parcel.setParcelType(parcelType);
@@ -173,6 +170,7 @@ public class ParcelService {
         token.setPickupCode(generateUniquePickupCode());
         token.setUsed(false);
         qrTokenRepository.save(token);
+        qrTokenService.saveUnifiedToken("PARCEL", saved.getId(), student, token.getQrToken(), token.getPickupCode(), null);
 
         // Transition RECEIVED -> NOTIFIED and send in-app notification
         saved.setStatus(Parcel.Status.NOTIFIED);
@@ -357,6 +355,7 @@ public class ParcelService {
             token.setUsedAt(now);
             qrTokenRepository.save(token);
         }
+        qrTokenService.markUsed("PARCEL", parcel.getId(), now);
 
         Parcel saved = parcelRepository.save(parcel);
 
@@ -403,6 +402,7 @@ public class ParcelService {
             t.setUsedAt(LocalDateTime.now());
             qrTokenRepository.save(t);
         });
+        qrTokenService.markClosed("PARCEL", saved.getId());
 
         recordHistory(saved, oldStatus, targetStatus.name(), warden, reason.trim());
 
@@ -576,16 +576,8 @@ public class ParcelService {
             throw new ForbiddenException("Access denied to parcel attachment");
         }
 
-        try {
-            Path path = Paths.get(att.getFilePath()).normalize();
-            Resource res = new UrlResource(path.toUri());
-            if (!res.exists() || !res.isReadable()) {
-                throw new ResourceNotFoundException("Parcel image not found on disk");
-            }
-            return new MaintenanceService.LoadedAttachment(res, att.getContentType(), att.getOriginalFilename());
-        } catch (MalformedURLException e) {
-            throw new ResourceNotFoundException("Invalid attachment path");
-        }
+        Resource res = attachmentStorageService.loadResource(att.getFilePath());
+        return new MaintenanceService.LoadedAttachment(res, att.getContentType(), att.getOriginalFilename());
     }
 
     // =====================================================
@@ -604,36 +596,23 @@ public class ParcelService {
     }
 
     private void validateImage(MultipartFile f) {
-        String ct = f.getContentType();
-        if (ct == null || !ALLOWED_IMAGE_TYPES.contains(ct.toLowerCase())) {
-            throw new BadRequestException("Only JPG, PNG, and WebP images are allowed for parcel photo");
-        }
-        if (f.getSize() > MAX_IMAGE_BYTES) {
-            throw new BadRequestException("Parcel photo must be 2 MB or smaller");
-        }
+        attachmentStorageService.validateFiles(new MultipartFile[]{f}, 1, ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES);
     }
 
     private void storeAttachment(Parcel parcel, MultipartFile file, User uploader) {
-        try {
-            Path dir = Paths.get(uploadDir, "parcels").toAbsolutePath().normalize();
-            Files.createDirectories(dir);
-            String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "image/jpeg";
-            String ext = ct.contains("png") ? ".png" : (ct.contains("webp") ? ".webp" : ".jpg");
-            String filename = parcel.getParcelCode() + "_" + UUID.randomUUID().toString().substring(0, 8) + ext;
-            Path target = dir.resolve(filename);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        String targetPath = attachmentStorageService.storeFile(file, "parcels", parcel.getParcelCode());
+        String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "image/jpeg";
 
-            ParcelAttachment att = new ParcelAttachment();
-            att.setParcel(parcel);
-            att.setFilePath(target.toString());
-            att.setOriginalFilename(file.getOriginalFilename() != null ? file.getOriginalFilename() : filename);
-            att.setContentType(ct);
-            att.setFileSize(file.getSize());
-            att.setUploadedBy(uploader);
-            attachmentRepository.save(att);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store parcel photo: " + e.getMessage());
-        }
+        ParcelAttachment att = new ParcelAttachment();
+        att.setParcel(parcel);
+        att.setFilePath(targetPath);
+        att.setOriginalFilename(file.getOriginalFilename() != null ? file.getOriginalFilename() : "parcel.jpg");
+        att.setContentType(ct);
+        att.setFileSize(file.getSize());
+        att.setUploadedBy(uploader);
+        attachmentRepository.save(att);
+
+        attachmentStorageService.registerAttachment("PARCEL", parcel.getId(), targetPath, file, "PARCEL_PHOTO", uploader);
     }
 
     private String generateUniqueParcelCode() {
@@ -649,43 +628,15 @@ public class ParcelService {
     }
 
     private String generateUniquePickupCode() {
-        for (int i = 0; i < 20; i++) {
-            int num = 100000 + SECURE_RANDOM.nextInt(900000);
-            String code = String.valueOf(num);
-            if (!qrTokenRepository.existsByPickupCode(code)) {
-                return code;
-            }
-        }
-        return String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
+        return qrTokenService.generateUniquePickupCode(qrTokenRepository::existsByPickupCode);
     }
 
     public String generateSignedQrToken(Long parcelId, Long studentId) {
-        byte[] rnd = new byte[12];
-        SECURE_RANDOM.nextBytes(rnd);
-        String nonce = HexFormat.of().formatHex(rnd);
-        String payload = "PRC1." + parcelId + "." + studentId + "." + nonce;
-        String sig = computeHmacHex(payload);
-        return payload + "." + sig;
+        return qrTokenService.generateSignedToken("PRC1", parcelId, studentId);
     }
 
     private boolean verifySignedQrTokenFormat(String token) {
-        String[] parts = token.split("\\.");
-        if (parts.length != 5 || !"PRC1".equals(parts[0])) return false;
-        String payload = parts[0] + "." + parts[1] + "." + parts[2] + "." + parts[3];
-        String expected = computeHmacHex(payload);
-        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), parts[4].getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String computeHmacHex(String payload) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec key = new SecretKeySpec(hmacSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(key);
-            byte[] raw = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(raw).substring(0, 24);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to sign parcel QR token", e);
-        }
+        return qrTokenService.verifySignature(token, "PRC1");
     }
 
     private void recordHistory(Parcel parcel, String oldStatus, String newStatus, User actor, String remarks) {

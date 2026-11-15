@@ -16,8 +16,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Optional<Student> findByRegisterNumber(String registerNumber);
     Optional<Student> findByCollegeEmail(String collegeEmail);
 
-    @Query("SELECT s FROM Student s WHERE " +
-           "(:query IS NULL OR LOWER(s.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+    @Query("SELECT s FROM Student s WHERE s.active = true AND s.deletedAt IS NULL AND (" +
+           ":query IS NULL OR LOWER(s.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(s.registerNumber) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(s.department) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Student> searchStudents(@Param("query") String query, Pageable pageable);

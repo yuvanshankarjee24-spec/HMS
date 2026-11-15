@@ -37,6 +37,11 @@ public class MaintenanceRequest {
         ON_HOLD
     }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -64,6 +69,14 @@ public class MaintenanceRequest {
     @Column(name = "room_number", nullable = false, length = 50)
     private String roomNumber;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    private Room room;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private Priority priority = Priority.MEDIUM;
@@ -71,7 +84,7 @@ public class MaintenanceRequest {
     @Column(name = "preferred_time_slot", length = 100)
     private String preferredTimeSlot;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false, length = 30)
     private Status status = Status.PENDING;
 
@@ -181,5 +194,11 @@ public class MaintenanceRequest {
 
     public LocalDateTime getResolvedAt() { return resolvedAt; }
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
+
+    public Room getRoom() { return room; }
+    public void setRoom(Room room) { this.room = room; }
 }
 

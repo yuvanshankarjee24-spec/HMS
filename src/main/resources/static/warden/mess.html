@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mess Operations - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
@@ -198,8 +198,8 @@
     </div>
   </div>
 
-  <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -305,8 +305,8 @@
             list.forEach(t => {
               const itemTxt = (t.items || []).map(i => `${i.foodName} x${i.quantity}`).join(', ');
               tb.appendChild(UI.createElement('tr', {},
-                UI.createElement('td', {}, UI.createElement('strong', {}, t.tokenCode)),
-                UI.createElement('td', {}, `${t.studentName} (${t.studentRegNo})`),
+                UI.createElement('td', {}, UI.createElement('strong', { className: 'token-id' }, t.tokenCode)),
+                UI.createElement('td', {}, t.studentName, ' (', UI.createElement('span', { className: 'reg-no-code' }, t.studentRegNo), ')'),
                 UI.createElement('td', {}, `${t.menuDate} ${t.period}`),
                 UI.createElement('td', {}, itemTxt),
                 UI.createElement('td', {}, `Rs. ${Number(t.totalAmount).toFixed(2)}`),
@@ -515,6 +515,11 @@
       document.getElementById('btnLoadSched').addEventListener('click', loadSchedule);
 
       tabsCtrl = UI.Tabs.init({ barSelector: '#wardenMessTabs', defaultTab: 'scan' });
+      const urlMessStatus = (new URLSearchParams(window.location.search).get('status') || '').trim().toUpperCase();
+      if (urlMessStatus) {
+        document.getElementById('tFilterStatus').value = urlMessStatus;
+        activeCardFilter = urlMessStatus;
+      }
       await Promise.all([loadSummaryAndTokens(0), loadPeriods(), loadItems(), loadSchedule()]);
     })();
   </script>

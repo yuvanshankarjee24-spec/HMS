@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Parcels &amp; Reports - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <style>
     .stats-grid-4 { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1rem; margin-bottom:1.5rem; }
     .mini-stat { background:#fff; border:1px solid var(--border-light); border-radius:var(--radius-md); padding:1rem 1.25rem; }
-    .mini-stat-label { font-size:0.78rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); }
-    .mini-stat-val { font-size:1.7rem; font-weight:800; margin-top:0.25rem; }
+    .mini-stat-label { font-size:var(--font-size-eyebrow); font-weight:var(--font-weight-eyebrow); text-transform:uppercase; letter-spacing:var(--letter-spacing-eyebrow); color:var(--text-muted); }
+    .mini-stat-val { font-size:var(--font-size-stat); font-weight:var(--font-weight-stat); font-variant-numeric:tabular-nums; line-height:var(--line-height-stat); color:var(--text-primary); margin-top:0.25rem; }
   </style>
 </head>
 <body>
@@ -98,7 +98,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {

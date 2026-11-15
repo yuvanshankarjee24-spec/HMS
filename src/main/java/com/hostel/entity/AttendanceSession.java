@@ -18,6 +18,10 @@ public class AttendanceSession {
     @Column(name = "hostel_block", nullable = false, length = 100)
     private String hostelBlock = "ALL";
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
+
     @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
@@ -112,5 +116,8 @@ public class AttendanceSession {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
 }
 

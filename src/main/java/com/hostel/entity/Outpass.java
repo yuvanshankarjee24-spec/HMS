@@ -23,6 +23,11 @@ public class Outpass {
         EXPIRED
     }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -50,7 +55,7 @@ public class Outpass {
     @Column(name = "emergency_phone", length = 50)
     private String emergencyPhone;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false, length = 50)
     private Status status = Status.PENDING;
 

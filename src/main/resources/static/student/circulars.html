@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circulars &amp; Events - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <style>
     .circ-card {
       background: #ffffff;
@@ -92,7 +92,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -113,7 +113,7 @@
           area.appendChild(UI.createElement('div', { className: 'circular-urgent-banner' },
             UI.createElement('div', {},
               UI.createElement('strong', {}, `🚨 URGENT UNREAD: ${u.title}`),
-              UI.createElement('div', { style: 'font-size:0.85rem;margin-top:0.2rem;' }, `${u.circularCode} — Click to open and acknowledge`)
+              UI.createElement('div', { style: 'font-size:var(--font-size-secondary);margin-top:0.2rem;' }, `${u.circularCode} — Click to open and acknowledge`)
             ),
             UI.createElement('button', { className: 'btn btn-danger btn-sm', onclick: () => openDetail(u.id) }, 'Open Now')
           ));
@@ -148,20 +148,20 @@
             const card = UI.createElement('div', { className: cls, onclick: () => openDetail(c.id) },
               UI.createElement('div', { style: 'flex:1;' },
                 UI.createElement('div', { style: 'display:flex;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.4rem;align-items:center;' },
-                  UI.createElement('strong', { style: 'font-size:0.84rem;color:var(--text-muted);' }, c.circularCode),
+                  UI.createElement('strong', { className: 'tech-code', style: 'color:var(--text-muted);' }, c.circularCode),
                   UI.createElement('span', { className: `status-badge ${c.priority === 'URGENT' ? 'badge-prio-urgent' : (c.priority === 'IMPORTANT' ? 'badge-prio-high' : 'badge-prio-low')}` }, c.priority),
                   UI.createElement('span', { className: 'status-badge', style: 'background:#f1f5f9;color:#334155;' }, c.type),
                   c.updatedFlag ? UI.createElement('span', { className: 'status-badge badge-maint-assigned' }, `Updated v${c.version}`) : null,
                   !c.read ? UI.createElement('span', { className: 'status-badge badge-maint-pending' }, 'Unread') : null,
                   c.acknowledged ? UI.createElement('span', { className: 'status-badge badge-active' }, 'Acknowledged') : null
                 ),
-                UI.createElement('h3', { style: 'font-size:1.1rem;margin-bottom:0.35rem;' }, c.title),
-                UI.createElement('p', { style: 'font-size:0.88rem;color:var(--text-muted);margin:0;' },
+                UI.createElement('h3', { className: 'type-h3', style: 'margin-bottom:0.35rem;' }, c.title),
+                UI.createElement('p', { className: 'type-secondary', style: 'margin:0;' },
                   c.description.length > 160 ? c.description.slice(0, 160) + '...' : c.description)
               ),
-              UI.createElement('div', { style: 'text-align:right;font-size:0.8rem;color:var(--text-light);' },
+              UI.createElement('div', { style: 'text-align:right;font-size:var(--font-size-helper);color:var(--text-muted);' },
                 UI.createElement('div', {}, UI.formatDateTime(c.publishedAt || c.createdAt)),
-                c.eventDateTime ? UI.createElement('div', { style: 'color:var(--primary);font-weight:700;margin-top:0.25rem;' }, `Event: ${UI.formatDateTime(c.eventDateTime)}`) : null
+                c.eventDateTime ? UI.createElement('div', { style: 'color:var(--primary);font-weight:600;margin-top:0.25rem;' }, `Event: ${UI.formatDateTime(c.eventDateTime)}`) : null
               )
             );
             listEl.appendChild(card);
@@ -207,14 +207,14 @@
           body.appendChild(evBox);
         }
 
-        body.appendChild(UI.createElement('div', { style: 'white-space:pre-wrap;font-size:0.94rem;line-height:1.55;margin-bottom:1rem;' }, c.description));
+        body.appendChild(UI.createElement('div', { className: 'type-body', style: 'white-space:pre-wrap;line-height:1.55;margin-bottom:1rem;' }, c.description));
 
         if (c.rulesAndRegulations) {
           body.appendChild(UI.createElement('div', {
             style: 'background:#fffbeb;border:1px solid #fde68a;padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;'
           },
-            UI.createElement('div', { style: 'font-weight:800;color:#92400e;margin-bottom:0.35rem;' }, 'Rules & Regulations'),
-            UI.createElement('div', { style: 'white-space:pre-wrap;font-size:0.9rem;color:#78350f;' }, c.rulesAndRegulations)
+            UI.createElement('div', { style: 'font-weight:700;color:#92400e;margin-bottom:0.35rem;' }, 'Rules & Regulations'),
+            UI.createElement('div', { className: 'type-secondary', style: 'white-space:pre-wrap;color:#78350f;' }, c.rulesAndRegulations)
           ));
         }
 

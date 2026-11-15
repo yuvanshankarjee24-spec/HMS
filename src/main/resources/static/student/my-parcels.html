@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Parcels - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     .tab-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
@@ -69,17 +69,17 @@
   <!-- Bright Full-Screen QR Pickup Overlay -->
   <div id="qrFullscreen" class="qr-fullscreen-overlay">
     <div style="max-width: 400px; width: 100%;">
-      <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem;">
+      <div class="type-eyebrow" style="margin-bottom: 0.5rem;">
         Present to Warden for Pickup
       </div>
-      <h2 id="qrParcelCodeTitle" style="font-size: 1.65rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem;">PRC-2026-0001</h2>
-      <p id="qrParcelSub" style="color: #475569; margin-bottom: 1.25rem; font-size: 0.95rem;"></p>
+      <h2 id="qrParcelCodeTitle" class="parcel-id" style="font-size: var(--font-size-h1); font-weight: var(--font-weight-h1); color: var(--text-primary); margin-bottom: 0.25rem;">PRC-2026-0001</h2>
+      <p id="qrParcelSub" class="type-secondary" style="margin-bottom: 1.25rem;"></p>
 
       <div class="qr-box-bright">
         <div id="qrRenderBox"></div>
         <div style="border-top: 1px dashed #cbd5e1; width: 100%; padding-top: 0.75rem;">
-          <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700;">6-Digit Pickup Code (Fallback)</div>
-          <div id="qrPickupCode" style="font-size: 1.75rem; font-weight: 800; letter-spacing: 0.2em; color: #0f172a; margin-top: 0.2rem;">000000</div>
+          <div class="type-eyebrow">6-Digit Pickup Code (Fallback)</div>
+          <div id="qrPickupCode" class="pickup-code" style="font-size: var(--font-size-stat); font-weight: var(--font-weight-stat); letter-spacing: 0.18em; color: var(--text-primary); margin-top: 0.2rem;">000000</div>
         </div>
       </div>
 
@@ -92,7 +92,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     function closeQrFullscreen() {

@@ -27,6 +27,15 @@ public class Notification {
     @Column(name = "reference_id")
     private Long referenceId;
 
+    @Column(length = 50)
+    private String type;
+
+    @Column(length = 50)
+    private String module;
+
+    @Column(length = 255)
+    private String link;
+
     @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
@@ -58,5 +67,14 @@ public class Notification {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getModule() { return module; }
+    public void setModule(String module) { this.module = module; }
+
+    public String getLink() { return link; }
+    public void setLink(String link) { this.link = link; }
 }
 

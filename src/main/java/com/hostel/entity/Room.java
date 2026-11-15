@@ -14,6 +14,11 @@ public class Room {
         ACTIVE, MAINTENANCE
     }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,9 +32,13 @@ public class Room {
     @Column(nullable = false)
     private int capacity;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -67,4 +76,7 @@ public class Room {
 
     public List<Bed> getBeds() { return beds; }
     public void setBeds(List<Bed> beds) { this.beds = beds; }
+
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
 }

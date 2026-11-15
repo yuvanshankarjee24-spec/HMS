@@ -24,6 +24,18 @@ public class AuditLog {
     @Column(nullable = false, length = 50)
     private String result;
 
+    @Column(length = 50)
+    private String module;
+
+    @Column(name = "reference_id")
+    private Long referenceId;
+
+    @Column(name = "old_value", length = 500)
+    private String oldValue;
+
+    @Column(name = "new_value", length = 500)
+    private String newValue;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -53,4 +65,16 @@ public class AuditLog {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getModule() { return module; }
+    public void setModule(String module) { this.module = module; }
+
+    public Long getReferenceId() { return referenceId; }
+    public void setReferenceId(Long referenceId) { this.referenceId = referenceId; }
+
+    public String getOldValue() { return oldValue; }
+    public void setOldValue(String oldValue) { this.oldValue = oldValue; }
+
+    public String getNewValue() { return newValue; }
+    public void setNewValue(String newValue) { this.newValue = newValue; }
 }

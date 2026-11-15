@@ -46,11 +46,10 @@ public class CircularService {
     private final StudentRepository studentRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final BedRepository bedRepository;
+    private final HostelRepository hostelRepository;
+    private final AttachmentStorageService attachmentStorageService;
     private final NotificationService notificationService;
     private final AuditService auditService;
-
-    @Value("${app.upload.dir:./storage/photos}")
-    private String uploadDir;
 
     public CircularService(CircularRepository circularRepository,
                            CircularAttachmentRepository attachmentRepository,
@@ -62,6 +61,8 @@ public class CircularService {
                            StudentRepository studentRepository,
                            StaffProfileRepository staffProfileRepository,
                            BedRepository bedRepository,
+                           HostelRepository hostelRepository,
+                           AttachmentStorageService attachmentStorageService,
                            NotificationService notificationService,
                            AuditService auditService) {
         this.circularRepository = circularRepository;
@@ -74,6 +75,8 @@ public class CircularService {
         this.studentRepository = studentRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.bedRepository = bedRepository;
+        this.hostelRepository = hostelRepository;
+        this.attachmentStorageService = attachmentStorageService;
         this.notificationService = notificationService;
         this.auditService = auditService;
     }
@@ -150,7 +153,13 @@ public class CircularService {
         c.setStatus(status);
         c.setRequireAcknowledgement(requireAcknowledgement);
         c.setTargetScope(scope);
-        c.setHostelBlock(hostelBlock != null && !hostelBlock.isBlank() ? hostelBlock.trim() : (scope == Circular.TargetScope.ALL ? "ALL" : "Main Block"));
+        String resolvedBlock = hostelBlock != null && !hostelBlock.isBlank() ? hostelBlock.trim() : (scope == Circular.TargetScope.ALL ? "ALL" : "Main Block");
+        c.setHostelBlock(resolvedBlock);
+        if (!"ALL".equalsIgnoreCase(resolvedBlock)) {
+            hostelRepository.findByNameIgnoreCase(resolvedBlock)
+                    .or(() -> hostelRepository.findByCodeIgnoreCase(resolvedBlock))
+                    .ifPresent(c::setHostel);
+        }
         c.setScheduledPublishAt(scheduledPublishAt);
         c.setExpiresAt(expiresAt);
         c.setPublishedAt(publishedAt);
@@ -556,16 +565,8 @@ public class CircularService {
         } else if (!"WARDEN".equals(actor.getRole()) && !"ADMIN".equals(actor.getRole())) {
             throw new ForbiddenException("Access denied");
         }
-        try {
-            Path p = Paths.get(att.getFilePath()).normalize();
-            Resource r = new UrlResource(p.toUri());
-            if (!r.exists() || !r.isReadable()) {
-                throw new ResourceNotFoundException("Attachment file not found");
-            }
-            return new MaintenanceService.LoadedAttachment(r, att.getContentType(), att.getOriginalFilename());
-        } catch (MalformedURLException e) {
-            throw new ResourceNotFoundException("Invalid attachment path");
-        }
+        Resource r = attachmentStorageService.loadResource(att.getFilePath());
+        return new MaintenanceService.LoadedAttachment(r, att.getContentType(), att.getOriginalFilename());
     }
 
     // =====================================================
@@ -662,7 +663,9 @@ public class CircularService {
 
     public List<Student> resolveTargetedStudents(Circular c) {
         List<Student> activeStudents = studentRepository.findAll().stream()
-                .filter(s -> s.getUser() != null && s.getUser().getStatus() == User.Status.ACTIVE)
+                .filter(s -> s.isActive() && s.getDeletedAt() == null
+                        && s.getUser() != null && s.getUser().getStatus() == User.Status.ACTIVE
+                        && s.getUser().isActive() && s.getUser().getDeletedAt() == null)
                 .collect(Collectors.toList());
         return activeStudents.stream()
                 .filter(s -> isStudentTargeted(c, s))
@@ -704,6 +707,11 @@ public class CircularService {
             CircularTarget t = new CircularTarget();
             t.setCircular(c);
             t.setHostelBlock(block);
+            if (block != null && !"ALL".equalsIgnoreCase(block)) {
+                hostelRepository.findByNameIgnoreCase(block)
+                        .or(() -> hostelRepository.findByCodeIgnoreCase(block))
+                        .ifPresent(t::setHostel);
+            }
             targetRepository.save(t);
         } else if (scope == Circular.TargetScope.YEAR_DEPT) {
             CircularTarget t = new CircularTarget();
@@ -759,47 +767,23 @@ public class CircularService {
     }
 
     private List<MultipartFile> validateFiles(MultipartFile[] files) {
-        if (files == null || files.length == 0) return List.of();
-        List<MultipartFile> list = new ArrayList<>();
-        for (MultipartFile f : files) {
-            if (f != null && !f.isEmpty()) list.add(f);
-        }
-        if (list.size() > MAX_ATTACHMENTS) {
-            throw new BadRequestException("Maximum " + MAX_ATTACHMENTS + " attachments allowed");
-        }
-        for (MultipartFile f : list) {
-            String ct = f.getContentType();
-            if (ct == null || !ALLOWED_TYPES.contains(ct.toLowerCase())) {
-                throw new BadRequestException("Only PDF, JPG, PNG, and WebP files are allowed");
-            }
-            if (f.getSize() > MAX_FILE_BYTES) {
-                throw new BadRequestException("Each attachment must be 2 MB or smaller");
-            }
-        }
-        return list;
+        return attachmentStorageService.validateFiles(files, MAX_ATTACHMENTS, ALLOWED_TYPES, MAX_FILE_BYTES);
     }
 
     private void storeAttachment(Circular c, MultipartFile file, User uploader) {
-        try {
-            Path dir = Paths.get(uploadDir, "circulars").toAbsolutePath().normalize();
-            Files.createDirectories(dir);
-            String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "application/pdf";
-            String ext = ct.contains("pdf") ? ".pdf" : (ct.contains("png") ? ".png" : (ct.contains("webp") ? ".webp" : ".jpg"));
-            String fname = c.getCircularCode() + "_" + UUID.randomUUID().toString().substring(0, 8) + ext;
-            Path target = dir.resolve(fname);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        String targetPath = attachmentStorageService.storeFile(file, "circulars", c.getCircularCode());
+        String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "application/pdf";
 
-            CircularAttachment att = new CircularAttachment();
-            att.setCircular(c);
-            att.setFilePath(target.toString());
-            att.setOriginalFilename(file.getOriginalFilename() != null ? file.getOriginalFilename() : fname);
-            att.setContentType(ct);
-            att.setFileSize(file.getSize());
-            att.setUploadedBy(uploader);
-            attachmentRepository.save(att);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store circular attachment: " + e.getMessage());
-        }
+        CircularAttachment att = new CircularAttachment();
+        att.setCircular(c);
+        att.setFilePath(targetPath);
+        att.setOriginalFilename(file.getOriginalFilename() != null ? file.getOriginalFilename() : "attachment");
+        att.setContentType(ct);
+        att.setFileSize(file.getSize());
+        att.setUploadedBy(uploader);
+        attachmentRepository.save(att);
+
+        attachmentStorageService.registerAttachment("CIRCULAR", c.getId(), targetPath, file, "CIRCULAR_ATTACHMENT", uploader);
     }
 
     private void saveVersionSnapshot(Circular c, User editor, String note) {

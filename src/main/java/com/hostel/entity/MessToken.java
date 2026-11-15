@@ -11,6 +11,11 @@ public class MessToken {
 
     public enum Status { BOOKED, QR_ACTIVE, DELIVERED, PARTIALLY_DELIVERED, CANCELLED, EXPIRED }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,6 +30,10 @@ public class MessToken {
     @Column(name = "hostel_block", nullable = false, length = 100)
     private String hostelBlock = "Main Block";
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
+
     @Column(name = "menu_date", nullable = false)
     private LocalDate menuDate;
 
@@ -35,7 +44,7 @@ public class MessToken {
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false, length = 30)
     private Status status = Status.BOOKED;
 
@@ -91,5 +100,7 @@ public class MessToken {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
 }
 

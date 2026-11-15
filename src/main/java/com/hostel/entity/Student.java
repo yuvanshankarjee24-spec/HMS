@@ -36,6 +36,29 @@ public class Student {
     @Column(name = "photo_path", length = 255)
     private String photoPath;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    private Room room;
+
+    @Column(name = "guardian_name", length = 150)
+    private String guardianName;
+
+    @Column(name = "guardian_phone", length = 20)
+    private String guardianPhone;
+
+    @Column(name = "guardian_relation", length = 50)
+    private String guardianRelation;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Column(name = "is_locked", nullable = false)
     private boolean locked = false;
 
@@ -107,4 +130,25 @@ public class Student {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
+
+    public Room getRoom() { return room; }
+    public void setRoom(Room room) { this.room = room; }
+
+    public String getGuardianName() { return guardianName; }
+    public void setGuardianName(String guardianName) { this.guardianName = guardianName; }
+
+    public String getGuardianPhone() { return guardianPhone; }
+    public void setGuardianPhone(String guardianPhone) { this.guardianPhone = guardianPhone; }
+
+    public String getGuardianRelation() { return guardianRelation; }
+    public void setGuardianRelation(String guardianRelation) { this.guardianRelation = guardianRelation; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

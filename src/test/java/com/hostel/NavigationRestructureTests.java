@@ -46,6 +46,8 @@ public class NavigationRestructureTests {
             {"/student/raise-request.html", "/student/maintenance.html?tab=raise"},
             {"/student/my-requests.html", "/student/maintenance.html?tab=list"},
             {"/student/booking.html", "/student/dashboard.html"},
+            {"/warden", "/warden/dashboard"},
+            {"/warden/attendance.html", "/warden/attendance?tab=roll-call"},
             {"/warden/mess-scan.html", "/warden/mess.html?tab=scan"},
             {"/warden/mess-menu.html", "/warden/mess.html?tab=menu"},
             {"/warden/parcel-scan.html", "/warden/parcels.html?tab=scan"},
@@ -58,6 +60,14 @@ public class NavigationRestructureTests {
                     .andExpect(status().is3xxRedirection())
                     .andExpect(redirectedUrl(pair[1]));
         }
+
+        // Clean extensionless Warden URLs forward cleanly to their unified HTML views
+        mockMvc.perform(get("/warden/dashboard"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/warden/dashboard.html"));
+        mockMvc.perform(get("/warden/attendance"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/warden/digital-attendance.html"));
     }
 
     @Test
@@ -84,10 +94,19 @@ public class NavigationRestructureTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activeWorkers", greaterThanOrEqualTo(0)));
 
+        mockMvc.perform(get("/api/warden/dashboard-overview").cookie(cookieWarden))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.outpassPending", greaterThanOrEqualTo(0)))
+                .andExpect(jsonPath("$.summary.parcelsWaiting", greaterThanOrEqualTo(0)))
+                .andExpect(jsonPath("$.summary.maintOpen", greaterThanOrEqualTo(0)))
+                .andExpect(jsonPath("$.pendingActions.outpasses").isArray())
+                .andExpect(jsonPath("$.recentActivity").isArray());
+
         mockMvc.perform(get("/api/warden/outpasses").param("status", "LATE").cookie(cookieWarden))
                 .andExpect(status().isOk());
 
         // Student must remain forbidden on all warden summary endpoints
+        mockMvc.perform(get("/api/warden/dashboard-overview").cookie(cookieStudent)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/warden/outpasses/summary").cookie(cookieStudent)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/warden/circulars/summary").cookie(cookieStudent)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/warden/students/summary").cookie(cookieStudent)).andExpect(status().isForbidden());

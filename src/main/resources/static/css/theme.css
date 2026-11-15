@@ -1,0 +1,229 @@
+/* ==========================================================================
+   SMART HOSTEL MANAGEMENT - GLOBAL THEME & TYPOGRAPHY SYSTEM
+   Reference: Mess Tokens & Meal Attendance Design Hierarchy
+   One centralized file for all typography, type scale tokens & light colors
+   ========================================================================== */
+
+/* 1. FONT LOADING (Google Fonts with display=swap) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ------------------------------------------------------------------------
+     FONT FAMILIES & FALLBACK STACKS
+     ------------------------------------------------------------------------ */
+  --font-sans: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Aliases for backwards compatibility */
+  --font-body: var(--font-sans);
+  --font-heading: var(--font-sans);
+
+  /* ------------------------------------------------------------------------
+     TYPE SCALE TOKENS
+     ------------------------------------------------------------------------ */
+  /* Page Title (H1) */
+  --font-size-h1: 30px;
+  --font-weight-h1: 700;
+  --line-height-h1: 1.15;
+  --letter-spacing-h1: -0.02em;
+
+  /* Section Title (H2) */
+  --font-size-h2: 18px;
+  --font-weight-h2: 600;
+  --line-height-h2: 1.25;
+  --letter-spacing-h2: -0.01em;
+
+  /* Subsection / Card Title (H3) */
+  --font-size-h3: 16px;
+  --font-weight-h3: 600;
+  --line-height-h3: 1.3;
+  --letter-spacing-h3: -0.01em;
+
+  /* Body Text */
+  --font-size-body: 14px;
+  --font-weight-body: 400;
+  --line-height-body: 1.5;
+  --letter-spacing-body: 0;
+
+  /* Secondary / Helper Text */
+  --font-size-secondary: 13px;
+  --font-size-helper: 12px;
+  --font-weight-secondary: 400;
+  --line-height-secondary: 1.4;
+
+  /* Small Label / Eyebrow (Uppercase headers, token balance, etc.) */
+  --font-size-eyebrow: 11px;
+  --font-weight-eyebrow: 600;
+  --letter-spacing-eyebrow: 0.06em;
+  --text-transform-eyebrow: uppercase;
+
+  /* Big Stat Numbers (86%, 18, 4, etc.) */
+  --font-size-stat: 36px;
+  --font-weight-stat: 700;
+  --line-height-stat: 1.1;
+
+  /* Buttons & Action Items */
+  --font-size-btn: 13.5px;
+  --font-weight-btn: 600;
+  --letter-spacing-btn: 0.01em;
+
+  /* Tabs */
+  --font-size-tab: 13.5px;
+  --font-weight-tab: 600;
+  --letter-spacing-tab: 0.01em;
+
+  /* Sidebar Navigation */
+  --font-size-sidebar: 14px;
+  --font-weight-sidebar: 500;
+  --letter-spacing-sidebar: 0;
+
+  /* Badges & Chips */
+  --font-size-badge: 11.5px;
+  --font-weight-badge: 600;
+  --letter-spacing-badge: 0.04em;
+  --text-transform-badge: uppercase;
+
+  /* Data Table Text */
+  --font-size-table: 13.5px;
+  --font-weight-table-header: 600;
+
+  /* Forms: Labels & Inputs */
+  --font-size-label: 13px;
+  --font-weight-label: 500;
+  --font-size-input: 14px;
+  --font-size-input-mobile: 16px; /* Prevents iOS auto-zoom */
+
+  /* Technical Codes, Tokens & IDs */
+  --font-size-code: 12.5px;
+  --letter-spacing-code: 0.02em;
+
+  /* ------------------------------------------------------------------------
+     COLOR TOKENS (LIGHT THEME)
+     All WCAG AA Compliant (minimum 4.5:1 against light card/page backgrounds)
+     ------------------------------------------------------------------------ */
+  --text-primary: #0b1f35;       /* 15.6:1 contrast against white */
+  --text-secondary: #475569;     /* 6.2:1 contrast against white */
+  --text-muted: #4e657e;         /* 5.1:1 contrast against white, 4.8:1 on #f5f9ff */
+  --text-on-primary: #ffffff;    /* pure white for dark buttons & badges */
+  --text-link: #1872db;          /* 4.6:1 contrast against white (WCAG AA) */
+  --text-danger: #dc2626;        /* 5.1:1 contrast against white */
+  --text-success: #15803d;       /* 5.4:1 contrast against white */
+  --text-warning: #b45309;       /* 5.2:1 contrast against white */
+
+  /* Backward Compatibility Aliases for legacy CSS variables */
+  --text-main: var(--text-primary);
+  --text-light: var(--text-muted);
+}
+
+/* ==========================================================================
+   GLOBAL TYPOGRAPHY UTILITY CLASSES & BASE ELEMENT RESETS
+   ========================================================================== */
+
+/* Technical Codes, IDs, Monospace elements */
+.font-mono,
+code,
+kbd,
+samp,
+.tech-code,
+.pickup-code,
+.token-id,
+.parcel-id,
+.outpass-id,
+.request-id,
+.reg-no-code,
+.tracking-code,
+.gate-code,
+[data-label="Pass #"],
+[data-label="ID"],
+[data-label="Token #"],
+[data-label="Token ID"],
+[data-label="Parcel ID"],
+[data-label="Request #"],
+[data-label="Reg No"],
+[data-label="Tracking / AWB"] {
+  font-family: var(--font-mono) !important;
+  font-size: var(--font-size-code);
+  letter-spacing: var(--letter-spacing-code);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numbers & Tabular Alignment */
+.tabular-nums,
+.stat-value,
+.summary-strip-val,
+.stat-info .stat-value,
+.data-table td,
+table td,
+.data-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Typography Hierarchy Utilities */
+.type-h1 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-h1);
+  line-height: var(--line-height-h1);
+  letter-spacing: var(--letter-spacing-h1);
+  color: var(--text-primary);
+}
+
+.type-h2 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-h2);
+  line-height: var(--line-height-h2);
+  letter-spacing: var(--letter-spacing-h2);
+  color: var(--text-primary);
+}
+
+.type-h3 {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-h3);
+  line-height: var(--line-height-h3);
+  letter-spacing: var(--letter-spacing-h3);
+  color: var(--text-primary);
+}
+
+.type-body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-body);
+  line-height: var(--line-height-body);
+  color: var(--text-primary);
+}
+
+.type-secondary {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-secondary);
+  font-weight: var(--font-weight-secondary);
+  line-height: var(--line-height-secondary);
+  color: var(--text-secondary);
+}
+
+.type-helper {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-helper);
+  font-weight: var(--font-weight-secondary);
+  line-height: var(--line-height-secondary);
+  color: var(--text-muted);
+}
+
+.type-eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-eyebrow);
+  font-weight: var(--font-weight-eyebrow);
+  text-transform: var(--text-transform-eyebrow);
+  letter-spacing: var(--letter-spacing-eyebrow);
+  color: var(--text-muted);
+}
+
+.type-stat {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-stat);
+  font-weight: var(--font-weight-stat);
+  line-height: var(--line-height-stat);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}

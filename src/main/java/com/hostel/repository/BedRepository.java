@@ -31,12 +31,12 @@ public interface BedRepository extends JpaRepository<Bed, Long> {
     List<Bed> findAvailableBedsInRoomWithLock(@Param("roomId") Long roomId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT b FROM Bed b JOIN b.room r WHERE r.status = 'ACTIVE' AND b.student IS NULL ORDER BY r.roomNumber ASC, b.bedNumber ASC")
+    @Query("SELECT b FROM Bed b JOIN b.room r WHERE r.status = com.hostel.entity.Room.Status.ACTIVE AND b.student IS NULL ORDER BY r.roomNumber ASC, b.bedNumber ASC")
     List<Bed> findAllAvailableBedsWithLock();
 
     @Query("SELECT b FROM Bed b WHERE b.room.id = :roomId AND b.student IS NULL ORDER BY b.bedNumber ASC")
     List<Bed> findAvailableBedsInRoom(@Param("roomId") Long roomId);
 
-    @Query("SELECT b FROM Bed b JOIN FETCH b.room WHERE b.student IS NULL AND b.room.status = 'ACTIVE' ORDER BY b.room.roomNumber ASC, b.bedNumber ASC")
+    @Query("SELECT b FROM Bed b JOIN FETCH b.room WHERE b.student IS NULL AND b.room.status = com.hostel.entity.Room.Status.ACTIVE ORDER BY b.room.roomNumber ASC, b.bedNumber ASC")
     List<Bed> findAllAvailableBeds();
 }

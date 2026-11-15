@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +22,7 @@ public class AdminService {
     private final StudentRepository studentRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final WorkerProfileRepository workerProfileRepository;
+    private final HostelRepository hostelRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
 
@@ -32,12 +34,14 @@ public class AdminService {
                         StudentRepository studentRepository,
                         StaffProfileRepository staffProfileRepository,
                         WorkerProfileRepository workerProfileRepository,
+                        HostelRepository hostelRepository,
                         PasswordEncoder passwordEncoder,
                         AuditService auditService) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.workerProfileRepository = workerProfileRepository;
+        this.hostelRepository = hostelRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
     }
@@ -59,9 +63,12 @@ public class AdminService {
         User user = new User();
         user.setEmail(email);
         user.setRegisterNumber(regNo);
+        user.setName(req.fullName().trim());
+        user.setPhone(req.phone().trim());
         user.setPasswordHash(passwordEncoder.encode(tempPassword));
         user.setRole("STUDENT");
         user.setStatus(User.Status.ACTIVE);
+        user.setActive(true);
         user.setMustChangePassword(true);
         User savedUser = userRepository.save(user);
 
@@ -73,6 +80,10 @@ public class AdminService {
         student.setPhone(req.phone().trim());
         student.setDepartment(req.department().trim());
         student.setYear(req.year());
+        student.setActive(true);
+        hostelRepository.findByCodeIgnoreCase("MAIN")
+                .or(() -> hostelRepository.findAll().stream().findFirst())
+                .ifPresent(student::setHostel);
         studentRepository.save(student);
 
         auditService.log(actorUser, "CREATE_STUDENT", "Email=" + email + ", RegNo=" + regNo, "SUCCESS");
@@ -103,9 +114,12 @@ public class AdminService {
 
         User user = new User();
         user.setEmail(email);
+        user.setName(req.fullName().trim());
+        user.setPhone(req.phone().trim());
         user.setPasswordHash(passwordEncoder.encode(tempPassword));
         user.setRole(role);
         user.setStatus(User.Status.ACTIVE);
+        user.setActive(true);
         user.setMustChangePassword(true);
         User savedUser = userRepository.save(user);
 
@@ -173,14 +187,55 @@ public class AdminService {
             throw new BadRequestException("Invalid status: " + req.status() + ". Allowed: ACTIVE, LOCKED, DISABLED");
         }
 
+        User.Status oldStatus = user.getStatus();
         user.setStatus(newStatus);
+        boolean active = (newStatus == User.Status.ACTIVE);
+        LocalDateTime deletedAt = (newStatus == User.Status.DISABLED) ? LocalDateTime.now() : null;
+        user.setActive(active);
+        user.setDeletedAt(deletedAt);
         if (newStatus == User.Status.ACTIVE) {
             user.setFailedAttempts(0);
             user.setLockedUntil(null);
         }
 
         userRepository.save(user);
-        auditService.log(actorUser, "UPDATE_USER_STATUS", "UserId=" + userId + ", Status=" + newStatus, "SUCCESS");
+        syncProfileActiveState(user, active, deletedAt);
+        auditService.log(actorUser, "ADMIN", "UPDATE_USER_STATUS", userId,
+                oldStatus.name(), newStatus.name(), "UserId=" + userId + ", Status=" + newStatus, "SUCCESS");
+    }
+
+    @Transactional
+    public void softDeleteUser(Long userId, User actorUser) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (actorUser != null && user.getId().equals(actorUser.getId())) {
+            throw new BadRequestException("You cannot delete your own account.");
+        }
+
+        String oldStatus = user.getStatus().name();
+        LocalDateTime now = LocalDateTime.now();
+        user.setStatus(User.Status.DISABLED);
+        user.setActive(false);
+        user.setDeletedAt(now);
+        userRepository.save(user);
+        syncProfileActiveState(user, false, now);
+
+        auditService.log(actorUser, "ADMIN", "SOFT_DELETE_USER", userId,
+                oldStatus, "DISABLED", "Soft deleted user " + user.getEmail(), "SUCCESS");
+    }
+
+    private void syncProfileActiveState(User user, boolean active, LocalDateTime deletedAt) {
+        studentRepository.findByUserId(user.getId()).ifPresent(s -> {
+            s.setActive(active);
+            s.setDeletedAt(deletedAt);
+            studentRepository.save(s);
+        });
+        workerProfileRepository.findByUserId(user.getId()).ifPresent(w -> {
+            w.setActive(active);
+            w.setDeletedAt(deletedAt);
+            workerProfileRepository.save(w);
+        });
     }
 
     @Transactional

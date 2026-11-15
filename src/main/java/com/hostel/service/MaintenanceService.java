@@ -43,11 +43,11 @@ public class MaintenanceService {
     private final WorkerProfileRepository workerProfileRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final BedRepository bedRepository;
+    private final HostelRepository hostelRepository;
+    private final RoomRepository roomRepository;
+    private final AttachmentStorageService attachmentStorageService;
     private final NotificationService notificationService;
     private final AuditService auditService;
-
-    @Value("${app.upload.dir:./storage/photos}")
-    private String uploadDir;
 
     public MaintenanceService(MaintenanceRequestRepository requestRepository,
                               RequestAttachmentRepository attachmentRepository,
@@ -57,6 +57,9 @@ public class MaintenanceService {
                               WorkerProfileRepository workerProfileRepository,
                               StaffProfileRepository staffProfileRepository,
                               BedRepository bedRepository,
+                              HostelRepository hostelRepository,
+                              RoomRepository roomRepository,
+                              AttachmentStorageService attachmentStorageService,
                               NotificationService notificationService,
                               AuditService auditService) {
         this.requestRepository = requestRepository;
@@ -67,6 +70,9 @@ public class MaintenanceService {
         this.workerProfileRepository = workerProfileRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.bedRepository = bedRepository;
+        this.hostelRepository = hostelRepository;
+        this.roomRepository = roomRepository;
+        this.attachmentStorageService = attachmentStorageService;
         this.notificationService = notificationService;
         this.auditService = auditService;
     }
@@ -126,6 +132,16 @@ public class MaintenanceService {
         req.setDescription(description.trim());
         req.setHostelBlock(hostelBlock.trim());
         req.setRoomNumber(roomNumber.trim());
+        roomRepository.findByRoomNumber(roomNumber.trim()).ifPresent(r -> {
+            req.setRoom(r);
+            req.setHostel(r.getHostel());
+        });
+        if (req.getHostel() == null) {
+            hostelRepository.findByNameIgnoreCase(hostelBlock.trim())
+                    .or(() -> Optional.ofNullable(student.getHostel()))
+                    .or(() -> hostelRepository.findByCodeIgnoreCase("MAIN"))
+                    .ifPresent(req::setHostel);
+        }
         req.setPriority(priority);
         req.setPreferredTimeSlot(preferredTimeSlot != null && !preferredTimeSlot.isBlank() ? preferredTimeSlot.trim() : null);
         req.setStatus(MaintenanceRequest.Status.PENDING);
@@ -705,16 +721,8 @@ public class MaintenanceService {
             throw new ForbiddenException("Access denied to maintenance attachment");
         }
 
-        try {
-            Path path = Paths.get(attachment.getFilePath()).normalize();
-            Resource resource = new UrlResource(path.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                throw new ResourceNotFoundException("Attachment file not found on disk");
-            }
-            return new LoadedAttachment(resource, attachment.getContentType(), attachment.getOriginalFilename());
-        } catch (MalformedURLException e) {
-            throw new ResourceNotFoundException("Invalid attachment path");
-        }
+        Resource resource = attachmentStorageService.loadResource(attachment.getFilePath());
+        return new LoadedAttachment(resource, attachment.getContentType(), attachment.getOriginalFilename());
     }
 
     public record LoadedAttachment(Resource resource, String contentType, String originalFilename) {}
@@ -751,53 +759,29 @@ public class MaintenanceService {
     }
 
     private List<MultipartFile> filterAndValidateImages(MultipartFile[] files, int maxFiles) {
-        if (files == null || files.length == 0) return List.of();
-        List<MultipartFile> valid = new ArrayList<>();
-        for (MultipartFile f : files) {
-            if (f == null || f.isEmpty()) continue;
-            valid.add(f);
-        }
-        if (valid.size() > maxFiles) {
-            throw new BadRequestException("Maximum " + maxFiles + " image(s) allowed");
-        }
-        for (MultipartFile f : valid) {
-            String contentType = f.getContentType();
-            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
-                throw new BadRequestException("Only JPG, PNG, and WebP images are allowed");
-            }
-            if (f.getSize() > MAX_IMAGE_BYTES) {
-                throw new BadRequestException("Each image must be 2 MB or smaller");
-            }
-        }
-        return valid;
+        return attachmentStorageService.validateFiles(files, maxFiles, ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES);
     }
 
     private void storeAttachment(MaintenanceRequest req,
                                  MultipartFile file,
                                  RequestAttachment.AttachmentType type,
                                  User uploader) {
-        try {
-            Path dir = Paths.get(uploadDir, "maintenance").toAbsolutePath().normalize();
-            Files.createDirectories(dir);
+        String storedPath = attachmentStorageService.storeFile(
+                file, "maintenance", req.getRequestCode() + "_" + type.name());
+        String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "image/jpeg";
 
-            String ct = file.getContentType() != null ? file.getContentType().toLowerCase() : "image/jpeg";
-            String ext = ct.contains("png") ? ".png" : (ct.contains("webp") ? ".webp" : ".jpg");
-            String filename = req.getRequestCode() + "_" + type.name() + "_" + UUID.randomUUID().toString().substring(0, 8) + ext;
-            Path target = dir.resolve(filename);
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        RequestAttachment attachment = new RequestAttachment();
+        attachment.setRequest(req);
+        attachment.setFilePath(storedPath);
+        attachment.setOriginalFilename(file.getOriginalFilename() != null ? file.getOriginalFilename() : "image.jpg");
+        attachment.setContentType(ct);
+        attachment.setFileSize(file.getSize());
+        attachment.setAttachmentType(type);
+        attachment.setUploadedBy(uploader);
+        attachmentRepository.save(attachment);
 
-            RequestAttachment attachment = new RequestAttachment();
-            attachment.setRequest(req);
-            attachment.setFilePath(target.toString());
-            attachment.setOriginalFilename(file.getOriginalFilename() != null ? file.getOriginalFilename() : filename);
-            attachment.setContentType(ct);
-            attachment.setFileSize(file.getSize());
-            attachment.setAttachmentType(type);
-            attachment.setUploadedBy(uploader);
-            attachmentRepository.save(attachment);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store attachment: " + e.getMessage());
-        }
+        attachmentStorageService.registerAttachment(
+                "MAINTENANCE", req.getId(), storedPath, file, type.name(), uploader);
     }
 
     private String generateUniqueRequestCode() {

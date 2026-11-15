@@ -17,6 +17,10 @@ public class CircularTarget {
     @Column(name = "hostel_block", length = 100)
     private String hostelBlock;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
+
     @Column(length = 100)
     private String department;
 
@@ -41,5 +45,7 @@ public class CircularTarget {
     public void setStudyYear(Integer studyYear) { this.studyYear = studyYear; }
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
 }
 

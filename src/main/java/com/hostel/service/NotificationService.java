@@ -34,9 +34,47 @@ public class NotificationService {
         n.setTitle(title);
         n.setMessage(message);
         n.setReferenceType(referenceType);
+        n.setType(resolveNotificationType(referenceType));
+        n.setModule(resolveModule(referenceType));
+        n.setLink(resolveLink(referenceType, user.getRole()));
         n.setReferenceId(referenceId);
         n.setRead(false);
         notificationRepository.save(n);
+    }
+
+    private String resolveNotificationType(String referenceType) {
+        if (referenceType == null) return "INFO";
+        return switch (referenceType.toUpperCase()) {
+            case "OUTPASS_LOCK", "CIRCULAR_URGENT" -> "ALERT";
+            case "PARCEL", "MESS_TOKEN" -> "REMINDER";
+            default -> referenceType.toUpperCase();
+        };
+    }
+
+    private String resolveModule(String referenceType) {
+        if (referenceType == null) return "SYSTEM";
+        String up = referenceType.toUpperCase();
+        if (up.startsWith("OUTPASS")) return "OUTPASS";
+        if (up.startsWith("ATTENDANCE")) return "ATTENDANCE";
+        if (up.startsWith("MAINTENANCE")) return "MAINTENANCE";
+        if (up.startsWith("PARCEL")) return "PARCELS";
+        if (up.startsWith("CIRCULAR") || up.startsWith("EVENT")) return "CIRCULARS";
+        if (up.startsWith("MESS")) return "MESS";
+        return up;
+    }
+
+    private String resolveLink(String referenceType, String role) {
+        String mod = resolveModule(referenceType);
+        boolean isWarden = "WARDEN".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
+        return switch (mod) {
+            case "OUTPASS" -> isWarden ? "/warden/outpasses.html" : "/student/outpasses.html";
+            case "ATTENDANCE" -> isWarden ? "/warden/attendance" : "/student/attendance.html";
+            case "MAINTENANCE" -> isWarden ? "/warden/maintenance.html?tab=requests" : "/student/maintenance.html?tab=list";
+            case "PARCELS" -> isWarden ? "/warden/parcels.html?tab=register" : "/student/my-parcels.html";
+            case "CIRCULARS" -> isWarden ? "/warden/circulars.html" : "/student/circulars.html";
+            case "MESS" -> isWarden ? "/warden/mess.html?tab=tokens" : "/student/mess-tokens.html?tab=my-tokens";
+            default -> isWarden ? "/warden/dashboard" : "/student/dashboard.html";
+        };
     }
 
     @Transactional

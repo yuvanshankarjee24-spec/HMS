@@ -4,6 +4,7 @@ import com.hostel.dto.DigitalAttendanceDtos.*;
 import com.hostel.entity.*;
 import com.hostel.exception.CustomExceptions.*;
 import com.hostel.repository.*;
+import com.hostel.util.StatusConstants;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,8 @@ public class DigitalAttendanceService {
     private final DigitalAttendanceRecordRepository recordRepository;
     private final AttendanceNotificationLogRepository notifLogRepository;
     private final OutpassLockHistoryRepository lockHistoryRepository;
+    private final OutpassLockRepository outpassLockRepository;
+    private final HostelRepository hostelRepository;
     private final StudentRepository studentRepository;
     private final BedRepository bedRepository;
     private final OutpassRepository outpassRepository;
@@ -34,6 +37,8 @@ public class DigitalAttendanceService {
                                     DigitalAttendanceRecordRepository recordRepository,
                                     AttendanceNotificationLogRepository notifLogRepository,
                                     OutpassLockHistoryRepository lockHistoryRepository,
+                                    OutpassLockRepository outpassLockRepository,
+                                    HostelRepository hostelRepository,
                                     StudentRepository studentRepository,
                                     BedRepository bedRepository,
                                     OutpassRepository outpassRepository,
@@ -44,6 +49,8 @@ public class DigitalAttendanceService {
         this.recordRepository = recordRepository;
         this.notifLogRepository = notifLogRepository;
         this.lockHistoryRepository = lockHistoryRepository;
+        this.outpassLockRepository = outpassLockRepository;
+        this.hostelRepository = hostelRepository;
         this.studentRepository = studentRepository;
         this.bedRepository = bedRepository;
         this.outpassRepository = outpassRepository;
@@ -72,6 +79,7 @@ public class DigitalAttendanceService {
         AttendanceSession s = new AttendanceSession();
         s.setName(req.name().trim());
         s.setHostelBlock(req.hostelBlock().trim());
+        resolveHostel(req.hostelBlock()).ifPresent(s::setHostel);
         s.setStartTime(req.startTime());
         s.setEndTime(req.endTime());
         s.setActiveDays(normalizeActiveDays(req.activeDays()));
@@ -104,6 +112,7 @@ public class DigitalAttendanceService {
 
         s.setName(req.name().trim());
         s.setHostelBlock(req.hostelBlock().trim());
+        resolveHostel(req.hostelBlock()).ifPresent(s::setHostel);
         s.setStartTime(req.startTime());
         s.setEndTime(req.endTime());
         s.setActiveDays(normalizeActiveDays(req.activeDays()));
@@ -312,8 +321,10 @@ public class DigitalAttendanceService {
                 String lockReason = "Missed " + session.getName() + " on " + today;
                 s.setLocked(true);
                 s.setLockReason(lockReason);
-                s.setLockedAt(now);
+                s.setLockedAt(StatusConstants.nowUtc());
                 studentRepository.save(s);
+
+                createActiveOutpassLock(s, session, today, lockReason, activePasses);
 
                 OutpassLockHistory lockHist = new OutpassLockHistory();
                 lockHist.setStudent(s);
@@ -358,7 +369,7 @@ public class DigitalAttendanceService {
 
     @Transactional
     public StudentTodayAttendanceResponse getStudentToday(User studentUser) {
-        return getStudentTodayAt(studentUser, LocalDateTime.now());
+        return getStudentTodayAt(studentUser, StatusConstants.nowIst());
     }
 
     @Transactional
@@ -440,7 +451,7 @@ public class DigitalAttendanceService {
                                               MarkDigitalAttendanceRequest req,
                                               String deviceInfo,
                                               String ipAddress) {
-        return markAttendanceAt(studentUser, req, deviceInfo, ipAddress, LocalDateTime.now());
+        return markAttendanceAt(studentUser, req, deviceInfo, ipAddress, StatusConstants.nowIst());
     }
 
     @Transactional
@@ -556,17 +567,18 @@ public class DigitalAttendanceService {
 
     @Transactional
     public WardenDigitalSummaryResponse getWardenSummary(LocalDate date) {
-        LocalDate target = (date != null) ? date : LocalDate.now();
-        if (target.equals(LocalDate.now())) {
-            initializeSessionsForDate(LocalDateTime.now());
+        LocalDate target = (date != null) ? date : StatusConstants.todayIst();
+        if (target.equals(StatusConstants.todayIst())) {
+            initializeSessionsForDate(StatusConstants.nowIst());
         }
         List<DigitalAttendanceRecord> recs = recordRepository.findByAttendanceDate(target);
-        long totalStudents = getActiveEligibleStudents().size();
+        List<Student> eligible = getActiveEligibleStudents();
+        long totalStudents = eligible.size();
         long marked = recs.stream().filter(r -> r.getStatus() == DigitalAttendanceRecord.Status.MARKED || r.getStatus() == DigitalAttendanceRecord.Status.MANUAL_PRESENT).count();
         long pending = recs.stream().filter(r -> r.getStatus() == DigitalAttendanceRecord.Status.PENDING).count();
         long missed = recs.stream().filter(r -> r.getStatus() == DigitalAttendanceRecord.Status.MISSED).count();
         long onOutpass = recs.stream().filter(r -> r.getStatus() == DigitalAttendanceRecord.Status.ON_OUTPASS).count();
-        long locked = studentRepository.findAll().stream().filter(Student::isLocked).count();
+        long locked = eligible.stream().filter(Student::isLocked).count();
 
         return new WardenDigitalSummaryResponse(target, totalStudents, marked, pending, missed, onOutpass, locked);
     }
@@ -586,9 +598,9 @@ public class DigitalAttendanceService {
     }
 
     public List<MissedOrPendingStudentItem> listLockedStudents(String query) {
-        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+        LocalDate thirtyDaysAgo = StatusConstants.todayIst().minusDays(30);
         String q = (query != null && !query.isBlank()) ? query.trim().toLowerCase() : null;
-        return studentRepository.findAll().stream()
+        return getActiveEligibleStudents().stream()
                 .filter(Student::isLocked)
                 .filter(s -> q == null || s.getFullName().toLowerCase().contains(q) || s.getRegisterNumber().toLowerCase().contains(q))
                 .map(s -> {
@@ -615,9 +627,18 @@ public class DigitalAttendanceService {
 
         student.setLocked(false);
         student.setUnlockedBy(actor);
-        student.setUnlockedAt(LocalDateTime.now());
+        student.setUnlockedAt(StatusConstants.nowUtc());
         student.setUnlockRemarks(reason.trim());
         studentRepository.save(student);
+
+        List<OutpassLock> activeLocks = outpassLockRepository.findByStudentIdAndActiveTrue(student.getId());
+        for (OutpassLock lock : activeLocks) {
+            lock.setActive(false);
+            lock.setUnlockedBy(actor);
+            lock.setUnlockedAt(StatusConstants.nowUtc());
+            lock.setUnlockRemarks(reason.trim());
+            outpassLockRepository.save(lock);
+        }
 
         OutpassLockHistory hist = new OutpassLockHistory();
         hist.setStudent(student);
@@ -694,8 +715,10 @@ public class DigitalAttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
         student.setLocked(true);
         student.setLockReason(reason.trim());
-        student.setLockedAt(LocalDateTime.now());
+        student.setLockedAt(StatusConstants.nowUtc());
         studentRepository.save(student);
+
+        createActiveOutpassLock(student, null, null, reason.trim(), getActiveOutpasses());
 
         OutpassLockHistory hist = new OutpassLockHistory();
         hist.setStudent(student);
@@ -721,7 +744,7 @@ public class DigitalAttendanceService {
         Map<Long, List<DigitalAttendanceRecord>> byStudent = recs.stream()
                 .collect(Collectors.groupingBy(r -> r.getStudent().getId()));
 
-        List<Student> students = studentRepository.findAll();
+        List<Student> students = getActiveEligibleStudents();
         List<AttendanceReportRow> rows = new ArrayList<>();
         for (Student s : students) {
             List<DigitalAttendanceRecord> sRecs = byStudent.getOrDefault(s.getId(), List.of());
@@ -762,10 +785,10 @@ public class DigitalAttendanceService {
     }
 
     public AdminAttendanceAnalyticsResponse getAdminAnalytics() {
-        LocalDate end = LocalDate.now();
+        LocalDate end = StatusConstants.todayIst();
         LocalDate start = end.minusDays(30);
         List<DigitalAttendanceRecord> recs = recordRepository.findByAttendanceDateBetween(start, end);
-        List<Student> students = studentRepository.findAll();
+        List<Student> students = getActiveEligibleStudents();
 
         long locked = students.stream().filter(Student::isLocked).count();
         long markedAll = recs.stream().filter(r -> r.getStatus() == DigitalAttendanceRecord.Status.MARKED || r.getStatus() == DigitalAttendanceRecord.Status.MANUAL_PRESENT).count();
@@ -812,8 +835,44 @@ public class DigitalAttendanceService {
 
     private List<Student> getActiveEligibleStudents() {
         return studentRepository.findAll().stream()
-                .filter(s -> s.getUser() != null && s.getUser().getStatus() == User.Status.ACTIVE)
+                .filter(s -> s.isActive() && s.getDeletedAt() == null
+                        && s.getUser() != null && s.getUser().getStatus() == User.Status.ACTIVE
+                        && s.getUser().isActive() && s.getUser().getDeletedAt() == null)
                 .collect(Collectors.toList());
+    }
+
+    private Optional<Hostel> resolveHostel(String hostelBlock) {
+        if (hostelBlock != null && !hostelBlock.isBlank()) {
+            Optional<Hostel> byName = hostelRepository.findByNameIgnoreCase(hostelBlock.trim());
+            if (byName.isPresent()) return byName;
+            Optional<Hostel> byCode = hostelRepository.findByCodeIgnoreCase(hostelBlock.trim());
+            if (byCode.isPresent()) return byCode;
+        }
+        return hostelRepository.findByCodeIgnoreCase("MAIN")
+                .or(() -> hostelRepository.findAll().stream().findFirst());
+    }
+
+    private void createActiveOutpassLock(Student student, AttendanceSession session, LocalDate attendanceDate,
+                                         String reason, List<Outpass> activePasses) {
+        OutpassLock lock = new OutpassLock();
+        lock.setStudent(student);
+        lock.setAttendanceSession(session);
+        lock.setAttendanceDate(attendanceDate);
+        lock.setReason(reason);
+        lock.setActive(true);
+        lock.setLockedAt(StatusConstants.nowUtc());
+        if (activePasses != null) {
+            activePasses.stream()
+                    .filter(op -> op.getStudent() != null && op.getStudent().getId().equals(student.getId()))
+                    .findFirst()
+                    .ifPresent(lock::setOutpass);
+        } else {
+            outpassRepository.findByStudentOrderByCreatedAtDesc(student).stream()
+                    .filter(op -> op.getStatus() == Outpass.Status.APPROVED || op.getStatus() == Outpass.Status.OUT)
+                    .findFirst()
+                    .ifPresent(lock::setOutpass);
+        }
+        outpassLockRepository.save(lock);
     }
 
     private List<Outpass> getActiveOutpasses() {

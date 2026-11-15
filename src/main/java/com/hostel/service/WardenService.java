@@ -248,9 +248,15 @@ public class WardenService {
             throw new ConflictException("Bed was taken by another allocation.");
         }
 
-        // Assign bed
+        // Assign bed and sync canonical student room/hostel FKs
         targetBed.setStudent(student);
         bedRepository.save(targetBed);
+
+        student.setRoom(targetBed.getRoom());
+        if (targetBed.getRoom() != null && targetBed.getRoom().getHostel() != null) {
+            student.setHostel(targetBed.getRoom().getHostel());
+        }
+        studentRepository.save(student);
 
         // Update request
         request.setStatus(RoomRequest.Status.APPROVED);
@@ -307,6 +313,9 @@ public class WardenService {
 
         bed.setStudent(null);
         bedRepository.save(bed);
+
+        student.setRoom(null);
+        studentRepository.save(student);
 
         AllocationHistory history = new AllocationHistory(student, bed, AllocationHistory.Action.VACATED, actorUser);
         allocationHistoryRepository.save(history);

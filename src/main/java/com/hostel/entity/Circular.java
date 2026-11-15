@@ -10,6 +10,11 @@ public class Circular {
     public enum Type { EVENT, CIRCULAR, REGULATION, EMERGENCY }
     public enum Priority { NORMAL, IMPORTANT, URGENT }
     public enum Status { DRAFT, SCHEDULED, PUBLISHED, ARCHIVED }
+
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
     public enum TargetScope { ALL, BLOCK, YEAR_DEPT, STUDENTS }
 
     @Id
@@ -42,7 +47,7 @@ public class Circular {
     @Column(nullable = false, length = 30)
     private Priority priority = Priority.NORMAL;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false, length = 30)
     private Status status = Status.DRAFT;
 
@@ -55,6 +60,10 @@ public class Circular {
 
     @Column(name = "hostel_block", length = 100)
     private String hostelBlock;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hostel_id")
+    private Hostel hostel;
 
     @Column(name = "scheduled_publish_at")
     private LocalDateTime scheduledPublishAt;
@@ -128,5 +137,7 @@ public class Circular {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Hostel getHostel() { return hostel; }
+    public void setHostel(Hostel hostel) { this.hostel = hostel; }
 }
 

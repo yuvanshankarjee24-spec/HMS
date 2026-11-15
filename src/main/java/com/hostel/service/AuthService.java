@@ -64,9 +64,9 @@ public class AuthService {
 
         User user = userOpt.get();
 
-        // Check if account is disabled
-        if (user.getStatus() == User.Status.DISABLED) {
-            auditService.log(user, "LOGIN", user.getEmail(), "FAILURE: Account disabled");
+        // Check if account is disabled or soft-deleted
+        if (user.getStatus() == User.Status.DISABLED || !user.isActive() || user.getDeletedAt() != null) {
+            auditService.log(user, "LOGIN", user.getEmail(), "FAILURE: Account disabled or deactivated");
             throw new ForbiddenException("Account has been disabled. Please contact administrator.");
         }
 

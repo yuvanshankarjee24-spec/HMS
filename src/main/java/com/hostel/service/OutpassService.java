@@ -20,17 +20,23 @@ public class OutpassService {
     private final StudentRepository studentRepository;
     private final BedRepository bedRepository;
     private final AttendanceRepository attendanceRepository;
+    private final OutpassLockRepository outpassLockRepository;
+    private final OutpassScanLogRepository outpassScanLogRepository;
     private final AuditService auditService;
 
     public OutpassService(OutpassRepository outpassRepository,
                           StudentRepository studentRepository,
                           BedRepository bedRepository,
                           AttendanceRepository attendanceRepository,
+                          OutpassLockRepository outpassLockRepository,
+                          OutpassScanLogRepository outpassScanLogRepository,
                           AuditService auditService) {
         this.outpassRepository = outpassRepository;
         this.studentRepository = studentRepository;
         this.bedRepository = bedRepository;
         this.attendanceRepository = attendanceRepository;
+        this.outpassLockRepository = outpassLockRepository;
+        this.outpassScanLogRepository = outpassScanLogRepository;
         this.auditService = auditService;
     }
 
@@ -281,23 +287,49 @@ public class OutpassService {
         return mapToSecurityScanResponse(outpass);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ForbiddenException.class)
     public SecurityOutpassScanResponse markSecurityExit(Long outpassId, User securityUser) {
         Outpass outpass = outpassRepository.findById(outpassId)
                 .orElseThrow(() -> new ResourceNotFoundException("Outpass not found: " + outpassId));
         Student student = outpass.getStudent();
 
-        if (student.isLocked()) {
-            throw new ForbiddenException("OUTPASS LOCKED - MISSED ATTENDANCE. Outpass locked due to missed attendance. Contact the warden.");
+        boolean hasActiveLock = student.isLocked()
+                || outpassLockRepository.findFirstByStudentIdAndActiveTrueOrderByLockedAtDesc(student.getId()).isPresent();
+        if (hasActiveLock) {
+            String denialMsg = "OUTPASS LOCKED - MISSED ATTENDANCE. Outpass locked due to missed attendance. Contact the warden.";
+            OutpassScanLog deniedLog = new OutpassScanLog();
+            deniedLog.setOutpass(outpass);
+            deniedLog.setScannedBy(securityUser);
+            deniedLog.setScanAction("denied");
+            deniedLog.setScanResult("LOCKED_MISSED_ATTENDANCE");
+            deniedLog.setNotes(denialMsg);
+            outpassScanLogRepository.save(deniedLog);
+
+            auditService.log(securityUser, "OUTPASS", "SECURITY_OUTPASS_EXIT_DENIED", outpass.getId(),
+                    outpass.getStatus().name(), outpass.getStatus().name(),
+                    "OutpassId=" + outpass.getId() + " Student=" + student.getRegisterNumber(), "DENIED_LOCKED");
+            throw new ForbiddenException(denialMsg);
         }
         if (outpass.getStatus() != Outpass.Status.APPROVED) {
             throw new BadRequestException("Exit can only be marked for APPROVED outpasses. Current status: " + outpass.getStatus());
         }
 
+        String oldStatus = outpass.getStatus().name();
         outpass.setStatus(Outpass.Status.OUT);
         outpass.setActualExitTime(LocalDateTime.now());
         Outpass saved = outpassRepository.save(outpass);
-        auditService.log(securityUser, "SECURITY_OUTPASS_EXIT", "OutpassId=" + saved.getId() + " Student=" + student.getRegisterNumber(), "SUCCESS");
+
+        OutpassScanLog exitLog = new OutpassScanLog();
+        exitLog.setOutpass(saved);
+        exitLog.setScannedBy(securityUser);
+        exitLog.setScanAction("exit");
+        exitLog.setScanResult("ALLOWED");
+        exitLog.setNotes("Security gate exit recorded");
+        outpassScanLogRepository.save(exitLog);
+
+        auditService.log(securityUser, "OUTPASS", "SECURITY_OUTPASS_EXIT", saved.getId(),
+                oldStatus, Outpass.Status.OUT.name(),
+                "OutpassId=" + saved.getId() + " Student=" + student.getRegisterNumber(), "SUCCESS");
         return mapToSecurityScanResponse(saved);
     }
 
@@ -307,7 +339,8 @@ public class OutpassService {
                 .map(b -> b.getRoom().getRoomNumber())
                 .orElse("-");
 
-        boolean locked = s.isLocked();
+        boolean locked = s.isLocked()
+                || outpassLockRepository.findFirstByStudentIdAndActiveTrueOrderByLockedAtDesc(s.getId()).isPresent();
         boolean exitAllowed;
         String gateMessage;
 

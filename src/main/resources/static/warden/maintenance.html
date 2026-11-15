@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maintenance &amp; Workers - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
 </head>
 <body>
   <div id="app-layout" class="app-container">
@@ -323,8 +323,8 @@
     </div>
   </div>
 
-  <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -734,6 +734,14 @@
       document.getElementById('btnWSearch').addEventListener('click', loadWorkers);
 
       tabsCtrl = UI.Tabs.init({ barSelector: '#maintMainTabs', defaultTab: 'requests' });
+      const urlMaintStatus = (new URLSearchParams(window.location.search).get('status') || '').trim().toUpperCase();
+      if (urlMaintStatus && urlMaintStatus !== 'OPEN') {
+        document.getElementById('filterStatus').value = urlMaintStatus;
+        activeCardFilter = urlMaintStatus;
+      } else if (urlMaintStatus === 'OPEN') {
+        document.getElementById('filterStatus').value = 'PENDING';
+        activeCardFilter = 'PENDING';
+      }
       await Promise.all([loadStats(), loadRequests(0), loadWorkers()]);
     })();
   </script>

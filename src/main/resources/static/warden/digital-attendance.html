@@ -3,36 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Attendance Desk - PSG iTech Hostel</title>
+  <title>Attendance Desk - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <style>
-    .stats-grid-5 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .mini-stat {
-      background: #ffffff;
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-md);
-      padding: 1rem 1.25rem;
-    }
-    .mini-stat-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-    .mini-stat-val { font-size: 1.65rem; font-weight: 800; margin-top: 0.25rem; }
-    .tab-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-    .tab-btn {
-      padding: 0.55rem 1.1rem;
+    .subtab-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .subtab-btn {
+      padding: 0.45rem 0.95rem;
       border-radius: var(--radius-full);
       border: 1px solid var(--border-light);
       background: #ffffff;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-weight: var(--font-weight-tab);
+      font-size: var(--font-size-tab);
+      letter-spacing: var(--letter-spacing-tab);
+      color: var(--text-secondary);
       cursor: pointer;
     }
-    .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); }
+    .subtab-btn:hover { color: var(--primary); border-color: var(--primary); }
+    .subtab-btn.active { background: var(--primary-subtle); color: var(--primary); border-color: var(--primary); font-weight: 700; }
+
+    .attendance-kpi-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.85rem 1.25rem;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .attendance-chip {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .btn-status-toggle {
+      border: 1px solid var(--border-light);
+      background: #ffffff;
+      border-radius: var(--radius-sm);
+      padding: 0.25rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-status-toggle:hover { background: var(--border-subtle); }
+    .btn-status-toggle.active-p { background: #dcfce7; color: #15803d; border-color: #86efac; }
+    .btn-status-toggle.active-a { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+    .btn-status-toggle.active-l { background: #fef3c7; color: #b45309; border-color: #fde68a; }
   </style>
 </head>
 <body>
@@ -41,8 +65,8 @@
       <div class="page-body">
         <div class="page-header">
           <div>
-            <h1 class="page-title">Digital Attendance &amp; Outpass Locks</h1>
-            <p class="page-subtitle">Monitor live sessions, manage missed attendance locks, mark exceptions manually, and export reports.</p>
+            <h1 class="page-title">Attendance &amp; Outpass Locks</h1>
+            <p class="page-subtitle">Monitor today's digital sessions, manage roll call register, unlock outpasses, and export attendance reports.</p>
           </div>
           <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
             <a href="/api/warden/digital-attendance/report/export" class="btn btn-secondary btn-sm">Export CSV Report</a>
@@ -50,113 +74,172 @@
           </div>
         </div>
 
-        <div id="daSummaryCards"></div>
-
-        <div class="tab-bar" id="viewTabs">
-          <button type="button" class="tab-btn active" data-tab="missed">Missed &amp; Locked Queue</button>
-          <button type="button" class="tab-btn" data-tab="pending">Live Pending Students</button>
-          <button type="button" class="tab-btn" data-tab="sessions">Sessions &amp; Geofence Config</button>
-          <button type="button" class="tab-btn" data-tab="report">30-Day Student Report</button>
+        <!-- Primary Attendance Tabs: Today / Roll Call Register / Reports -->
+        <div class="portal-tabs" id="attendanceMainTabs">
+          <button type="button" class="portal-tab-btn active" data-tab="today">Today</button>
+          <button type="button" class="portal-tab-btn" data-tab="roll-call">Roll Call Register</button>
+          <button type="button" class="portal-tab-btn" data-tab="reports">Reports</button>
         </div>
 
-        <!-- TAB: Missed & Locked -->
-        <div id="tab-missed" class="card">
-          <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
-            <h2 class="card-title">Missed Attendance &amp; Locked Outpasses</h2>
-            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
-              <input type="text" id="missedQuery" class="form-control" style="width:180px;" placeholder="Name or Reg No...">
-              <input type="date" id="missedDate" class="form-control" style="width:150px;">
-              <button type="button" class="btn btn-secondary btn-sm" id="btnFilterMissed">Filter</button>
-              <button type="button" class="btn btn-success btn-sm" id="btnBulkUnlock">Bulk Unlock Selected</button>
+        <!-- TAB 1: TODAY (Digital Attendance & Locks + Sessions) -->
+        <div id="panel-today">
+          <div id="daSummaryCards"></div>
+
+          <div class="subtab-bar" id="todaySubTabs">
+            <button type="button" class="subtab-btn active" data-subtab="missed">Missed &amp; Locked Queue</button>
+            <button type="button" class="subtab-btn" data-subtab="pending">Live Pending Students</button>
+            <button type="button" class="subtab-btn" data-subtab="sessions">Sessions &amp; Geofence Config</button>
+          </div>
+
+          <div id="subtab-missed" class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+              <h2 class="card-title">Missed Attendance &amp; Locked Outpasses</h2>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+                <input type="text" id="missedQuery" class="form-control" style="width:180px;" placeholder="Name or Reg No...">
+                <input type="date" id="missedDate" class="form-control" style="width:150px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnFilterMissed">Filter</button>
+                <button type="button" class="btn btn-success btn-sm" id="btnBulkUnlock">Bulk Unlock Selected</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="chkAllMissed"></th>
+                    <th>Student</th>
+                    <th>Room</th>
+                    <th>Session &amp; Date</th>
+                    <th>Misses (30d)</th>
+                    <th>Lock Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="missedBody"></tbody>
+              </table>
+            </div>
+            <div id="missedPag" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
+          </div>
+
+          <div id="subtab-pending" class="card" style="display:none;">
+            <div class="card-header">
+              <h2 class="card-title">Live Pending Students (Window Open)</h2>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshPending">Refresh</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Room</th>
+                    <th>Session</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="pendingBody"></tbody>
+              </table>
             </div>
           </div>
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table">
-              <thead>
-                <tr>
-                  <th><input type="checkbox" id="chkAllMissed"></th>
-                  <th>Student</th>
-                  <th>Room</th>
-                  <th>Session &amp; Date</th>
-                  <th>Misses (30d)</th>
-                  <th>Lock Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="missedBody"></tbody>
-            </table>
-          </div>
-          <div id="missedPag" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0 0;"></div>
-        </div>
 
-        <!-- TAB: Live Pending -->
-        <div id="tab-pending" class="card" style="display:none;">
-          <div class="card-header">
-            <h2 class="card-title">Live Pending Students (Window Open)</h2>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshPending">Refresh</button>
-          </div>
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Room</th>
-                  <th>Session</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="pendingBody"></tbody>
-            </table>
+          <div id="subtab-sessions" class="card" style="display:none;">
+            <div class="card-header">
+              <h2 class="card-title">Configured Attendance Sessions</h2>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Block</th>
+                    <th>Window</th>
+                    <th>Active Days</th>
+                    <th>Reminders</th>
+                    <th>Geofence</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="sessionsBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- TAB: Sessions Config -->
-        <div id="tab-sessions" class="card" style="display:none;">
-          <div class="card-header">
-            <h2 class="card-title">Configured Attendance Sessions</h2>
-          </div>
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Block</th>
-                  <th>Window</th>
-                  <th>Active Days</th>
-                  <th>Reminders</th>
-                  <th>Geofence</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="sessionsBody"></tbody>
-            </table>
+        <!-- TAB 2: ROLL CALL REGISTER (Moved from /warden/attendance.html) -->
+        <div id="panel-roll-call" style="display:none;">
+          <div id="rollSummaryCards"></div>
+
+          <div class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:1rem;">
+              <h2 class="card-title">Student Active Attendance Roster</h2>
+              <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                <input type="date" id="attendanceDatePicker" class="form-control" style="width:auto;padding:0.4rem 0.75rem;font-size:0.85rem;">
+                <select id="attendanceFilterSelect" class="form-control" style="width:auto;padding:0.4rem 0.75rem;font-size:0.85rem;">
+                  <option value="ALL">All Statuses</option>
+                  <option value="PRESENT">Present</option>
+                  <option value="ABSENT">Absent</option>
+                  <option value="ON_OUTPASS">On Outpass</option>
+                  <option value="LATE">Late</option>
+                </select>
+                <button type="button" class="btn btn-primary btn-sm" id="btnMarkAllPresent" title="Mark all unrecorded allocated students as Present">
+                  &#10003; Mark All Present
+                </button>
+              </div>
+            </div>
+
+            <div class="attendance-kpi-bar">
+              <span class="attendance-chip" style="color:#1e3a8a;">Total Residents: <strong id="chipTotal">0</strong></span>
+              <span class="attendance-chip" style="color:#15803d;">Present: <strong id="chipPresent">0</strong></span>
+              <span class="attendance-chip" style="color:#b91c1c;">Absent: <strong id="chipAbsent">0</strong></span>
+              <span class="attendance-chip" style="color:#6d28d9;">On Outpass: <strong id="chipOutpass">0</strong></span>
+              <span class="attendance-chip" style="color:#b45309;">Late: <strong id="chipLate">0</strong></span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table" id="attendanceTable">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Room &amp; Bed</th>
+                    <th>Department &amp; Year</th>
+                    <th>Current Active Status</th>
+                    <th>Outpass / Notes</th>
+                    <th>Quick Roll Call Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                  <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Loading live attendance records...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- TAB: 30-Day Report -->
-        <div id="tab-report" class="card" style="display:none;">
-          <div class="card-header">
-            <h2 class="card-title">Attendance Summary Report (Last 30 Days)</h2>
-          </div>
-          <div class="table-responsive">
-            <table class="data-table mobile-collapse-table">
-              <thead>
-                <tr>
-                  <th>Reg No</th>
-                  <th>Student Name</th>
-                  <th>Room</th>
-                  <th>Total</th>
-                  <th>Marked</th>
-                  <th>Missed</th>
-                  <th>Rate</th>
-                  <th>Lock Status</th>
-                </tr>
-              </thead>
-              <tbody id="reportBody"></tbody>
-            </table>
+        <!-- TAB 3: REPORTS (30-Day Digital Attendance Report) -->
+        <div id="panel-reports" style="display:none;">
+          <div class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:0.75rem;">
+              <h2 class="card-title">Attendance Summary Report (Last 30 Days)</h2>
+              <a href="/api/warden/digital-attendance/report/export" class="btn btn-secondary btn-sm">Download CSV</a>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table mobile-collapse-table">
+                <thead>
+                  <tr>
+                    <th>Reg No</th>
+                    <th>Student Name</th>
+                    <th>Room</th>
+                    <th>Total</th>
+                    <th>Marked</th>
+                    <th>Missed</th>
+                    <th>Rate</th>
+                    <th>Lock Status</th>
+                  </tr>
+                </thead>
+                <tbody id="reportBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -229,8 +312,8 @@
     </div>
   </div>
 
-  <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/auth.js?v=5"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -239,21 +322,54 @@
       UI.renderLayout(user, 'digital-attendance');
 
       let missedPage = 0;
-
       let activeDaCard = null;
-      function activateDaTab(tab) {
-        document.querySelectorAll('#viewTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-        ['missed', 'pending', 'sessions', 'report'].forEach(t => {
-          document.getElementById('tab-' + t).style.display = tab === t ? 'block' : 'none';
+      let activeSubTab = 'missed';
+
+      function activateSubTab(subtab) {
+        activeSubTab = subtab;
+        document.querySelectorAll('#todaySubTabs .subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab === subtab));
+        ['missed', 'pending', 'sessions'].forEach(t => {
+          document.getElementById('subtab-' + t).style.display = subtab === t ? 'block' : 'none';
         });
-        if (tab === 'missed') loadMissed(0);
-        if (tab === 'pending') loadPending();
-        if (tab === 'sessions') loadSessions();
-        if (tab === 'report') loadReport();
+        if (subtab === 'missed') loadMissed(0);
+        if (subtab === 'pending') loadPending();
+        if (subtab === 'sessions') loadSessions();
       }
 
-      document.querySelectorAll('#viewTabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => activateDaTab(btn.dataset.tab));
+      document.querySelectorAll('#todaySubTabs .subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => activateSubTab(btn.dataset.subtab));
+      });
+
+      // Normalize legacy deep-link query ?tab=missed / pending / sessions / report before Tabs.init
+      const rawParams = new URLSearchParams(window.location.search);
+      const rawTab = rawParams.get('tab');
+      if (rawTab === 'missed' || rawTab === 'pending' || rawTab === 'sessions') {
+        activeSubTab = rawTab;
+        rawParams.set('tab', 'today');
+        history.replaceState(null, '', `${window.location.pathname}?${rawParams.toString()}`);
+      } else if (rawTab === 'report') {
+        rawParams.set('tab', 'reports');
+        history.replaceState(null, '', `${window.location.pathname}?${rawParams.toString()}`);
+      }
+
+      const datePicker = document.getElementById('attendanceDatePicker');
+      const filterSelect = document.getElementById('attendanceFilterSelect');
+      datePicker.value = new Date().toISOString().split('T')[0];
+
+      const tabsCtrl = UI.Tabs.init({
+        barSelector: '#attendanceMainTabs',
+        paramName: 'tab',
+        defaultTab: 'today',
+        onChange: (tab) => {
+          if (tab === 'today') {
+            loadSummary();
+            activateSubTab(activeSubTab);
+          } else if (tab === 'roll-call') {
+            loadRollCallAttendance();
+          } else if (tab === 'reports') {
+            loadReport();
+          }
+        }
       });
 
       async function loadSummary() {
@@ -264,9 +380,9 @@
           activeKey: activeDaCard,
           onSelect: (key) => {
             activeDaCard = key;
-            if (key === 'PENDING') activateDaTab('pending');
-            else if (key === 'MISSED' || key === 'LOCKED') activateDaTab('missed');
-            else if (key === 'TOTAL' || key === 'MARKED' || key === 'ON_OUTPASS') activateDaTab('report');
+            if (key === 'PENDING') activateSubTab('pending');
+            else if (key === 'MISSED' || key === 'LOCKED') activateSubTab('missed');
+            else if (key === 'TOTAL' || key === 'MARKED' || key === 'ON_OUTPASS') tabsCtrl.switchTo('reports');
             loadSummary();
           },
           cards: [
@@ -487,13 +603,183 @@
             UI.createElement('td', {}, r.roomNumber),
             UI.createElement('td', {}, String(r.totalSessions)),
             UI.createElement('td', {}, String(r.markedCount)),
-            UI.createElement('td', {}, String(r.missedCount) + (r.repeatOffender ? ' ⚠️' : '')),
+            UI.createElement('td', {}, String(r.missedCount) + (r.repeatOffender ? ' !' : '')),
             UI.createElement('td', {}, `${r.attendancePercentage}%`),
             UI.createElement('td', {}, r.outpassLocked
               ? UI.createElement('span', { className: 'status-badge badge-absent' }, 'LOCKED')
               : UI.createElement('span', { className: 'status-badge badge-active' }, 'Unlocked'))
           ));
         });
+      }
+
+      // =====================================================
+      // ROLL CALL REGISTER LOGIC (/api/warden/attendance*)
+      // =====================================================
+
+      datePicker.addEventListener('change', loadRollCallAttendance);
+      filterSelect.addEventListener('change', loadRollCallAttendance);
+
+      document.getElementById('btnMarkAllPresent').addEventListener('click', async () => {
+        const date = datePicker.value;
+        const confirmed = await UI.showConfirm({
+          title: 'Confirm Bulk Attendance',
+          message: `Mark all students who have not yet been recorded for ${date} as PRESENT?`,
+          confirmText: 'Mark All Present',
+          cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
+
+        try {
+          const res = await fetch(`/api/warden/attendance/mark-all-present?date=${date}`, {
+            method: 'POST',
+            credentials: 'same-origin'
+          });
+          if (res.ok) {
+            UI.showToast('All pending students marked Present successfully!', 'success');
+            loadRollCallAttendance();
+          } else {
+            UI.showToast('Failed to mark all present', 'error');
+          }
+        } catch (e) {
+          UI.showToast('Network error during bulk attendance', 'error');
+        }
+      });
+
+      async function loadRollCallAttendance() {
+        const date = datePicker.value;
+        const status = filterSelect.value;
+
+        try {
+          const [listRes, sumRes] = await Promise.all([
+            fetch(`/api/warden/attendance?date=${date}&status=${encodeURIComponent(status)}`, { credentials: 'same-origin' }),
+            fetch(`/api/warden/attendance/summary?date=${date}`, { credentials: 'same-origin' })
+          ]);
+
+          if (listRes.ok) {
+            renderRollCallTable(await listRes.json());
+          }
+
+          if (sumRes.ok) {
+            const sum = await sumRes.json();
+            document.getElementById('chipTotal').textContent = sum.totalAllocated;
+            document.getElementById('chipPresent').textContent = sum.presentCount;
+            document.getElementById('chipAbsent').textContent = sum.absentCount;
+            document.getElementById('chipOutpass').textContent = sum.onOutpassCount;
+            document.getElementById('chipLate').textContent = sum.lateCount;
+            UI.SummaryCards.render('rollSummaryCards', {
+              activeKey: filterSelect.value,
+              onSelect: (key) => {
+                filterSelect.value = (filterSelect.value === key) ? 'ALL' : key;
+                loadRollCallAttendance();
+              },
+              cards: [
+                { key: 'ALL', label: 'Total Residents', value: sum.totalAllocated, accentColor: '#0284c7' },
+                { key: 'PRESENT', label: 'Present', value: sum.presentCount, accentColor: '#16a34a', valColor: '#15803d' },
+                { key: 'ABSENT', label: 'Absent', value: sum.absentCount, accentColor: '#dc2626', valColor: '#b91c1c' },
+                { key: 'ON_OUTPASS', label: 'On Outpass', value: sum.onOutpassCount, accentColor: '#7c3aed' },
+                { key: 'LATE', label: 'Late', value: sum.lateCount, accentColor: '#f59e0b', valColor: '#b45309' }
+              ],
+              chartTitle: 'Roll Call Breakdown',
+              chartSegments: [
+                { label: 'Present', value: sum.presentCount, color: '#16a34a' },
+                { label: 'Absent', value: sum.absentCount, color: '#dc2626' },
+                { label: 'On Outpass', value: sum.onOutpassCount, color: '#7c3aed' },
+                { label: 'Late', value: sum.lateCount, color: '#f59e0b' }
+              ]
+            });
+          }
+        } catch (err) {
+          console.error('Roll call attendance error:', err);
+        }
+      }
+
+      function renderRollCallTable(items) {
+        const tbody = document.getElementById('attendanceTableBody');
+        tbody.innerHTML = '';
+
+        if (!items || items.length === 0) {
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', { colSpan: 6, style: 'text-align:center;padding:2rem;color:var(--text-muted);' }, 'No resident students match the selected filter.')
+          ));
+          return;
+        }
+
+        items.forEach(item => {
+          const tdStatus = UI.createElement('td', { dataset: { label: 'Current Active Status' } });
+          if (item.status === 'ON_OUTPASS') {
+            tdStatus.appendChild(UI.createElement('span', { className: 'status-badge badge-home' }, 'On Outpass'));
+          } else if (item.status === 'ABSENT') {
+            tdStatus.appendChild(UI.createElement('span', { className: 'status-badge badge-absent' }, 'ABSENT'));
+            tdStatus.appendChild(UI.createElement('span', { style: 'font-size:0.72rem;color:#b91c1c;font-weight:700;display:block;margin-top:2px;' }, 'Outpass Disabled'));
+          } else if (item.status === 'PRESENT') {
+            tdStatus.appendChild(UI.createElement('span', { className: 'status-badge badge-present' }, 'PRESENT'));
+          } else if (item.status === 'LATE') {
+            tdStatus.appendChild(UI.createElement('span', { className: 'status-badge badge-late' }, 'LATE'));
+          } else {
+            tdStatus.appendChild(UI.createElement('span', { className: 'status-badge badge-not-allocated' }, 'NOT MARKED'));
+          }
+
+          const tdNotes = UI.createElement('td', { dataset: { label: 'Outpass / Notes' } });
+          if (item.status === 'ON_OUTPASS' && item.activeOutpassDetails) {
+            tdNotes.appendChild(UI.createElement('span', { style: 'font-size:0.82rem;color:#6d28d9;font-weight:600;' }, item.activeOutpassDetails));
+          } else {
+            tdNotes.textContent = item.notes || '-';
+          }
+
+          const btnGroup = UI.createElement('div', { style: 'display:flex;gap:0.35rem;flex-wrap:wrap;' },
+            UI.createElement('button', {
+              type: 'button',
+              className: `btn-status-toggle ${item.status === 'PRESENT' ? 'active-p' : ''}`,
+              title: 'Mark Present',
+              onclick: () => markSingleRollCall(item.studentId, 'PRESENT')
+            }, 'P'),
+            UI.createElement('button', {
+              type: 'button',
+              className: `btn-status-toggle ${item.status === 'ABSENT' ? 'active-a' : ''}`,
+              title: 'Mark Absent',
+              onclick: () => markSingleRollCall(item.studentId, 'ABSENT')
+            }, 'A'),
+            UI.createElement('button', {
+              type: 'button',
+              className: `btn-status-toggle ${item.status === 'LATE' ? 'active-l' : ''}`,
+              title: 'Mark Late',
+              onclick: () => markSingleRollCall(item.studentId, 'LATE')
+            }, 'L')
+          );
+
+          tbody.appendChild(UI.createElement('tr', {},
+            UI.createElement('td', { dataset: { label: 'Student' } },
+              UI.createElement('div', { style: 'font-weight:700;' }, item.studentName),
+              UI.createElement('div', { style: 'font-size:0.8rem;color:var(--text-muted);' }, item.registerNumber)
+            ),
+            UI.createElement('td', { dataset: { label: 'Room & Bed' }, style: 'font-weight:600;' }, `Room ${item.roomNumber} - Bed #${item.bedNumber}`),
+            UI.createElement('td', { dataset: { label: 'Department & Year' } }, `${item.department} (Yr ${item.year})`),
+            tdStatus,
+            tdNotes,
+            UI.createElement('td', { dataset: { label: 'Roll Call Actions' } }, btnGroup)
+          ));
+        });
+      }
+
+      async function markSingleRollCall(studentId, status) {
+        const date = datePicker.value;
+        try {
+          const res = await fetch('/api/warden/attendance/mark', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ studentId, date, status, notes: null })
+          });
+          if (res.ok) {
+            UI.showToast(`Marked as ${status}`, 'success');
+            loadRollCallAttendance();
+          } else {
+            const err = await res.json();
+            UI.showToast(err.message || 'Failed to update attendance', 'error');
+          }
+        } catch (e) {
+          UI.showToast('Network error updating attendance', 'error');
+        }
       }
 
       document.getElementById('btnNewSession').addEventListener('click', () => {
@@ -534,10 +820,7 @@
 
       document.getElementById('btnFilterMissed').addEventListener('click', () => loadMissed(0));
       document.getElementById('btnRefreshPending').addEventListener('click', loadPending);
-
-      await Promise.all([loadSummary(), loadMissed(0)]);
     })();
   </script>
 </body>
 </html>
-

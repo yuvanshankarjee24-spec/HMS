@@ -71,6 +71,15 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "User status updated to " + request.status()));
     }
 
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Map<String, String>> softDeleteUser(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id) {
+        User user = getAuthenticatedUser(userDetails);
+        adminService.softDeleteUser(id, user);
+        return ResponseEntity.ok(Map.of("message", "User soft-deleted successfully. Historical records preserved."));
+    }
+
     @PostMapping("/users/{id}/reset-password")
     public ResponseEntity<Map<String, String>> resetPassword(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -79,7 +88,6 @@ public class AdminController {
         String tempPass = adminService.resetPassword(id, user);
         return ResponseEntity.ok(Map.of(
                 "temporaryPassword", tempPass,
-                "message", "Password reset successfully. The user must change their password on next login."
-        ));
+                "message", "Password reset successfully. The user must change their password on next login."));
     }
 }

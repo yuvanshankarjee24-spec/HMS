@@ -23,14 +23,48 @@ const Auth = {
     }
   },
 
+  clearNavigationState() {
+    try {
+      const staticKeys = [
+        'hms_sidebar_open', 'hms_last_page', 'hms_last_route', 'hms_active_nav',
+        'hms_session_uid', 'sidebarState', 'sidebarCollapsed', 'activeTab',
+        'lastVisitedPage', 'redirectAfterLogin', 'lastRoute', 'activeMenu'
+      ];
+      staticKeys.forEach(k => {
+        sessionStorage.removeItem(k);
+        localStorage.removeItem(k);
+      });
+      [sessionStorage, localStorage].forEach(store => {
+        for (let i = store.length - 1; i >= 0; i--) {
+          const k = store.key(i);
+          if (k && /^(hms_|sidebar|nav_|last_|active_)/i.test(k)) {
+            store.removeItem(k);
+          }
+        }
+      });
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) sidebar.classList.remove('open');
+    } catch (e) {}
+  },
+
   async requireAuth(allowedRoles = []) {
     const user = await this.getMe();
     this.currentUser = user;
 
     if (!user) {
+      this.clearNavigationState();
       window.location.replace('/login.html');
       return null;
     }
+
+    try {
+      const prevUid = sessionStorage.getItem('hms_session_uid');
+      const curUid = String(user.id || user.email || '');
+      if (prevUid && prevUid !== curUid) {
+        this.clearNavigationState();
+      }
+      sessionStorage.setItem('hms_session_uid', curUid);
+    } catch (e) {}
 
     if (user.mustChangePassword && !window.location.pathname.endsWith('/change-password.html')) {
       window.location.replace('/change-password.html');
@@ -49,7 +83,7 @@ const Auth = {
   redirectToDashboard(role) {
     const roleRoutes = {
       'STUDENT': '/student/dashboard.html',
-      'WARDEN': '/warden/dashboard.html',
+      'WARDEN': '/warden/dashboard',
       'ADMIN': '/admin/dashboard.html',
       'SECURITY': '/security/dashboard.html',
       'WORKER': '/worker/dashboard.html',
@@ -63,6 +97,8 @@ const Auth = {
   },
 
   async logout() {
+    this.clearNavigationState();
+    this.currentUser = null;
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',

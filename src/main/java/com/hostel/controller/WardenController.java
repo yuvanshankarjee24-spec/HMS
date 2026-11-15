@@ -7,6 +7,7 @@ import com.hostel.entity.Room;
 import com.hostel.entity.RoomRequest;
 import com.hostel.entity.User;
 import com.hostel.repository.UserRepository;
+import com.hostel.service.WardenDashboardService;
 import com.hostel.service.WardenService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -35,17 +36,20 @@ import java.time.LocalDate;
 public class WardenController {
 
     private final WardenService wardenService;
+    private final WardenDashboardService wardenDashboardService;
     private final UserRepository userRepository;
     private final AttendanceService attendanceService;
     private final OutpassService outpassService;
     private final com.hostel.repository.StudentRepository studentRepository;
 
     public WardenController(WardenService wardenService,
+                            WardenDashboardService wardenDashboardService,
                             UserRepository userRepository,
                             AttendanceService attendanceService,
                             OutpassService outpassService,
                             com.hostel.repository.StudentRepository studentRepository) {
         this.wardenService = wardenService;
+        this.wardenDashboardService = wardenDashboardService;
         this.userRepository = userRepository;
         this.attendanceService = attendanceService;
         this.outpassService = outpassService;
@@ -60,6 +64,12 @@ public class WardenController {
     @GetMapping("/summary")
     public ResponseEntity<WardenSummaryResponse> getSummary() {
         return ResponseEntity.ok(wardenService.getSummary());
+    }
+
+    @GetMapping("/dashboard-overview")
+    public ResponseEntity<Map<String, Object>> getDashboardOverview(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(wardenDashboardService.getDashboardOverview(getAuthenticatedUser(userDetails)));
     }
 
     @GetMapping("/rooms")

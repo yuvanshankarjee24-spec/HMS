@@ -36,5 +36,8 @@ build/
 Thumbs.db
 
 ### Local Runtime & Uploads ###
+.env
+.env.*
+!.env.example
 storage/
 *.log

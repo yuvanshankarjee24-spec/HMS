@@ -4,27 +4,15 @@ import com.hostel.dto.MessDtos.*;
 import com.hostel.entity.*;
 import com.hostel.exception.CustomExceptions.*;
 import com.hostel.repository.*;
-import org.springframework.beans.factory.annotation.Value;
+import com.hostel.util.StatusConstants;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.MalformedURLException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -33,7 +21,6 @@ import java.util.stream.Collectors;
 @Service
 public class MessTokenService {
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("hh:mm a");
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
@@ -49,15 +36,12 @@ public class MessTokenService {
     private final StudentRepository studentRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final BedRepository bedRepository;
+    private final HostelRepository hostelRepository;
     private final SystemSettingRepository settingRepository;
+    private final QrTokenService qrTokenService;
+    private final AttachmentStorageService attachmentStorageService;
     private final NotificationService notificationService;
     private final AuditService auditService;
-
-    @Value("${app.jwt.secret}")
-    private String hmacSecret;
-
-    @Value("${app.upload.dir:./storage/photos}")
-    private String uploadDir;
 
     public MessTokenService(FoodItemRepository foodItemRepository,
                             MessPeriodConfigRepository periodConfigRepository,
@@ -69,7 +53,10 @@ public class MessTokenService {
                             StudentRepository studentRepository,
                             StaffProfileRepository staffProfileRepository,
                             BedRepository bedRepository,
+                            HostelRepository hostelRepository,
                             SystemSettingRepository settingRepository,
+                            QrTokenService qrTokenService,
+                            AttachmentStorageService attachmentStorageService,
                             NotificationService notificationService,
                             AuditService auditService) {
         this.foodItemRepository = foodItemRepository;
@@ -82,7 +69,10 @@ public class MessTokenService {
         this.studentRepository = studentRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.bedRepository = bedRepository;
+        this.hostelRepository = hostelRepository;
         this.settingRepository = settingRepository;
+        this.qrTokenService = qrTokenService;
+        this.attachmentStorageService = attachmentStorageService;
         this.notificationService = notificationService;
         this.auditService = auditService;
     }
@@ -217,11 +207,11 @@ public class MessTokenService {
         ms.setMessClosed(req.messClosed());
 
         MenuSchedule saved = menuScheduleRepository.save(ms);
-        return toScheduleResponse(saved, LocalDateTime.now());
+        return toScheduleResponse(saved, StatusConstants.nowIst());
     }
 
     public List<MenuScheduleResponse> getMenuForDateAndPeriod(LocalDate date, String periodStr) {
-        return getMenuForDateAndPeriodAt(date, periodStr, LocalDateTime.now());
+        return getMenuForDateAndPeriodAt(date, periodStr, StatusConstants.nowIst());
     }
 
     public List<MenuScheduleResponse> getMenuForDateAndPeriodAt(LocalDate date, String periodStr, LocalDateTime serverNow) {
@@ -238,7 +228,7 @@ public class MessTokenService {
 
     @Transactional
     public MessTokenResponse bookToken(User studentUser, BookTokenRequest req) {
-        return bookTokenAt(studentUser, req, LocalDateTime.now());
+        return bookTokenAt(studentUser, req, StatusConstants.nowIst());
     }
 
     @Transactional
@@ -267,6 +257,11 @@ public class MessTokenService {
         token.setTokenCode(generateUniqueTokenCode());
         token.setStudent(student);
         token.setHostelBlock(block);
+        bedRepository.findByStudentId(student.getId())
+                .map(b -> b.getRoom().getHostel())
+                .or(() -> Optional.ofNullable(student.getHostel()))
+                .or(() -> hostelRepository.findByCodeIgnoreCase("MAIN"))
+                .ifPresent(token::setHostel);
         token.setMenuDate(req.menuDate());
         token.setPeriod(period);
         token.setStatus(MessToken.Status.BOOKED);
@@ -336,6 +331,9 @@ public class MessTokenService {
         qr.setClosed(false);
         tokenQrRepository.save(qr);
 
+        LocalDateTime mealEndsAt = LocalDateTime.of(savedToken.getMenuDate(), cfg.getEndTime());
+        qrTokenService.saveUnifiedToken("MESS", savedToken.getId(), student, qr.getQrToken(), qr.getPickupCode(), mealEndsAt);
+
         recordHistory(savedToken, null, savedToken.getStatus().name(), studentUser, "Token booked");
 
         notificationService.notifyUser(
@@ -353,7 +351,7 @@ public class MessTokenService {
 
     @Transactional
     public MessTokenResponse cancelToken(User studentUser, Long tokenId) {
-        return cancelTokenAt(studentUser, tokenId, LocalDateTime.now());
+        return cancelTokenAt(studentUser, tokenId, StatusConstants.nowIst());
     }
 
     @Transactional
@@ -389,6 +387,7 @@ public class MessTokenService {
             qr.setClosed(true);
             tokenQrRepository.save(qr);
         });
+        qrTokenService.markClosed("MESS", saved.getId());
 
         recordHistory(saved, oldStatus, MessToken.Status.CANCELLED.name(), studentUser, "Cancelled by student before cutoff");
         auditService.log(studentUser, "CANCEL_MESS_TOKEN", saved.getTokenCode(), "SUCCESS");
@@ -396,7 +395,7 @@ public class MessTokenService {
     }
 
     public Page<MessTokenResponse> getStudentTokens(User studentUser, String tab, Pageable pageable) {
-        return getStudentTokensAt(studentUser, tab, pageable, LocalDateTime.now());
+        return getStudentTokensAt(studentUser, tab, pageable, StatusConstants.nowIst());
     }
 
     public Page<MessTokenResponse> getStudentTokensAt(User studentUser, String tab, Pageable pageable, LocalDateTime serverNow) {
@@ -419,7 +418,7 @@ public class MessTokenService {
     // =====================================================
 
     public MessScanVerifyResponse verifyQrOrCode(String tokenOrCode, String expectedBlock) {
-        return verifyQrOrCodeAt(tokenOrCode, expectedBlock, LocalDateTime.now());
+        return verifyQrOrCodeAt(tokenOrCode, expectedBlock, StatusConstants.nowIst());
     }
 
     public MessScanVerifyResponse verifyQrOrCodeAt(String tokenOrCode, String expectedBlock, LocalDateTime serverNow) {
@@ -490,7 +489,7 @@ public class MessTokenService {
 
     @Transactional
     public MessTokenResponse confirmDelivery(User warden, ConfirmMessDeliveryRequest req) {
-        return confirmDeliveryAt(warden, req, LocalDateTime.now());
+        return confirmDeliveryAt(warden, req, StatusConstants.nowIst());
     }
 
     @Transactional
@@ -575,6 +574,7 @@ public class MessTokenService {
             qr.setUsedAt(serverNow);
             tokenQrRepository.save(qr);
         }
+        qrTokenService.markUsed("MESS", token.getId(), serverNow);
 
         MessToken saved = messTokenRepository.save(token);
         recordHistory(saved, oldStatus, newStatus.name(), warden,
@@ -646,6 +646,7 @@ public class MessTokenService {
                     qr.setClosed(true);
                     tokenQrRepository.save(qr);
                 });
+                qrTokenService.markClosed("MESS", t.getId());
 
                 for (MessTokenItem item : tokenItemRepository.findByTokenId(t.getId())) {
                     menuScheduleRepository.findByIdWithLock(item.getMenuSchedule().getId()).ifPresent(ms -> {
@@ -668,13 +669,13 @@ public class MessTokenService {
         MessToken.Status status = (statusStr != null && !statusStr.isBlank() && !"ALL".equalsIgnoreCase(statusStr))
                 ? parseEnum(MessToken.Status.class, statusStr, "status") : null;
         String q = (query != null && !query.isBlank()) ? query.trim() : null;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = StatusConstants.nowIst();
         return messTokenRepository.searchFiltered(date, period, status, q, pageable)
                 .map(t -> toTokenResponse(t, false, now));
     }
 
     public WardenMessSummaryResponse getWardenSummary(LocalDate date, String periodStr) {
-        LocalDate target = date != null ? date : LocalDate.now();
+        LocalDate target = date != null ? date : StatusConstants.todayIst();
         MessPeriodConfig.Period period = (periodStr != null && !periodStr.isBlank() && !"ALL".equalsIgnoreCase(periodStr))
                 ? parseEnum(MessPeriodConfig.Period.class, periodStr, "period")
                 : MessPeriodConfig.Period.LUNCH;
@@ -764,14 +765,7 @@ public class MessTokenService {
         FoodItem item = foodItemRepository.findById(foodItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Food item not found"));
         if (item.getPhotoPath() == null) throw new ResourceNotFoundException("No photo");
-        try {
-            Path p = Paths.get(item.getPhotoPath()).normalize();
-            Resource r = new UrlResource(p.toUri());
-            if (!r.exists() || !r.isReadable()) throw new ResourceNotFoundException("Photo missing");
-            return r;
-        } catch (MalformedURLException e) {
-            throw new ResourceNotFoundException("Invalid photo path");
-        }
+        return attachmentStorageService.loadResource(item.getPhotoPath());
     }
 
     // =====================================================
@@ -843,24 +837,9 @@ public class MessTokenService {
     }
 
     private String storeFoodPhoto(MultipartFile f, String itemName) {
-        String ct = f.getContentType();
-        if (ct == null || !ALLOWED_IMAGE_TYPES.contains(ct.toLowerCase())) {
-            throw new BadRequestException("Only JPG, PNG, and WebP images are allowed");
-        }
-        if (f.getSize() > MAX_IMAGE_BYTES) {
-            throw new BadRequestException("Food photo must be 2 MB or smaller");
-        }
-        try {
-            Path dir = Paths.get(uploadDir, "mess").toAbsolutePath().normalize();
-            Files.createDirectories(dir);
-            String ext = ct.contains("png") ? ".png" : (ct.contains("webp") ? ".webp" : ".jpg");
-            String safeName = itemName.replaceAll("[^a-zA-Z0-9]", "_") + "_" + UUID.randomUUID().toString().substring(0, 6) + ext;
-            Path target = dir.resolve(safeName);
-            Files.copy(f.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-            return target.toString();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save food photo: " + e.getMessage());
-        }
+        attachmentStorageService.validateFiles(new MultipartFile[]{f}, 1, ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES);
+        String prefix = itemName.replaceAll("[^a-zA-Z0-9]", "_");
+        return attachmentStorageService.storeFile(f, "mess", prefix);
     }
 
     private MessPeriodConfig getPeriodConfigOrThrow(MessPeriodConfig.Period period) {
@@ -886,36 +865,15 @@ public class MessTokenService {
     }
 
     private String generateUniquePickupCode() {
-        for (int i = 0; i < 20; i++) {
-            String code = String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
-            if (!tokenQrRepository.existsByPickupCode(code)) return code;
-        }
-        return String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
+        return qrTokenService.generateUniquePickupCode(tokenQrRepository::existsByPickupCode);
     }
 
     public String generateSignedQrToken(Long tokenId, Long studentId) {
-        byte[] rnd = new byte[12];
-        SECURE_RANDOM.nextBytes(rnd);
-        String payload = "TKN1." + tokenId + "." + studentId + "." + HexFormat.of().formatHex(rnd);
-        return payload + "." + computeHmacHex(payload);
+        return qrTokenService.generateSignedToken("TKN1", tokenId, studentId);
     }
 
     private boolean verifySignedQrTokenFormat(String token) {
-        String[] parts = token.split("\\.");
-        if (parts.length != 5 || !"TKN1".equals(parts[0])) return false;
-        String payload = parts[0] + "." + parts[1] + "." + parts[2] + "." + parts[3];
-        String expected = computeHmacHex(payload);
-        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), parts[4].getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String computeHmacHex(String payload) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(hmacSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            return HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))).substring(0, 24);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to sign mess QR token", e);
-        }
+        return qrTokenService.verifySignature(token, "TKN1");
     }
 
     private void recordHistory(MessToken t, String oldStatus, String newStatus, User actor, String remarks) {

@@ -166,13 +166,13 @@ const UI = {
     }, bellSvg, notifBadge);
 
     const notifList = this.createElement('div', { className: 'notif-list', id: 'notifListContainer' },
-      this.createElement('div', { style: 'padding: 1rem; color: var(--text-muted); font-size: 0.85rem; text-align: center;' }, 'Loading notifications...')
+      this.createElement('div', { style: 'padding: 1rem; color: var(--text-muted); font-size: var(--font-size-secondary); text-align: center;' }, 'Loading notifications...')
     );
 
     const markAllBtn = this.createElement('button', {
       className: 'btn btn-secondary btn-sm',
       type: 'button',
-      style: 'font-size: 0.72rem; padding: 0.25rem 0.5rem; min-height: auto;',
+      style: 'font-size: var(--font-size-helper); padding: 0.25rem 0.5rem; min-height: auto;',
       onclick: async (e) => {
         e.stopPropagation();
         await fetch('/api/notifications/read-all', { method: 'POST', credentials: 'same-origin' });
@@ -182,7 +182,7 @@ const UI = {
 
     const notifDropdown = this.createElement('div', { className: 'notif-dropdown', id: 'notifDropdown' },
       this.createElement('div', { className: 'notif-header' },
-        this.createElement('strong', { style: 'font-size: 0.88rem;' }, 'Notifications'),
+        this.createElement('strong', { style: 'font-size: var(--font-size-secondary); font-weight: 600;' }, 'Notifications'),
         markAllBtn
       ),
       notifList
@@ -247,10 +247,9 @@ const UI = {
         { key: 'profile', label: 'My Profile', href: '/student/profile.html' }
       ],
       'WARDEN': [
-        { key: 'dashboard', label: 'Dashboard', href: '/warden/dashboard.html' },
+        { key: 'dashboard', label: 'Dashboard', href: '/warden/dashboard' },
         { key: 'outpasses', label: 'Outpass', href: '/warden/outpasses.html' },
-        { key: 'digital-attendance', label: 'Attendance', href: '/warden/digital-attendance.html' },
-        { key: 'attendance', label: 'Roll Call Register', href: '/warden/attendance.html' },
+        { key: 'digital-attendance', label: 'Attendance', href: '/warden/attendance' },
         { key: 'parcels', label: 'Parcels', href: '/warden/parcels.html' },
         { key: 'mess', label: 'Mess', href: '/warden/mess.html' },
         { key: 'maintenance', label: 'Maintenance', href: '/warden/maintenance.html' },
@@ -297,22 +296,37 @@ const UI = {
     };
 
     const items = menuItemsByRole[currentUser.role] || [];
+    this._currentMenuItems = items;
+    this._activePageKeyFallback = activePageKey;
+
     items.forEach(item => {
       const link = this.createElement('a', {
-        className: `sidebar-link ${item.key === activePageKey ? 'active' : ''}`,
-        href: item.href
+        className: 'sidebar-link',
+        href: item.href,
+        dataset: { navKey: item.key }
       }, item.label);
+      link.addEventListener('click', () => {
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.classList.remove('open');
+      });
       navList.appendChild(this.createElement('li', {}, link));
     });
 
     sidebar.appendChild(navList);
 
-    // Insert navbar at top of page, sidebar inside container
+    // Insert fresh navbar & sidebar (resetting any prior sidebar DOM/state)
     const existingNav = document.querySelector('.top-navbar');
     if (existingNav) existingNav.remove();
+    const existingSidebar = document.getElementById('sidebar');
+    if (existingSidebar) existingSidebar.remove();
     document.body.insertBefore(navbar, document.body.firstChild);
 
     appContainer.insertBefore(sidebar, appContainer.firstChild);
+    this.syncActiveSidebarFromUrl();
+    if (!this._sidebarPopListenerBound) {
+      window.addEventListener('popstate', () => this.syncActiveSidebarFromUrl());
+      this._sidebarPopListenerBound = true;
+    }
 
     this._currentUserRole = currentUser.role;
     this.refreshUnreadCount();
@@ -377,7 +391,7 @@ const UI = {
       const items = data.content || [];
       listEl.innerHTML = '';
       if (items.length === 0) {
-        listEl.appendChild(this.createElement('div', { style: 'padding: 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;' }, 'No notifications yet.'));
+        listEl.appendChild(this.createElement('div', { style: 'padding: 1.25rem; text-align: center; color: var(--text-muted); font-size: var(--font-size-secondary);' }, 'No notifications yet.'));
       } else {
         items.forEach(n => {
           const item = this.createElement('div', {
@@ -404,18 +418,33 @@ const UI = {
     } catch (e) {}
   },
 
+  _parseUtcAwareDate(iso) {
+    if (!iso) return null;
+    const raw = String(iso).trim();
+    // Append Z when naive ISO timestamp (stored in UTC) lacks offset
+    const normalized = (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(raw) && !/[Zz]|[+-]\d{2}:?\d{2}$/.test(raw))
+      ? raw.replace(' ', 'T') + 'Z'
+      : raw;
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d;
+  },
+
   formatDateTime(iso) {
     if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    const d = this._parseUtcAwareDate(iso);
+    if (!d) return iso;
+    return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
   },
 
   formatDate(iso) {
     if (!iso) return '—';
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString('en-IN', { dateStyle: 'medium' });
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso).trim())) {
+      const [y, m, day] = String(iso).trim().split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, day)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium' });
+    }
+    const d = this._parseUtcAwareDate(iso);
+    if (!d) return iso;
+    return d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium' });
   },
 
   categoryLabel(cat) {
@@ -503,6 +532,66 @@ const UI = {
     return this.createElement('span', { className: cls }, labelMap[status] || status);
   },
 
+  syncActiveSidebarFromUrl() {
+    const navItems = this._currentMenuItems || [];
+    const links = Array.from(document.querySelectorAll('#sidebar .sidebar-link'));
+    if (links.length === 0) return;
+
+    const normalizePath = (p) => {
+      const clean = (p || '/').replace(/\/+$/, '') || '/';
+      if (
+        clean === '/warden/attendance' ||
+        clean === '/warden/attendance.html' ||
+        clean === '/warden/digital-attendance' ||
+        clean === '/warden/digital-attendance.html'
+      ) {
+        return '/warden/attendance';
+      }
+      return clean.replace(/\.html$/, '');
+    };
+
+    const curPath = normalizePath(window.location.pathname);
+    const curParams = new URLSearchParams(window.location.search || '');
+    const curTab = curParams.get('tab');
+
+    const matchesPath = (itemPath) => itemPath === curPath;
+
+    let matched = navItems.find(item => {
+      const u = new URL(item.href, window.location.origin);
+      const itemPath = normalizePath(u.pathname);
+      const itemTab = u.searchParams.get('tab');
+      return matchesPath(itemPath) && itemTab !== null && itemTab === curTab;
+    });
+
+    if (!matched) {
+      matched = navItems.find(item => {
+        const u = new URL(item.href, window.location.origin);
+        return matchesPath(normalizePath(u.pathname)) && !u.searchParams.has('tab');
+      });
+    }
+
+    if (!matched) {
+      matched = navItems.find(item => {
+        const u = new URL(item.href, window.location.origin);
+        return matchesPath(normalizePath(u.pathname));
+      });
+    }
+
+    if (!matched && this._activePageKeyFallback) {
+      matched = navItems.find(item => item.key === this._activePageKeyFallback) || null;
+    }
+
+    links.forEach(link => {
+      const isMatch = matched && link.dataset.navKey === matched.key;
+      link.classList.toggle('active', Boolean(isMatch));
+      if (isMatch) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  },
+
   resolveNotificationUrl(n, role) {
     const rt = (n && n.referenceType) ? String(n.referenceType).toUpperCase() : '';
     const refId = n && n.referenceId ? n.referenceId : '';
@@ -520,9 +609,9 @@ const UI = {
       if (rt === 'MESS_TOKEN') return '/warden/mess.html?tab=tokens';
       if (rt === 'PARCEL') return '/warden/parcels.html?tab=register';
       if (rt === 'MAINTENANCE_REQUEST') return '/warden/maintenance.html?tab=requests';
-      if (rt === 'DIGITAL_ATTENDANCE') return '/warden/digital-attendance.html';
+      if (rt === 'DIGITAL_ATTENDANCE') return '/warden/attendance';
       if (rt === 'OUTPASS') return '/warden/outpasses.html';
-      return '/warden/dashboard.html';
+      return role === 'ADMIN' ? '/admin/dashboard.html' : '/warden/dashboard';
     }
     if (role === 'WORKER') return '/worker/dashboard.html';
     return null;
@@ -550,6 +639,7 @@ const UI = {
           url.searchParams.set(paramName, chosen);
           history.replaceState(null, '', url.toString());
         }
+        UI.syncActiveSidebarFromUrl();
         if (typeof onChange === 'function' && chosen) onChange(chosen);
       };
       buttons.forEach(b => b.addEventListener('click', () => activate(b.dataset.tab, true)));
@@ -600,7 +690,7 @@ const UI = {
             legend.appendChild(UI.createElement('span', {}, dot, `${seg.label}: ${val}`));
           });
           const chartBox = UI.createElement('div', { className: 'summary-mini-chart' },
-            chartTitle ? UI.createElement('div', { style: 'font-size:0.75rem;font-weight:700;color:var(--text-muted);margin-bottom:0.35rem;text-transform:uppercase;' }, chartTitle) : null,
+            chartTitle ? UI.createElement('div', { className: 'type-eyebrow', style: 'margin-bottom:0.35rem;' }, chartTitle) : null,
             bar,
             legend
           );

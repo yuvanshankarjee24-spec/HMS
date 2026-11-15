@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Attendance - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
   <style>
     .session-cards-grid {
       display: grid;
@@ -36,14 +36,18 @@
       padding: 1rem 1.25rem;
     }
     .mini-stat-label {
-      font-size: 0.78rem;
-      font-weight: 700;
+      font-size: var(--font-size-eyebrow);
+      font-weight: var(--font-weight-eyebrow);
       text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-eyebrow);
       color: var(--text-muted);
     }
     .mini-stat-val {
-      font-size: 1.65rem;
-      font-weight: 800;
+      font-size: var(--font-size-stat);
+      font-weight: var(--font-weight-stat);
+      font-variant-numeric: tabular-nums;
+      line-height: var(--line-height-stat);
+      color: var(--text-primary);
       margin-top: 0.25rem;
     }
   </style>
@@ -122,7 +126,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script src="/js/maintenance-ui.js"></script>
   <script>
     (async () => {
@@ -165,11 +169,11 @@
           const banner = UI.createElement('div', { className: 'lock-alert-banner' },
             UI.createElement('span', { style: 'font-size:1.75rem;' }, '🔒'),
             UI.createElement('div', {},
-              UI.createElement('div', { style: 'font-weight:800;font-size:1.05rem;' }, 'OUTPASS LOCKED — MISSED ATTENDANCE'),
-              UI.createElement('div', { style: 'font-size:0.92rem;margin-top:0.25rem;' },
+              UI.createElement('div', { style: 'font-weight:700;font-size:var(--font-size-h3);' }, 'OUTPASS LOCKED — MISSED ATTENDANCE'),
+              UI.createElement('div', { style: 'font-size:var(--font-size-secondary);margin-top:0.25rem;' },
                 `${data.lockReason || 'Outpass privileges are locked due to missed attendance.'} Please contact the Warden to unlock.`),
               data.lockedAt
-                ? UI.createElement('div', { style: 'font-size:0.8rem;margin-top:0.25rem;' }, `Locked at: ${UI.formatDateTime(data.lockedAt)}`)
+                ? UI.createElement('div', { style: 'font-size:var(--font-size-helper);margin-top:0.25rem;' }, `Locked at: ${UI.formatDateTime(data.lockedAt)}`)
                 : null
             )
           );
@@ -180,7 +184,7 @@
         grid.innerHTML = '';
         const sessions = data.sessions || [];
         if (sessions.length === 0) {
-          grid.appendChild(UI.createElement('div', { className: 'card', style: 'padding:2rem;text-align:center;color:var(--text-muted);' },
+          grid.appendChild(UI.createElement('div', { className: 'card', style: 'padding:2rem;text-align:center;color:var(--text-muted);font-size:var(--font-size-secondary);' },
             'No active attendance sessions scheduled for today.'));
           return;
         }
@@ -190,8 +194,8 @@
 
           const header = UI.createElement('div', { style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;' },
             UI.createElement('div', {},
-              UI.createElement('h2', { style: 'font-size:1.25rem;margin-bottom:0.2rem;' }, s.sessionName),
-              UI.createElement('div', { style: 'font-size:0.86rem;color:var(--text-muted);' },
+              UI.createElement('h2', { style: 'font-size:var(--font-size-h2);font-weight:var(--font-weight-h2);margin-bottom:0.2rem;' }, s.sessionName),
+              UI.createElement('div', { style: 'font-size:var(--font-size-secondary);color:var(--text-muted);' },
                 `Window: ${s.startTime.slice(0, 5)} – ${s.endTime.slice(0, 5)} (${s.hostelBlock})`)
             ),
             UI.digitalAttendanceBadge(s.status)
@@ -227,15 +231,15 @@
           let infoBox = null;
           if (s.status === 'MARKED' || s.status === 'MANUAL_PRESENT') {
             infoBox = UI.createElement('div', {
-              style: 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:0.75rem 1rem;border-radius:var(--radius-md);font-size:0.9rem;font-weight:600;'
+              style: 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:0.75rem 1rem;border-radius:var(--radius-md);font-size:var(--font-size-secondary);font-weight:600;'
             }, `Marked at: ${UI.formatDateTime(s.markedAt)}`);
           } else if (s.status === 'ON_OUTPASS') {
             infoBox = UI.createElement('div', {
-              style: 'background:#f5f3ff;border:1px solid #ddd6fe;color:#6d28d9;padding:0.75rem 1rem;border-radius:var(--radius-md);font-size:0.9rem;'
+              style: 'background:#f5f3ff;border:1px solid #ddd6fe;color:#6d28d9;padding:0.75rem 1rem;border-radius:var(--radius-md);font-size:var(--font-size-secondary);'
             }, 'Automatically excluded — You have an active Approved Outpass.');
           } else if (s.status === 'MISSED') {
             infoBox = UI.createElement('div', {
-              style: 'background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:0.75rem 1rem;border-radius:var(--radius-md);font-size:0.9rem;font-weight:600;'
+              style: 'background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:0.75rem 1rem;border-radius:var(--radius-md);font-size:var(--font-size-secondary);font-weight:600;'
             }, 'Not Pressed before deadline. Contact the Warden.');
           }
 
@@ -333,8 +337,8 @@
               UI.createElement('td', { dataset: { label: 'Date' } }, UI.formatDate(item.date)),
               UI.createElement('td', { dataset: { label: 'Session' } }, item.sessionName),
               UI.createElement('td', { dataset: { label: 'Status' } }, UI.digitalAttendanceBadge(item.status)),
-              UI.createElement('td', { dataset: { label: 'Marked At' }, style: 'font-size:0.84rem;' }, UI.formatDateTime(item.markedAt)),
-              UI.createElement('td', { dataset: { label: 'Remarks' }, style: 'font-size:0.84rem;color:var(--text-muted);' }, item.remarks || '—')
+              UI.createElement('td', { dataset: { label: 'Marked At' } }, UI.formatDateTime(item.markedAt)),
+              UI.createElement('td', { dataset: { label: 'Remarks' }, style: 'color:var(--text-muted);' }, item.remarks || '—')
             ));
           });
         }

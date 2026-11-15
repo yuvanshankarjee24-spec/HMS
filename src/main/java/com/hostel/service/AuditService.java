@@ -21,15 +21,39 @@ public class AuditService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void log(User actorUser, String action, String target, String result) {
+        log(actorUser, inferModule(action), action, null, null, null, target, result);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void log(User actorUser, String module, String action, Long referenceId,
+                    String oldValue, String newValue, String target, String result) {
         try {
             User managedUser = null;
             if (actorUser != null && actorUser.getId() != null) {
                 managedUser = entityManager.find(User.class, actorUser.getId());
             }
             AuditLog auditLog = new AuditLog(managedUser, action, target, result);
+            auditLog.setModule(module != null ? module : inferModule(action));
+            auditLog.setReferenceId(referenceId);
+            auditLog.setOldValue(oldValue);
+            auditLog.setNewValue(newValue);
             auditLogRepository.save(auditLog);
         } catch (Exception e) {
             System.err.println("Failed to write audit log: " + e.getMessage());
         }
+    }
+
+    private String inferModule(String action) {
+        if (action == null) return "SYSTEM";
+        String up = action.toUpperCase();
+        if (up.contains("OUTPASS")) return "OUTPASS";
+        if (up.contains("ATTENDANCE")) return "ATTENDANCE";
+        if (up.contains("MAINTENANCE") || up.contains("TICKET")) return "MAINTENANCE";
+        if (up.contains("PARCEL")) return "PARCELS";
+        if (up.contains("CIRCULAR") || up.contains("EVENT")) return "CIRCULARS";
+        if (up.contains("MESS") || up.contains("MENU") || up.contains("TOKEN")) return "MESS";
+        if (up.contains("ROOM") || up.contains("BED") || up.contains("VACATE")) return "ROOMS";
+        if (up.contains("LOGIN") || up.contains("PASSWORD")) return "AUTH";
+        return "ADMIN";
     }
 }

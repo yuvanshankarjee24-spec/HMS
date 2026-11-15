@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Security Desk - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
-  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/common.css?v=6">
 </head>
 <body>
   <div id="app-layout" class="app-container">
@@ -37,7 +37,7 @@
   </div>
 
   <script src="/js/auth.js"></script>
-  <script src="/js/ui.js?v=4"></script>
+  <script src="/js/ui.js?v=6"></script>
   <script>
     (async () => {
       const user = await Auth.requireAuth(['SECURITY', 'ADMIN']);
@@ -68,8 +68,8 @@
           container.appendChild(UI.createElement('div', { className: 'lock-alert-banner' },
             UI.createElement('span', { style: 'font-size:1.75rem;' }, '🚫'),
             UI.createElement('div', {},
-              UI.createElement('div', { style: 'font-weight:800;font-size:1.1rem;' }, 'OUTPASS LOCKED - MISSED ATTENDANCE'),
-              UI.createElement('div', { style: 'font-size:0.92rem;margin-top:0.25rem;' }, data.lockReason || data.gateMessage)
+              UI.createElement('div', { style: 'font-weight:700;font-size:var(--font-size-h3);' }, 'OUTPASS LOCKED - MISSED ATTENDANCE'),
+              UI.createElement('div', { style: 'font-size:var(--font-size-secondary);margin-top:0.25rem;' }, data.lockReason || data.gateMessage)
             )
           ));
         } else {
@@ -81,11 +81,11 @@
         }
 
         const details = UI.createElement('div', {
-          style: 'background:var(--card-bg);padding:1.25rem;border-radius:var(--radius-md);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;font-size:0.92rem;'
+          style: 'background:var(--card-bg);padding:1.25rem;border-radius:var(--radius-md);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;font-size:var(--font-size-table);'
         },
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Student: '), `${data.studentName} (${data.registerNumber})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Student: '), `${data.studentName} (`, UI.createElement('span', { className: 'reg-no-code' }, data.registerNumber), ')'),
           UI.createElement('div', {}, UI.createElement('strong', {}, 'Room / Dept: '), `Room ${data.roomNumber} — ${data.department}`),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Outpass #: '), `#${data.outpassId} (${data.passType})`),
+          UI.createElement('div', {}, UI.createElement('strong', {}, 'Outpass #: '), UI.createElement('span', { className: 'outpass-id' }, `#${data.outpassId}`), ` (${data.passType})`),
           UI.createElement('div', {}, UI.createElement('strong', {}, 'Status: '), data.outpassStatus),
           UI.createElement('div', {}, UI.createElement('strong', {}, 'Departure: '), UI.formatDateTime(data.departureDateTime)),
           UI.createElement('div', {}, UI.createElement('strong', {}, 'Return: '), UI.formatDateTime(data.returnDateTime)),

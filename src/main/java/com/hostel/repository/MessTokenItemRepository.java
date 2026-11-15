@@ -16,14 +16,14 @@ public interface MessTokenItemRepository extends JpaRepository<MessTokenItem, Lo
     @Query("SELECT COALESCE(SUM(i.quantity), 0) FROM MessTokenItem i " +
            "WHERE i.token.student.id = :studentId " +
            "AND i.menuSchedule.id = :scheduleId " +
-           "AND i.token.status NOT IN ('CANCELLED', 'EXPIRED')")
+           "AND i.token.status NOT IN (com.hostel.entity.MessToken.Status.CANCELLED, com.hostel.entity.MessToken.Status.EXPIRED)")
     int sumActiveBookedQuantityForStudentAndSchedule(
             @Param("studentId") Long studentId,
             @Param("scheduleId") Long scheduleId);
 
     @Query("SELECT i FROM MessTokenItem i WHERE i.token.menuDate = :menuDate " +
            "AND i.token.period = :period " +
-           "AND i.token.status IN ('BOOKED', 'QR_ACTIVE', 'DELIVERED', 'PARTIALLY_DELIVERED')")
+           "AND i.token.status IN (com.hostel.entity.MessToken.Status.BOOKED, com.hostel.entity.MessToken.Status.QR_ACTIVE, com.hostel.entity.MessToken.Status.DELIVERED, com.hostel.entity.MessToken.Status.PARTIALLY_DELIVERED)")
     List<MessTokenItem> findActiveItemsForDateAndPeriod(
             @Param("menuDate") LocalDate menuDate,
             @Param("period") com.hostel.entity.MessPeriodConfig.Period period);

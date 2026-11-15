@@ -11,6 +11,11 @@ public class User {
         ACTIVE, LOCKED, DISABLED
     }
 
+    @Converter
+    public static class StatusConverter extends com.hostel.entity.converter.LowercaseEnumConverter<Status> {
+        public StatusConverter() { super(Status.class); }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,9 +32,21 @@ public class User {
     @Column(nullable = false, length = 50)
     private String role; // STUDENT, WARDEN, ADMIN, SECURITY, CLEANING_WORKER, MAINTENANCE_STAFF, MESS_STAFF, VENDING_MANAGER
 
-    @Enumerated(EnumType.STRING)
+    @Column(length = 150)
+    private String name;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Convert(converter = StatusConverter.class)
     @Column(nullable = false)
     private Status status = Status.ACTIVE;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword = false;
@@ -74,4 +91,16 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
 }

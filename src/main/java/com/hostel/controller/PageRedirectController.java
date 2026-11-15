@@ -32,7 +32,27 @@ public class PageRedirectController {
         return "redirect:/student/dashboard.html";
     }
 
-    // Warden portal redirects
+    // Warden portal routes & redirects
+    @GetMapping("/warden")
+    public String redirectWardenRoot() {
+        return "redirect:/warden/dashboard";
+    }
+
+    @GetMapping("/warden/dashboard")
+    public String forwardWardenDashboard() {
+        return "forward:/warden/dashboard.html";
+    }
+
+    @GetMapping("/warden/attendance")
+    public String forwardWardenAttendance() {
+        return "forward:/warden/digital-attendance.html";
+    }
+
+    @GetMapping("/warden/attendance.html")
+    public String redirectWardenAttendanceLegacy() {
+        return "redirect:/warden/attendance?tab=roll-call";
+    }
+
     @GetMapping("/warden/mess-scan.html")
     public String redirectWardenMessScan() {
         return "redirect:/warden/mess.html?tab=scan";
