@@ -89,150 +89,131 @@ const UI = {
     if (modal) modal.classList.remove('active');
   },
 
-  // Shared Top Navbar & Sidebar Layout
+  // Helper to generate consistent Lucide outline SVGs (22px)
+  _getSidebarIcon(iconKey) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '22');
+    svg.setAttribute('height', '22');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+
+    let paths = '';
+    switch (iconKey) {
+      case 'dashboard':
+      case 'warden-overview':
+      case 'admin-dashboard':
+        paths = '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>';
+        break;
+      case 'outpasses':
+      case 'verify-outpass':
+        paths = '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>';
+        break;
+      case 'attendance':
+      case 'digital-attendance':
+      case 'admin-attendance':
+        paths = '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/>';
+        break;
+      case 'parcels':
+      case 'my-parcels':
+      case 'admin-parcels':
+        paths = '<path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12.5 20.71 7"/><line x1="12" y1="22.5" x2="12" y2="12"/>';
+        break;
+      case 'mess':
+      case 'mess-tokens':
+      case 'admin-mess':
+        paths = '<path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>';
+        break;
+      case 'maintenance':
+      case 'admin-maintenance':
+      case 'workers':
+        paths = '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>';
+        break;
+      case 'circulars':
+      case 'admin-circulars':
+        paths = '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>';
+        break;
+      case 'profile':
+        paths = '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+        break;
+      case 'students':
+      case 'users':
+        paths = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>';
+        break;
+      case 'change-password':
+        paths = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+        break;
+      default:
+        paths = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+    }
+    svg.innerHTML = paths;
+    return svg;
+  },
+
+  // Helper for Topbar icons
+  _getPillIcon(type) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+
+    let paths = '';
+    switch (type) {
+      case 'megaphone':
+        paths = '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>';
+        break;
+      case 'package':
+        paths = '<path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12.5 20.71 7"/><line x1="12" y1="22.5" x2="12" y2="12"/>';
+        break;
+      case 'bell':
+        paths = '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
+        break;
+      case 'user':
+        paths = '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+        break;
+      case 'logout':
+        paths = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>';
+        break;
+      case 'chevron-down':
+        svg.setAttribute('width', '14');
+        svg.setAttribute('height', '14');
+        paths = '<polyline points="6 9 12 15 18 9"/>';
+        break;
+    }
+    svg.innerHTML = paths;
+    return svg;
+  },
+
+  // Shared Top Navbar & Sidebar Layout (AppShell)
   renderLayout(currentUser, activePageKey) {
     const appContainer = document.getElementById('app-layout');
     if (!appContainer) return;
 
-    // --- TOP NAVBAR ---
-    const brandLogo = this.createElement('img', {
+    // --- SIDEBAR (Fixed Full Height, Dark Navy) ---
+    const sidebar = this.createElement('aside', { className: 'app-sidebar', id: 'sidebar', 'aria-label': 'Main Navigation' });
+
+    // Sidebar Header: Logo + "PSG iTech Hostel" + Divider
+    const logoImg = this.createElement('img', {
       src: '/img/psgitech_logo.png',
       alt: 'PSG iTech Logo',
-      className: 'navbar-brand-logo'
+      className: 'sidebar-logo'
     });
 
-    const brand = this.createElement('a', { className: 'navbar-brand', href: '#' },
-      brandLogo,
-      this.createElement('span', {}, 'PSG iTech Hostel')
-    );
+    const sidebarTitle = this.createElement('span', { className: 'sidebar-title' }, 'PSG iTech Hostel');
+    const sidebarHeader = this.createElement('div', { className: 'sidebar-header' }, logoImg, sidebarTitle);
+    sidebar.appendChild(sidebarHeader);
 
-    const hamburgerBtn = this.createElement('button', {
-      className: 'btn-hamburger',
-      onclick: () => {
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.toggle('open');
-      }
-    }, '☰');
-
-    const leftNav = this.createElement('div', { style: 'display: flex; align-items: center; gap: 1rem;' },
-      hamburgerBtn,
-      brand
-    );
-
-    const userInitial = currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U';
-    const avatarCircle = this.createElement('div', { className: 'user-avatar-circle' }, userInitial);
-
-    const userInfoName = this.createElement('span', { className: 'user-info-name' });
-    userInfoName.textContent = currentUser.name;
-
-    const roleBadge = this.createElement('span', { className: `role-badge ${currentUser.role}` });
-    roleBadge.textContent = currentUser.role.replace('_', ' ');
-
-    const userInfo = this.createElement('div', { className: 'user-info-text' },
-      userInfoName,
-      roleBadge
-    );
-
-    const userBadge = this.createElement('div', { className: 'user-profile-badge' },
-      avatarCircle,
-      userInfo
-    );
-
-    const logoutBtn = this.createElement('button', {
-      className: 'btn-logout',
-      onclick: () => Auth.logout()
-    }, 'Sign out');
-
-    // Notification Bell + Dropdown
-    const notifBadge = this.createElement('span', { className: 'notif-badge-count', id: 'notifBadgeCount' }, '0');
-    const bellSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    bellSvg.setAttribute('width', '18');
-    bellSvg.setAttribute('height', '18');
-    bellSvg.setAttribute('viewBox', '0 0 24 24');
-    bellSvg.setAttribute('fill', 'none');
-    bellSvg.setAttribute('stroke', 'currentColor');
-    bellSvg.setAttribute('stroke-width', '2');
-    const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path1.setAttribute('d', 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9');
-    const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path2.setAttribute('d', 'M13.73 21a2 2 0 0 1-3.46 0');
-    bellSvg.append(path1, path2);
-
-    const notifBtn = this.createElement('button', {
-      className: 'notif-bell-btn',
-      type: 'button',
-      title: 'Notifications',
-      id: 'notifBellBtn'
-    }, bellSvg, notifBadge);
-
-    const notifList = this.createElement('div', { className: 'notif-list', id: 'notifListContainer' },
-      this.createElement('div', { style: 'padding: 1rem; color: var(--text-muted); font-size: var(--font-size-secondary); text-align: center;' }, 'Loading notifications...')
-    );
-
-    const markAllBtn = this.createElement('button', {
-      className: 'btn btn-secondary btn-sm',
-      type: 'button',
-      style: 'font-size: var(--font-size-helper); padding: 0.25rem 0.5rem; min-height: auto;',
-      onclick: async (e) => {
-        e.stopPropagation();
-        await fetch('/api/notifications/read-all', { method: 'POST', credentials: 'same-origin' });
-        await this.refreshNotifications();
-      }
-    }, 'Mark all read');
-
-    const notifDropdown = this.createElement('div', { className: 'notif-dropdown', id: 'notifDropdown' },
-      this.createElement('div', { className: 'notif-header' },
-        this.createElement('strong', { style: 'font-size: var(--font-size-secondary); font-weight: 600;' }, 'Notifications'),
-        markAllBtn
-      ),
-      notifList
-    );
-
-    const notifWrapper = this.createElement('div', { className: 'notif-wrapper' }, notifBtn, notifDropdown);
-
-    notifBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const isOpen = notifDropdown.classList.toggle('open');
-      if (isOpen) {
-        await this.refreshNotifications();
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!notifWrapper.contains(e.target)) {
-        notifDropdown.classList.remove('open');
-      }
-    });
-
-    const rightNav = this.createElement('div', { className: 'navbar-user' },
-      currentUser.role === 'STUDENT'
-        ? this.createElement('a', {
-            href: '/student/circulars.html',
-            className: 'nav-parcel-pill',
-            id: 'navCircularBadge',
-            style: 'display:none;background:#fee2e2;color:#b91c1c;border-color:#fca5a5;'
-          }, '📢 0 Unread')
-        : null,
-      currentUser.role === 'STUDENT'
-        ? this.createElement('a', {
-            href: '/student/my-parcels.html',
-            className: 'nav-parcel-pill',
-            id: 'navParcelBadge',
-            style: 'display:none;'
-          }, '📦 0 Parcels')
-        : null,
-      notifWrapper,
-      userBadge,
-      logoutBtn
-    );
-
-    const navbar = this.createElement('nav', { className: 'top-navbar' },
-      leftNav,
-      rightNav
-    );
-
-    // --- SIDEBAR BY ROLE ---
-    const sidebar = this.createElement('aside', { className: 'app-sidebar', id: 'sidebar' });
+    // Sidebar Menu Items
     const navList = this.createElement('ul', { className: 'sidebar-nav' });
 
     const menuItemsByRole = {
@@ -301,28 +282,252 @@ const UI = {
     this._activePageKeyFallback = activePageKey;
 
     items.forEach(item => {
+      const icon = this._getSidebarIcon(item.key);
+      const labelSpan = this.createElement('span', {}, item.label);
       const link = this.createElement('a', {
         className: 'sidebar-link',
         href: item.href,
         dataset: { navKey: item.key }
-      }, item.label);
+      }, icon, labelSpan);
+
       link.addEventListener('click', () => {
         const sb = document.getElementById('sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
         if (sb) sb.classList.remove('open');
+        if (bd) bd.classList.remove('open');
       });
       navList.appendChild(this.createElement('li', {}, link));
     });
 
     sidebar.appendChild(navList);
 
-    // Insert fresh navbar & sidebar (resetting any prior sidebar DOM/state)
+    // --- TOP BAR (White, 70px height, Soft bottom shadow) ---
+    const hamburgerBtn = this.createElement('button', {
+      className: 'btn-hamburger',
+      type: 'button',
+      'aria-label': 'Toggle navigation menu',
+      onclick: () => {
+        const sb = document.getElementById('sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
+        if (sb) sb.classList.toggle('open');
+        if (bd) bd.classList.toggle('open');
+      }
+    }, '☰');
+
+    const mobileBrand = this.createElement('div', { className: 'topbar-mobile-brand' },
+      this.createElement('img', { src: '/img/psgitech_logo.png', alt: 'Logo', className: 'topbar-logo' }),
+      this.createElement('span', { className: 'topbar-title' }, 'PSG iTech Hostel')
+    );
+
+    const leftNav = this.createElement('div', { className: 'topbar-left' }, hamburgerBtn, mobileBrand);
+
+    // Notification Bell + Dropdown
+    const notifBadge = this.createElement('span', { className: 'notif-badge-count', id: 'notifBadgeCount', style: 'display:none;' }, '0');
+    const bellSvg = this._getPillIcon('bell');
+    const notifBtn = this.createElement('button', {
+      className: 'notif-bell-btn',
+      type: 'button',
+      title: 'Notifications',
+      'aria-label': 'Notifications',
+      id: 'notifBellBtn'
+    }, bellSvg, notifBadge);
+
+    const notifList = this.createElement('div', { className: 'notif-list', id: 'notifListContainer' },
+      this.createElement('div', { style: 'padding: 1.25rem; color: var(--text-muted); font-size: var(--font-size-secondary); text-align: center;' }, 'Loading notifications...')
+    );
+
+    const markAllBtn = this.createElement('button', {
+      className: 'btn btn-secondary btn-sm',
+      type: 'button',
+      style: 'font-size: var(--font-size-helper); padding: 0.25rem 0.65rem; min-height: auto;',
+      onclick: async (e) => {
+        e.stopPropagation();
+        await fetch('/api/notifications/read-all', { method: 'POST', credentials: 'same-origin' });
+        await this.refreshNotifications();
+      }
+    }, 'Mark all read');
+
+    const notifDropdown = this.createElement('div', { className: 'notif-dropdown', id: 'notifDropdown' },
+      this.createElement('div', { className: 'notif-header' },
+        this.createElement('strong', { style: 'font-size: var(--font-size-secondary); font-weight: 700; color: var(--navy-900);' }, 'Notifications'),
+        markAllBtn
+      ),
+      notifList
+    );
+
+    const notifWrapper = this.createElement('div', { className: 'notif-wrapper' }, notifBtn, notifDropdown);
+
+    notifBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const userDd = document.getElementById('userDropdownMenu');
+      if (userDd) userDd.classList.remove('open');
+      const isOpen = notifDropdown.classList.toggle('open');
+      if (isOpen) {
+        await this.refreshNotifications();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!notifWrapper.contains(e.target)) {
+        notifDropdown.classList.remove('open');
+      }
+    });
+
+    // Circular pill (STUDENT only)
+    let circularPill = null;
+    if (currentUser.role === 'STUDENT') {
+      circularPill = this.createElement('a', {
+        href: '/student/circulars.html',
+        className: 'topbar-pill topbar-pill-circular',
+        id: 'navCircularBadge',
+        style: 'display:none;'
+      },
+        this._getPillIcon('megaphone'),
+        this.createElement('span', { className: 'pill-text' }, '0 Unread Circular')
+      );
+    }
+
+    // Parcel pill (STUDENT only)
+    let parcelPill = null;
+    if (currentUser.role === 'STUDENT') {
+      parcelPill = this.createElement('a', {
+        href: '/student/my-parcels.html',
+        className: 'topbar-pill topbar-pill-parcel',
+        id: 'navParcelBadge',
+        style: 'display:none;'
+      },
+        this._getPillIcon('package'),
+        this.createElement('span', { className: 'pill-text' }, '0 Waiting Parcels')
+      );
+    }
+
+    // User Chip with Dropdown
+    const userInitial = currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U';
+    const userAvatar = this.createElement('div', { className: 'user-chip-avatar' });
+    if (currentUser.photoUrl) {
+      const img = document.createElement('img');
+      img.src = currentUser.photoUrl;
+      img.alt = currentUser.name || 'User';
+      userAvatar.appendChild(img);
+    } else {
+      userAvatar.textContent = userInitial;
+    }
+
+    const userChipName = this.createElement('div', { className: 'user-chip-name' }, currentUser.name || 'User');
+    const userChipRole = this.createElement('div', { className: 'user-chip-role' }, (currentUser.role || '').replace(/_/g, ' '));
+    const userChipMeta = this.createElement('div', { className: 'user-chip-meta' }, userChipName, userChipRole);
+    const chevronSvg = this._getPillIcon('chevron-down');
+
+    const userChipBtn = this.createElement('button', {
+      className: 'user-chip-btn',
+      type: 'button',
+      'aria-haspopup': 'true',
+      'aria-expanded': 'false',
+      id: 'userChipBtn'
+    }, userAvatar, userChipMeta, chevronSvg);
+
+    const profileHref = currentUser.role === 'STUDENT' ? '/student/profile.html' : '/change-password.html';
+    const dropdownProfile = this.createElement('a', {
+      className: 'user-dropdown-item',
+      href: profileHref
+    }, this._getPillIcon('user'), 'My Profile');
+
+    const dropdownLogout = this.createElement('button', {
+      className: 'user-dropdown-item',
+      type: 'button',
+      onclick: () => Auth.logout()
+    }, this._getPillIcon('logout'), 'Sign out');
+
+    const userDropdownMenu = this.createElement('div', { className: 'user-dropdown-menu', id: 'userDropdownMenu' },
+      dropdownProfile,
+      this.createElement('div', { className: 'user-dropdown-divider' }),
+      dropdownLogout
+    );
+
+    const userChipWrapper = this.createElement('div', { className: 'user-chip-wrapper' }, userChipBtn, userDropdownMenu);
+
+    userChipBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (notifDropdown) notifDropdown.classList.remove('open');
+      const isOpen = userDropdownMenu.classList.toggle('open');
+      userChipBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!userChipWrapper.contains(e.target)) {
+        userDropdownMenu.classList.remove('open');
+        userChipBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Sign out outline button
+    const logoutBtn = this.createElement('button', {
+      className: 'btn-signout-outline',
+      type: 'button',
+      title: 'Sign out',
+      onclick: () => Auth.logout()
+    }, this._getPillIcon('logout'), 'Sign out');
+
+    const rightNav = this.createElement('div', { className: 'topbar-right' },
+      circularPill,
+      parcelPill,
+      notifWrapper,
+      userChipWrapper,
+      logoutBtn
+    );
+
+    const navbar = this.createElement('nav', { className: 'top-navbar', 'aria-label': 'Top Navigation' },
+      leftNav,
+      rightNav
+    );
+
+    // Backdrop for mobile off-canvas drawer
+    let backdrop = document.getElementById('sidebarBackdrop');
+    if (!backdrop) {
+      backdrop = this.createElement('div', {
+        className: 'sidebar-backdrop',
+        id: 'sidebarBackdrop',
+        onclick: () => {
+          const sb = document.getElementById('sidebar');
+          if (sb) sb.classList.remove('open');
+          backdrop.classList.remove('open');
+        }
+      });
+      document.body.appendChild(backdrop);
+    }
+
+    // Keyboard support: Escape closes drawers and dropdowns
+    if (!this._escListenerBound) {
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const sb = document.getElementById('sidebar');
+          const bd = document.getElementById('sidebarBackdrop');
+          if (sb) sb.classList.remove('open');
+          if (bd) bd.classList.remove('open');
+          const userDd = document.getElementById('userDropdownMenu');
+          if (userDd) userDd.classList.remove('open');
+          const notifDd = document.getElementById('notifDropdown');
+          if (notifDd) notifDd.classList.remove('open');
+        }
+      });
+      this._escListenerBound = true;
+    }
+
+    // Insert fresh navbar & sidebar into DOM
     const existingNav = document.querySelector('.top-navbar');
     if (existingNav) existingNav.remove();
     const existingSidebar = document.getElementById('sidebar');
     if (existingSidebar) existingSidebar.remove();
-    document.body.insertBefore(navbar, document.body.firstChild);
 
     appContainer.insertBefore(sidebar, appContainer.firstChild);
+
+    const mainContent = appContainer.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.insertBefore(navbar, mainContent.firstChild);
+    } else {
+      appContainer.insertBefore(navbar, appContainer.children[1] || null);
+    }
+
     this.syncActiveSidebarFromUrl();
     if (!this._sidebarPopListenerBound) {
       window.addEventListener('popstate', () => this.syncActiveSidebarFromUrl());
@@ -348,7 +553,10 @@ const UI = {
       const pill = document.getElementById('navCircularBadge');
       if (pill) {
         const c = data.unreadCount || 0;
-        pill.textContent = `📢 ${c} Unread Circular${c === 1 ? '' : 's'}`;
+        const textSpan = pill.querySelector('.pill-text');
+        const label = `${c} Unread Circular${c === 1 ? '' : 's'}`;
+        if (textSpan) textSpan.textContent = label;
+        else pill.textContent = label;
         pill.style.display = c > 0 ? 'inline-flex' : 'none';
       }
     } catch (e) {}
@@ -362,7 +570,10 @@ const UI = {
       const pill = document.getElementById('navParcelBadge');
       if (pill) {
         const c = data.waitingCount || 0;
-        pill.textContent = `📦 ${c} Waiting Parcel${c === 1 ? '' : 's'}`;
+        const textSpan = pill.querySelector('.pill-text');
+        const label = `${c} Waiting Parcel${c === 1 ? '' : 's'}`;
+        if (textSpan) textSpan.textContent = label;
+        else pill.textContent = label;
         pill.style.display = c > 0 ? 'inline-flex' : 'none';
       }
     } catch (e) {}

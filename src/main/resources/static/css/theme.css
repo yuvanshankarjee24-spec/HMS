@@ -98,17 +98,32 @@
   --letter-spacing-code: 0.02em;
 
   /* ------------------------------------------------------------------------
-     COLOR TOKENS (LIGHT THEME)
-     All WCAG AA Compliant (minimum 4.5:1 against light card/page backgrounds)
+     COLOR TOKENS - UNIFIED DESIGN SYSTEM
      ------------------------------------------------------------------------ */
-  --text-primary: #0b1f35;       /* 15.6:1 contrast against white */
-  --text-secondary: #475569;     /* 6.2:1 contrast against white */
-  --text-muted: #4e657e;         /* 5.1:1 contrast against white, 4.8:1 on #f5f9ff */
-  --text-on-primary: #ffffff;    /* pure white for dark buttons & badges */
-  --text-link: #1872db;          /* 4.6:1 contrast against white (WCAG AA) */
-  --text-danger: #dc2626;        /* 5.1:1 contrast against white */
-  --text-success: #15803d;       /* 5.4:1 contrast against white */
-  --text-warning: #b45309;       /* 5.2:1 contrast against white */
+  --navy-900: #0B1B45;   /* sidebar background, gradient #0E2459 to #091638 */
+  --navy-800: #12285F;   /* sidebar header strip, user avatar background */
+  --blue-600: #1457D9;   /* active sidebar item, primary buttons, links */
+  --blue-700: #0F44B0;   /* hover */
+  --blue-100: #E6EEFC;   /* light pill and outline button fill */
+  --blue-200: #C9D9F7;   /* borders on pills and outline buttons */
+  --page-bg: #EEF3FB;
+  --surface: #FFFFFF;
+  --border: #DCE5F3;
+  --text-primary: #0B1B45;
+  --text-secondary: #4B5B7A;
+  --text-muted: #6F7E9C;
+  --amber-100: #FDF1D6;
+  --amber-text: #8A5A06;
+  --danger-100: #FDE4E4;
+  --danger-text: #B42318;
+  --success-100: #E1F4EA;
+  --success-text: #1E7B4F;
+
+  --text-on-primary: #ffffff;
+  --text-link: var(--blue-600);
+  --text-danger: var(--danger-text);
+  --text-success: var(--success-text);
+  --text-warning: var(--amber-text);
 
   /* Backward Compatibility Aliases for legacy CSS variables */
   --text-main: var(--text-primary);

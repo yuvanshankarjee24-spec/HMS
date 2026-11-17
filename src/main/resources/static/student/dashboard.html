@@ -15,18 +15,19 @@
     }
 
     .profile-avatar-large {
-      width: 88px;
-      height: 88px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      border: 3px solid var(--primary);
+      border: 3px solid var(--blue-600);
       overflow: hidden;
-      background: var(--primary-subtle);
+      background: var(--blue-100);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--primary);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--blue-600);
+      flex-shrink: 0;
     }
 
     .profile-avatar-large img {
@@ -37,11 +38,8 @@
 
     .profile-details-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border-subtle);
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
     }
 
     .profile-field-label {
@@ -50,31 +48,51 @@
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: var(--letter-spacing-eyebrow);
+      margin-bottom: 4px;
     }
 
     .profile-field-val {
-      font-size: var(--font-size-body);
-      font-weight: 600;
-      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy-900);
     }
 
     .room-badge-pill {
-      font-size: var(--font-size-secondary);
-      font-weight: var(--font-weight-btn);
+      font-size: 13.5px;
+      font-weight: 600;
       font-family: var(--font-sans);
-      padding: 0.6rem 1.25rem;
-      border-radius: var(--radius-md);
-      background: #e0f2fe;
-      color: #0369a1;
+      padding: 0.55rem 1.25rem;
+      border-radius: var(--radius-full);
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .room-badge-pill.pill-allocated {
+      background: var(--success-100);
+      color: var(--success-text);
+      border-color: #bfead0;
+    }
+
+    .room-badge-pill.pill-pending {
+      background: var(--amber-100);
+      color: var(--amber-text);
+      border-color: #f9e2ab;
+    }
+
+    .room-badge-pill.pill-not-allocated {
+      background: var(--danger-100);
+      color: var(--danger-text);
+      border-color: #fbcaca;
     }
 
     @media (max-width: 768px) {
       .profile-hero {
         grid-template-columns: 1fr;
         text-align: center;
+        gap: 1rem;
       }
 
       .profile-avatar-large {
@@ -84,6 +102,16 @@
       .profile-actions {
         display: flex;
         justify-content: center;
+      }
+
+      .profile-details-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .profile-details-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -102,8 +130,8 @@
             <h1 id="welcomeTitle">Welcome, Student</h1>
             <p>View your room allocation status, submit requests, and manage hostel services.</p>
           </div>
-          <div id="quickRequestContainer" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <a href="/student/outpasses.html" class="btn btn-secondary">
+          <div class="welcome-grid-actions" id="quickRequestContainer">
+            <a href="/student/outpasses.html" class="btn-pill-outline">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                 <polyline points="10 17 15 12 10 7" />
@@ -111,48 +139,50 @@
               </svg>
               Apply Outpass
             </a>
-            <a href="/student/mess-tokens.html" class="btn btn-secondary">Mess Tokens</a>
-            <a href="/student/maintenance.html?tab=raise" class="btn btn-secondary">+ Maintenance Request</a>
+            <a href="/student/mess-tokens.html" class="btn-pill-outline">Mess Tokens</a>
+            <a href="/student/maintenance.html?tab=raise" class="btn-pill-outline">+ Maintenance Request</a>
             <button id="openRequestModalBtn" class="btn btn-primary">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Request Room
+              + Request Room
             </button>
           </div>
         </div>
 
         <!-- Student Profile & Allocation Card -->
         <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">
+          <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+            <h2 class="card-title" style="font-size: 1.15rem; font-weight: 600; color: var(--navy-900);">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              My Room & Allocation Details
+              My Room &amp; Allocation Details
             </h2>
             <div id="statusBadgeContainer">
-              <span class="status-badge" id="statusBadge">Loading...</span>
+              <span class="status-badge badge-not-allocated" id="statusBadge">NOT ALLOCATED</span>
             </div>
           </div>
 
           <div class="profile-hero">
             <div class="profile-avatar-large" id="avatarDisplay">S</div>
             <div>
-              <h3 id="studentFullName" style="font-size: 1.4rem; margin-bottom: 0.25rem;">Student Name</h3>
-              <p id="studentEmail" style="color: var(--text-muted); font-size: 0.95rem;">student@college.edu</p>
-              <div style="margin-top: 0.5rem;">
+              <h3 id="studentFullName" style="font-size: 24px; font-weight: 700; color: var(--navy-900); margin-bottom: 0.25rem;">Student Name</h3>
+              <p id="studentEmail" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 0.65rem;">student@college.edu</p>
+              <div>
                 <a href="/student/profile.html" class="btn btn-secondary btn-sm">Edit Profile / Photo</a>
               </div>
             </div>
             <div class="profile-actions" id="roomDisplayContainer">
-              <div class="room-badge-pill" id="roomBadgePill">
+              <div class="room-badge-pill pill-not-allocated" id="roomBadgePill">
                 <span id="roomBedText">Not Allocated</span>
               </div>
             </div>
           </div>
+
+          <hr style="border: none; border-top: 1px solid var(--border); margin: 1.25rem 0;">
 
           <div class="profile-details-grid">
             <div>
@@ -176,14 +206,15 @@
 
         <!-- Request History Table -->
         <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">
+          <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+            <h2 class="card-title" style="font-size: 1.15rem; font-weight: 600; color: var(--navy-900);">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               Room Request History
             </h2>
+            <a href="#requestTable" class="btn-link" style="color: var(--blue-600); font-weight: 600; font-size: 13.5px; text-decoration: none;">View All &rarr;</a>
           </div>
           <div class="table-responsive">
             <table class="data-table mobile-collapse-table" id="requestTable">
@@ -201,7 +232,7 @@
               </thead>
               <tbody id="requestTableBody">
                 <tr>
-                  <td colspan="8" style="text-align: center; color: var(--text-muted);">Loading requests...</td>
+                  <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading requests...</td>
                 </tr>
               </tbody>
             </table>
@@ -540,8 +571,10 @@
 
       if (profile.allocationStatus === 'ALLOCATED') {
         statusBadge.className = 'status-badge badge-allocated';
-        roomBadgePill.style.background = '#dcfce7';
-        roomBadgePill.style.color = '#15803d';
+        statusBadge.textContent = 'ALLOCATED';
+        roomBadgePill.className = 'room-badge-pill pill-allocated';
+        roomBadgePill.style.background = '';
+        roomBadgePill.style.color = '';
         roomBedText.textContent = `Room ${profile.roomNumber} - Bed #${profile.bedNumber}`;
         if (openRequestModalBtn) {
           openRequestModalBtn.disabled = true;
@@ -549,8 +582,10 @@
         }
       } else if (profile.allocationStatus === 'REQUEST PENDING') {
         statusBadge.className = 'status-badge badge-pending';
-        roomBadgePill.style.background = '#fef3c7';
-        roomBadgePill.style.color = '#b45309';
+        statusBadge.textContent = 'REQUEST PENDING';
+        roomBadgePill.className = 'room-badge-pill pill-pending';
+        roomBadgePill.style.background = '';
+        roomBadgePill.style.color = '';
         roomBedText.textContent = 'Request Pending Approval';
         if (openRequestModalBtn) {
           openRequestModalBtn.disabled = true;
@@ -558,8 +593,10 @@
         }
       } else {
         statusBadge.className = 'status-badge badge-not-allocated';
-        roomBadgePill.style.background = '#fee2e2';
-        roomBadgePill.style.color = '#b91c1c';
+        statusBadge.textContent = 'NOT ALLOCATED';
+        roomBadgePill.className = 'room-badge-pill pill-not-allocated';
+        roomBadgePill.style.background = '';
+        roomBadgePill.style.color = '';
         roomBedText.textContent = 'Not Allocated';
         if (openRequestModalBtn) {
           openRequestModalBtn.disabled = false;
@@ -586,10 +623,18 @@
         const tr = document.createElement('tr');
         const td = document.createElement('td');
         td.colSpan = 8;
+        td.style.padding = '2.5rem 1rem';
         td.style.textAlign = 'center';
-        td.style.padding = '2rem';
-        td.style.color = 'var(--text-muted)';
-        td.textContent = 'No room requests submitted yet.';
+        td.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-muted);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--blue-200)" stroke-width="2" style="margin-bottom: 0.25rem;">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <div style="font-weight: 700; font-size: 15px; color: var(--navy-900);">No room requests yet</div>
+            <div style="font-size: 13.5px; color: var(--text-secondary);">When you request a room, the history and approval status will appear here.</div>
+          </div>
+        `;
         tr.appendChild(td);
         tbody.appendChild(tr);
         return;
@@ -1173,15 +1218,15 @@
           className: isUrgent ? 'circular-urgent-banner' : 'circular-important-banner'
         },
           UI.createElement('div', {},
-            UI.createElement('div', { style: 'font-weight:800;font-size:0.95rem;' },
+            UI.createElement('div', { className: 'banner-title' },
               `${isUrgent ? 'URGENT NOTICE' : 'IMPORTANT CIRCULAR'}: ${target.title}`),
-            UI.createElement('div', { style: 'font-size:0.84rem;margin-top:0.2rem;' },
-              `${target.circularCode} - Published ${UI.formatDateTime(target.publishedAt)}`)
+            UI.createElement('div', { className: 'banner-meta' },
+              `${target.circularCode} • Published ${UI.formatDateTime(target.publishedAt)}`)
           ),
           UI.createElement('a', {
             href: `/student/circulars.html?open=${target.id}`,
-            className: isUrgent ? 'btn btn-danger btn-sm' : 'btn btn-primary btn-sm'
-          }, 'Read & Acknowledge')
+            className: isUrgent ? 'banner-btn' : 'banner-btn'
+          }, 'Read & Acknowledge →')
         );
         slot.appendChild(banner);
       } catch (e) { }
