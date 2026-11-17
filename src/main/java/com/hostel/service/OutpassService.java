@@ -268,8 +268,13 @@ public class OutpassService {
             throw new BadRequestException("Enter Outpass ID or Student Register Number");
         }
         String trimmed = query.trim();
+        // Remove leading # or OP- or OP or OUTPASS: prefix if present
+        String idCandidate = trimmed.replaceAll("^(?i)(?:outpass[:#\\-\\s]*|otp[:#\\-\\s]*|op[:#\\-\\s]*|#+)", "");
         Outpass outpass = null;
-        if (trimmed.matches("\\d+")) {
+        if (idCandidate.matches("\\d+")) {
+            outpass = outpassRepository.findById(Long.parseLong(idCandidate)).orElse(null);
+        }
+        if (outpass == null && trimmed.matches("\\d+")) {
             outpass = outpassRepository.findById(Long.parseLong(trimmed)).orElse(null);
         }
         if (outpass == null) {
@@ -289,6 +294,11 @@ public class OutpassService {
 
     @Transactional(noRollbackFor = ForbiddenException.class)
     public SecurityOutpassScanResponse markSecurityExit(Long outpassId, User securityUser) {
+        return markSecurityExit(outpassId, securityUser, null);
+    }
+
+    @Transactional(noRollbackFor = ForbiddenException.class)
+    public SecurityOutpassScanResponse markSecurityExit(Long outpassId, User securityUser, String remarks) {
         Outpass outpass = outpassRepository.findById(outpassId)
                 .orElseThrow(() -> new ResourceNotFoundException("Outpass not found: " + outpassId));
         Student student = outpass.getStudent();
@@ -302,7 +312,7 @@ public class OutpassService {
             deniedLog.setScannedBy(securityUser);
             deniedLog.setScanAction("denied");
             deniedLog.setScanResult("LOCKED_MISSED_ATTENDANCE");
-            deniedLog.setNotes(denialMsg);
+            deniedLog.setNotes(remarks != null && !remarks.isBlank() ? denialMsg + " Remarks: " + remarks.trim() : denialMsg);
             outpassScanLogRepository.save(deniedLog);
 
             auditService.log(securityUser, "OUTPASS", "SECURITY_OUTPASS_EXIT_DENIED", outpass.getId(),
@@ -317,6 +327,10 @@ public class OutpassService {
         String oldStatus = outpass.getStatus().name();
         outpass.setStatus(Outpass.Status.OUT);
         outpass.setActualExitTime(LocalDateTime.now());
+        if (remarks != null && !remarks.isBlank()) {
+            String prev = outpass.getWardenRemarks() != null ? outpass.getWardenRemarks() + " | " : "";
+            outpass.setWardenRemarks(prev + "Exit remarks: " + remarks.trim());
+        }
         Outpass saved = outpassRepository.save(outpass);
 
         OutpassScanLog exitLog = new OutpassScanLog();
@@ -324,11 +338,43 @@ public class OutpassService {
         exitLog.setScannedBy(securityUser);
         exitLog.setScanAction("exit");
         exitLog.setScanResult("ALLOWED");
-        exitLog.setNotes("Security gate exit recorded");
+        exitLog.setNotes(remarks != null && !remarks.isBlank() ? "Security gate exit recorded: " + remarks.trim() : "Security gate exit recorded");
         outpassScanLogRepository.save(exitLog);
 
         auditService.log(securityUser, "OUTPASS", "SECURITY_OUTPASS_EXIT", saved.getId(),
                 oldStatus, Outpass.Status.OUT.name(),
+                "OutpassId=" + saved.getId() + " Student=" + student.getRegisterNumber(), "SUCCESS");
+        return mapToSecurityScanResponse(saved);
+    }
+
+    @Transactional
+    public SecurityOutpassScanResponse markSecurityEntry(Long outpassId, User securityUser, String remarks) {
+        Outpass outpass = outpassRepository.findById(outpassId)
+                .orElseThrow(() -> new ResourceNotFoundException("Outpass not found: " + outpassId));
+        Student student = outpass.getStudent();
+
+        if (outpass.getStatus() != Outpass.Status.OUT) {
+            throw new BadRequestException("Entry can only be marked for students currently OUT. Current status: " + outpass.getStatus());
+        }
+
+        String oldStatus = outpass.getStatus().name();
+        outpass.setStatus(Outpass.Status.RETURNED);
+        if (remarks != null && !remarks.isBlank()) {
+            String prev = outpass.getWardenRemarks() != null ? outpass.getWardenRemarks() + " | " : "";
+            outpass.setWardenRemarks(prev + "Entry remarks: " + remarks.trim());
+        }
+        Outpass saved = outpassRepository.save(outpass);
+
+        OutpassScanLog entryLog = new OutpassScanLog();
+        entryLog.setOutpass(saved);
+        entryLog.setScannedBy(securityUser);
+        entryLog.setScanAction("entry");
+        entryLog.setScanResult("ALLOWED");
+        entryLog.setNotes(remarks != null && !remarks.isBlank() ? "Security gate entry recorded: " + remarks.trim() : "Security gate entry recorded");
+        outpassScanLogRepository.save(entryLog);
+
+        auditService.log(securityUser, "OUTPASS", "SECURITY_OUTPASS_ENTRY", saved.getId(),
+                oldStatus, Outpass.Status.RETURNED.name(),
                 "OutpassId=" + saved.getId() + " Student=" + student.getRegisterNumber(), "SUCCESS");
         return mapToSecurityScanResponse(saved);
     }
@@ -347,12 +393,18 @@ public class OutpassService {
         if (locked) {
             exitAllowed = false;
             gateMessage = "OUTPASS LOCKED - MISSED ATTENDANCE. Contact the warden.";
-        } else if (outpass.getStatus() != Outpass.Status.APPROVED) {
-            exitAllowed = false;
-            gateMessage = "Outpass cannot be used for Exit. Current status: " + outpass.getStatus();
-        } else {
+        } else if (outpass.getStatus() == Outpass.Status.APPROVED) {
             exitAllowed = true;
             gateMessage = "Valid Approved Outpass. Exit permitted.";
+        } else if (outpass.getStatus() == Outpass.Status.OUT) {
+            exitAllowed = false;
+            gateMessage = "Student is currently OUT. Ready for Entry check-in.";
+        } else if (outpass.getStatus() == Outpass.Status.RETURNED) {
+            exitAllowed = false;
+            gateMessage = "Student has already returned.";
+        } else {
+            exitAllowed = false;
+            gateMessage = "Outpass status is " + outpass.getStatus() + ". Exit not permitted.";
         }
 
         return new SecurityOutpassScanResponse(

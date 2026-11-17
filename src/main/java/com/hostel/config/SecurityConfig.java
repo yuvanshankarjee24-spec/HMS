@@ -74,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/index.html",
+                                "/login",
                                 "/login.html",
                                 "/change-password.html",
                                 "/css/**",
@@ -87,14 +88,16 @@ public class SecurityConfig {
                         ).permitAll()
                         // General authenticated
                         .requestMatchers("/api/auth/me", "/api/auth/change-password").authenticated()
+                        // Student photo access for authorized campus roles
+                        .requestMatchers("/api/student/photo/**").hasAnyRole("STUDENT", "WARDEN", "ADMIN", "SECURITY")
                         // Student only
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
                         // Warden and Admin
                         .requestMatchers("/api/warden/**").hasAnyRole("WARDEN", "ADMIN")
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // Security only
-                        .requestMatchers("/api/security/**").hasRole("SECURITY")
+                        // Security and Admin
+                        .requestMatchers("/api/security/**").hasAnyRole("SECURITY", "ADMIN")
                         // Worker only
                         .requestMatchers("/api/worker/**").hasRole("WORKER")
                         // Notifications & attachments (authenticated; service enforces ownership/RBAC)

@@ -75,7 +75,7 @@ public class StudentController {
     }
 
     @GetMapping("/photo/{studentId}")
-    @PreAuthorize("hasAnyRole('WARDEN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('WARDEN', 'ADMIN', 'SECURITY')")
     public ResponseEntity<Resource> getStudentPhotoById(@PathVariable Long studentId) {
         Resource resource = studentService.loadPhotoByStudentId(studentId);
         return createResourceResponse(resource);

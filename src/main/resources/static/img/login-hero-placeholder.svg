@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9E44"/>
+      <stop offset="45%" stop-color="#FF6B2B"/>
+      <stop offset="100%" stop-color="#DE4A07"/>
+    </linearGradient>
+    <linearGradient id="beanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#9A3412"/>
+    </linearGradient>
+    <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background orange gradient -->
+  <rect width="800" height="1000" fill="url(#bgGrad)"/>
+
+  <!-- Ambient background curves -->
+  <circle cx="150" cy="200" r="280" fill="url(#glowGrad)"/>
+  <circle cx="700" cy="750" r="320" fill="#C2410C" opacity="0.3"/>
+  <circle cx="650" cy="180" r="140" fill="#FFA959" opacity="0.4"/>
+
+  <!-- Subtle grid/dots decor -->
+  <g fill="#FFFFFF" opacity="0.15">
+    <circle cx="100" cy="120" r="4"/><circle cx="130" cy="120" r="4"/><circle cx="160" cy="120" r="4"/>
+    <circle cx="100" cy="150" r="4"/><circle cx="130" cy="150" r="4"/><circle cx="160" cy="150" r="4"/>
+    <circle cx="100" cy="180" r="4"/><circle cx="130" cy="180" r="4"/><circle cx="160" cy="180" r="4"/>
+  </g>
+
+  <!-- Large Orange Bean Bag -->
+  <ellipse cx="400" cy="680" rx="260" ry="190" fill="url(#beanGrad)"/>
+  <path d="M 200 640 Q 400 520 600 640 Q 560 840 400 860 Q 240 840 200 640 Z" fill="#C2410C" opacity="0.6"/>
+
+  <!-- Student Relaxing Figure -->
+  <!-- Legs / Jeans -->
+  <path d="M 330 670 Q 280 730 220 780 Q 250 810 320 760 Q 370 700 390 660 Z" fill="#1E293B"/>
+  <path d="M 430 670 Q 490 730 560 780 Q 530 810 460 760 Q 410 700 390 660 Z" fill="#0F172A"/>
+  <!-- White sneakers -->
+  <ellipse cx="205" cy="790" rx="32" ry="18" fill="#FFFFFF"/>
+  <ellipse cx="575" cy="790" rx="32" ry="18" fill="#FFFFFF"/>
+
+  <!-- Torso & White Hoodie / Shirt -->
+  <path d="M 340 500 Q 400 480 460 500 L 480 640 Q 400 660 320 640 Z" fill="url(#shirtGrad)"/>
+
+  <!-- Laptop on Lap -->
+  <polygon points="350,580 450,580 470,620 330,620" fill="#94A3B8"/>
+  <polygon points="355,525 445,525 450,580 350,580" fill="#CBD5E1"/>
+  <rect x="365" y="535" width="70" height="38" rx="2" fill="#38BDF8" opacity="0.8"/>
+
+  <!-- Arms -->
+  <path d="M 340 510 Q 310 570 360 595" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="M 460 510 Q 490 570 440 595" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <circle cx="360" cy="595" r="14" fill="#FDBA74"/>
+  <circle cx="440" cy="595" r="14" fill="#FDBA74"/>
+
+  <!-- Head / Hair / Face -->
+  <!-- Neck -->
+  <rect x="388" y="460" width="24" height="40" fill="#FDBA74"/>
+  <!-- Head -->
+  <ellipse cx="400" cy="420" rx="38" ry="46" fill="#FED7AA"/>
+  <!-- Smiling Face Details -->
+  <path d="M 390 435 Q 400 445 410 435" stroke="#9A3412" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="388" cy="415" r="3.5" fill="#431407"/>
+  <circle cx="412" cy="415" r="3.5" fill="#431407"/>
+  <!-- Eyebrows -->
+  <path d="M 382 405 Q 388 402 394 405" stroke="#431407" stroke-width="2" fill="none"/>
+  <path d="M 406 405 Q 412 402 418 405" stroke="#431407" stroke-width="2" fill="none"/>
+  <!-- Modern Hair Style -->
+  <path d="M 360 415 Q 360 360 400 360 Q 440 360 440 410 Q 425 385 400 385 Q 375 385 360 415 Z" fill="#1C1917"/>
+
+  <!-- Floating Study Badges / Sparkles -->
+  <g transform="translate(560, 360)">
+    <circle cx="0" cy="0" r="28" fill="#FFFFFF" opacity="0.9" filter="drop-shadow(0px 6px 12px rgba(0,0,0,0.15))"/>
+    <text x="0" y="7" font-size="22" text-anchor="middle">🎓</text>
+  </g>
+  <g transform="translate(240, 420)">
+    <circle cx="0" cy="0" r="24" fill="#FFFFFF" opacity="0.9" filter="drop-shadow(0px 6px 12px rgba(0,0,0,0.15))"/>
+    <text x="0" y="7" font-size="20" text-anchor="middle">✨</text>
+  </g>
+  <g transform="translate(230, 260)">
+    <circle cx="0" cy="0" r="28" fill="#FFFFFF" opacity="0.9" filter="drop-shadow(0px 6px 12px rgba(0,0,0,0.15))"/>
+    <text x="0" y="8" font-size="24" text-anchor="middle">📚</text>
+  </g>
+
+  <!-- Bottom Brand Text Watermark -->
+  <text x="400" y="930" font-family="'Poppins', sans-serif" font-weight="600" font-size="22" fill="#FFFFFF" text-anchor="middle" letter-spacing="1.5" opacity="0.95">Smart Hostel Community</text>
+  <text x="400" y="955" font-family="'Poppins', sans-serif" font-weight="400" font-size="14" fill="#FFFFFF" text-anchor="middle" opacity="0.75">Comfortable Living &amp; Academic Excellence</text>
+</svg>
+

@@ -6,6 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PageRedirectController {
 
+    // Login routes
+    @GetMapping("/login")
+    public String forwardLogin() {
+        return "forward:/login.html";
+    }
+
     // Student portal redirects
     @GetMapping("/student/mess-booking.html")
     public String redirectStudentMessBooking() {

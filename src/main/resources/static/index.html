@@ -3,27 +3,359 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Hostel Management</title>
-  <link rel="stylesheet" href="/css/common.css?v=6">
-  <script src="/js/auth.js?v=6"></script>
+  <title>Hostel Management System - Select Role</title>
+  <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-green: #1F4D3A;
+      --brand-green-hover: #2d6a4f;
+      --brand-green-light: #f4f8f5;
+      --brand-blue: #5B7CFA;
+      --border: #e2e8f0;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #64748b;
+      --font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow-x: hidden;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Top-Right College Logo */
+    .header-logo-container {
+      position: absolute;
+      top: 2rem;
+      right: 2.5rem;
+      z-index: 10;
+    }
+
+    .psg-logo {
+      width: 100px;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* Main Centered Content */
+    .landing-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4rem 1rem 2rem 1rem;
+      text-align: center;
+    }
+
+    /* Centered Title */
+    .landing-title {
+      font-size: 30px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.015em;
+      color: #0f172a;
+      margin-bottom: 3.5rem;
+      line-height: 1.25;
+    }
+
+    /* Roles Row */
+    .roles-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Role Button Item */
+    .role-btn-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text-primary);
+      outline: none;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    /* 96px Circular Button */
+    .role-circle {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 2px solid var(--brand-green);
+      background-color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #111827;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .role-circle svg {
+      width: 42px;
+      height: 42px;
+      transition: stroke 0.2s ease;
+    }
+
+    /* Role Name Label */
+    .role-name {
+      margin-top: 0.85rem;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-primary);
+      text-align: center;
+      transition: color 0.2s ease;
+    }
+
+    /* Hover & Focus Interactions */
+    .role-btn-item:hover {
+      transform: translateY(-4px) scale(1.05);
+    }
+
+    .role-btn-item:hover .role-circle {
+      border-color: var(--brand-green-hover);
+      border-width: 2.5px;
+      background-color: var(--brand-green-light);
+      box-shadow: 0 10px 24px rgba(31, 77, 58, 0.12);
+    }
+
+    .role-btn-item:hover .role-name {
+      color: var(--brand-green);
+      font-weight: 500;
+    }
+
+    .role-btn-item:focus-visible .role-circle {
+      outline: 3px solid rgba(31, 77, 58, 0.45);
+      outline-offset: 4px;
+      border-color: var(--brand-green-hover);
+      background-color: var(--brand-green-light);
+    }
+
+    /* Footer: Discreet Admin Login */
+    .landing-footer {
+      width: 100%;
+      text-align: center;
+      padding-top: 2rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .admin-login-link {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .admin-login-link:hover {
+      color: var(--brand-green);
+      text-decoration: underline;
+    }
+
+    .admin-login-link:focus-visible {
+      outline: 2px solid var(--brand-green);
+      outline-offset: 2px;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 900px) {
+      .landing-title {
+        font-size: 26px;
+        margin-bottom: 2.75rem;
+      }
+      .roles-row {
+        flex-wrap: wrap;
+        max-width: 480px;
+        gap: 2.25rem 2.5rem;
+      }
+      /* Wraps to 3 on row 1, 2 on row 2 */
+      .role-btn-item {
+        flex: 0 0 calc(33.333% - 1.7rem);
+      }
+      .role-btn-item:nth-child(4),
+      .role-btn-item:nth-child(5) {
+        flex: 0 0 calc(50% - 2rem);
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1.25rem 1rem;
+      }
+      .header-logo-container {
+        top: 1.25rem;
+        right: 1.25rem;
+      }
+      .psg-logo {
+        width: 78px;
+      }
+      .landing-main {
+        padding-top: 3.5rem;
+      }
+      .landing-title {
+        font-size: 22px;
+        margin-bottom: 2.25rem;
+      }
+      .roles-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.75rem 1rem;
+        max-width: 300px;
+      }
+      .role-btn-item {
+        flex: none;
+      }
+      .role-btn-item:nth-child(5) {
+        grid-column: 1 / span 2;
+        margin: 0 auto;
+      }
+      .role-circle {
+        width: 86px;
+        height: 86px;
+      }
+      .role-circle svg {
+        width: 36px;
+        height: 36px;
+      }
+    }
+  </style>
 </head>
-<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--page-bg);color:var(--text-primary);">
-  <div style="text-align:center;">
-    <div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto 16px auto;"></div>
-    <p style="color:var(--text-secondary);font-size:var(--font-size-body);">Loading Smart Hostel Portal...</p>
-  </div>
+<body>
+
+  <!-- Top-Right College Logo -->
+  <header class="header-logo-container">
+    <img src="/img/psgitech_logo.png" alt="PSG iTech Logo" class="psg-logo">
+  </header>
+
+  <!-- Centered Role Selection Body -->
+  <main class="landing-main">
+    <h1 class="landing-title">HOSTEL MANAGEMENT SYSTEM</h1>
+
+    <div class="roles-row" role="navigation" aria-label="Role Portals">
+      <!-- 1. Student -->
+      <a href="/login?role=student" class="role-btn-item" aria-label="Student portal login" onclick="selectRole('student', event)">
+        <div class="role-circle">
+          <!-- Graduation Cap Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="role-name">Student</span>
+      </a>
+
+      <!-- 2. Warden -->
+      <a href="/login?role=warden" class="role-btn-item" aria-label="Warden portal login" onclick="selectRole('warden', event)">
+        <div class="role-circle">
+          <!-- Suited Person Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M5.5 21v-2a4.5 4.5 0 0 1 4.5-4.5h4a4.5 4.5 0 0 1 4.5 4.5v2"/>
+            <path d="m10.5 14.5 1.5 2.5 1.5-2.5"/>
+            <path d="m12 17 1 4-1-1-1 1 1-4"/>
+          </svg>
+        </div>
+        <span class="role-name">Warden</span>
+      </a>
+
+      <!-- 3. Security -->
+      <a href="/login?role=security" class="role-btn-item" aria-label="Security portal login" onclick="selectRole('security', event)">
+        <div class="role-circle">
+          <!-- Guard Shield Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <span class="role-name">Security</span>
+      </a>
+
+      <!-- 4. Staff -->
+      <a href="/login?role=staff" class="role-btn-item" aria-label="Staff portal login" onclick="selectRole('staff', event)">
+        <div class="role-circle">
+          <!-- Person with Briefcase Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="7" r="3.5"/>
+            <path d="M3.5 21v-2a4 4 0 0 1 4-4h3a4 4 0 0 1 4 4v2"/>
+            <rect x="14" y="11" width="8" height="7" rx="1.5"/>
+            <path d="M16 11V9.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V11"/>
+            <line x1="18" y1="14" x2="18" y2="15"/>
+          </svg>
+        </div>
+        <span class="role-name">Staff</span>
+      </a>
+
+      <!-- 5. Worker -->
+      <a href="/login?role=worker" class="role-btn-item" aria-label="Worker portal login" onclick="selectRole('worker', event)">
+        <div class="role-circle">
+          <!-- Helmet & Safety Vest Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 11a8 8 0 0 1 16 0"/>
+            <path d="M2 13a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2H2z"/>
+            <path d="M6 15v6h12v-6"/>
+            <path d="m8 15 2 6"/>
+            <path d="m16 15-2 6"/>
+            <line x1="6" y1="18" x2="18" y2="18"/>
+          </svg>
+        </div>
+        <span class="role-name">Worker</span>
+      </a>
+    </div>
+  </main>
+
+  <!-- Discreet Admin Login Link -->
+  <footer class="landing-footer">
+    <a href="/login?role=admin" class="admin-login-link" aria-label="Admin portal login" onclick="selectRole('admin', event)">Admin login</a>
+  </footer>
+
+  <script src="/js/auth.js?v=6"></script>
   <script>
+    function selectRole(role, event) {
+      if (event) {
+        event.preventDefault();
+      }
+      try {
+        localStorage.setItem('hms_selected_role', role);
+      } catch (e) {}
+      window.location.href = '/login?role=' + encodeURIComponent(role);
+    }
+
+    // Auto-redirect if already logged in
     (async () => {
       try {
         const user = await Auth.getMe();
-        if (!user) {
-          window.location.replace('/login.html');
-        } else {
+        if (user && user.role) {
           Auth.redirectToDashboard(user.role);
         }
-      } catch (e) {
-        window.location.replace('/login.html');
-      }
+      } catch (e) {}
     })();
   </script>
 </body>

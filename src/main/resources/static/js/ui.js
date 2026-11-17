@@ -271,6 +271,7 @@ const UI = {
       ],
       'SECURITY': [
         { key: 'dashboard', label: 'Security Desk', href: '/security/dashboard.html' },
+        { key: 'verify-outpass', label: 'Verify Outpass', href: '/security/dashboard.html?tab=verify' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],
       'WORKER': [

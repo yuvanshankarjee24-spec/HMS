@@ -10,9 +10,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/security/outpasses")
-@PreAuthorize("hasRole('SECURITY')")
+@PreAuthorize("hasAnyRole('SECURITY', 'ADMIN')")
 public class SecurityGateController {
 
     private final OutpassService outpassService;
@@ -36,8 +38,19 @@ public class SecurityGateController {
     @PostMapping("/{id}/exit")
     public ResponseEntity<SecurityOutpassScanResponse> markExit(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable Long id) {
-        return ResponseEntity.ok(outpassService.markSecurityExit(id, getActor(userDetails)));
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String remarks = body != null ? body.get("remarks") : null;
+        return ResponseEntity.ok(outpassService.markSecurityExit(id, getActor(userDetails), remarks));
+    }
+
+    @PostMapping("/{id}/entry")
+    public ResponseEntity<SecurityOutpassScanResponse> markEntry(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String remarks = body != null ? body.get("remarks") : null;
+        return ResponseEntity.ok(outpassService.markSecurityEntry(id, getActor(userDetails), remarks));
     }
 }
 

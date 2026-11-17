@@ -6,37 +6,529 @@
   <title>Security Desk - PSG iTech Hostel</title>
   <link rel="icon" type="image/png" href="/img/psgitech_logo.png">
   <link rel="stylesheet" href="/css/common.css?v=6">
+  <!-- HTML5 QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    /* Security Hero Card */
+    .security-hero-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .security-hero-title {
+      font-size: var(--font-size-h1);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .security-hero-desc {
+      font-size: var(--font-size-secondary);
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* Verification Actions Bar */
+    .action-prompt-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+    }
+
+    .action-prompt-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .scan-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      background-color: #1F4D3A;
+      color: #ffffff;
+      padding: 0.85rem 1.5rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(31, 77, 58, 0.25);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .scan-cta-btn:hover {
+      background-color: #29634b;
+      transform: translateY(-1px);
+    }
+
+    .scan-cta-btn:focus-visible {
+      outline: 3px solid rgba(31, 77, 58, 0.4);
+      outline-offset: 2px;
+    }
+
+    /* Outpass Result Card */
+    .result-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      margin-top: 1.5rem;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .student-profile-header {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .student-photo-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 16px;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      background-color: #f1f5f9;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      flex-shrink: 0;
+    }
+
+    .student-meta-info {
+      flex: 1;
+    }
+
+    .student-name-lg {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .student-tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: var(--font-size-secondary);
+      color: var(--text-secondary);
+    }
+
+    .details-grid-custom {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      background: #f8fafc;
+      padding: 1.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid #e2e8f0;
+      margin-bottom: 1.25rem;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .detail-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .detail-value {
+      font-size: var(--font-size-table);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* Remarks and Action Bar */
+    .guard-actions-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .guard-buttons-group {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Full-Screen / Modal Camera QR Scanner */
+    .qr-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 23, 39, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .qr-modal-overlay.active {
+      display: flex;
+    }
+
+    .qr-modal-dialog {
+      background: #0f172a;
+      color: #ffffff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+
+    .qr-modal-header {
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .qr-modal-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #f8fafc;
+    }
+
+    .qr-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .qr-action-btn {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f1f5f9;
+      border-radius: 8px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .qr-action-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .qr-action-btn.active {
+      background: #2563eb;
+      border-color: #3b82f6;
+      color: #ffffff;
+    }
+
+    .qr-close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.5rem;
+      line-height: 1;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .qr-close-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .qr-viewfinder-container {
+      position: relative;
+      width: 100%;
+      background: #000000;
+      min-height: 330px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #qrReader {
+      width: 100%;
+      border: none !important;
+    }
+
+    #qrReader video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
+    /* Reticle Frame Overlay */
+    .qr-reticle-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 240px;
+      height: 240px;
+      pointer-events: none;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+
+    .qr-corner {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border-color: #22c55e;
+      border-style: solid;
+    }
+
+    .qr-corner-tl { top: 0; left: 0; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 6px; }
+    .qr-corner-tr { top: 0; right: 0; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 6px; }
+    .qr-corner-bl { bottom: 0; left: 0; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 6px; }
+    .qr-corner-br { bottom: 0; right: 0; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 6px; }
+
+    .qr-scan-line {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #22c55e, #4ade80, transparent);
+      box-shadow: 0 0 10px 2px rgba(34, 197, 94, 0.7);
+      animation: scanLaser 2.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes scanLaser {
+      0% { top: 12px; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 226px; opacity: 0.8; }
+    }
+
+    .qr-helper-text {
+      padding: 0.75rem 1rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      background: #0f172a;
+    }
+
+    .qr-scanner-alert {
+      margin: 0.75rem 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .qr-scanner-alert.active {
+      display: flex;
+    }
+
+    .qr-scanner-alert.error {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .qr-scanner-alert.warning {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+
+    .qr-modal-footer {
+      padding: 0.85rem 1.25rem;
+      background: #0b1324;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    /* Mobile full viewport */
+    @media (max-width: 768px) {
+      .qr-modal-overlay {
+        padding: 0;
+      }
+      .qr-modal-dialog {
+        max-width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+      }
+      .qr-viewfinder-container {
+        flex: 1;
+        min-height: 0;
+      }
+    }
+  </style>
 </head>
 <body>
   <div id="app-layout" class="app-container">
     <main class="main-content">
       <div class="page-body">
-        <div class="welcome-card">
-          <div class="welcome-text">
-            <h1 id="welcomeUser">Security Officer Portal</h1>
-            <p>Campus gate outpass verification — automatically blocks students locked due to missed attendance.</p>
+        
+        <!-- Welcome Banner -->
+        <div class="security-hero-banner">
+          <div>
+            <h1 class="security-hero-title" id="welcomeUser">Security Officer Portal</h1>
+            <p class="security-hero-desc">Campus gate outpass verification &amp; attendance lock enforcement.</p>
           </div>
           <div>
             <span class="status-badge badge-active">On Duty</span>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Outpass Gate Check / Verification</h2>
-          </div>
-          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;">
-            <input type="text" id="scanQueryInput" class="form-control" style="flex:1;min-width:240px;" placeholder="Enter Outpass ID (e.g. 3) or Student Register No (e.g. REG202605)...">
-            <button type="button" class="btn btn-primary" id="btnVerifyOutpass">Verify Outpass</button>
+        <!-- Verification Action & Manual Bar -->
+        <div class="action-prompt-card">
+          <div class="action-prompt-header">
+            <div>
+              <h2 class="card-title" style="margin-bottom:0.25rem;">Outpass Gate Verification</h2>
+              <p style="font-size:var(--font-size-secondary);color:var(--text-secondary);margin:0;">
+                Click "Verify Outpass" to open the camera scanner or enter credentials manually.
+              </p>
+            </div>
+            <!-- Main Button: Verify Outpass / Open Scanner -->
+            <button type="button" class="scan-cta-btn" id="btnOpenScanner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <path d="M7 7h.01M17 7h.01M7 17h.01M17 17h.01M12 7v10M7 12h10"/>
+              </svg>
+              Verify Outpass
+            </button>
           </div>
 
-          <div id="scanResultContainer" style="display:none;"></div>
+          <!-- Manual Lookup Bar (Always Available) -->
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <input 
+              type="text" 
+              id="scanQueryInput" 
+              class="form-control" 
+              style="flex:1;min-width:260px;" 
+              placeholder="Enter Outpass ID (e.g. 3) or Student Register No (e.g. REG202605)..."
+              autocomplete="off"
+            >
+            <button type="button" class="btn btn-secondary" id="btnManualVerify">
+              Search &amp; Verify
+            </button>
+          </div>
         </div>
+
+        <!-- Outpass Verification Result Screen -->
+        <div id="scanResultContainer" style="display:none;"></div>
+
       </div>
     </main>
   </div>
 
-  <script src="/js/auth.js"></script>
+  <!-- Camera QR Scanner Modal -->
+  <div class="qr-modal-overlay" id="qrScannerModal" role="dialog" aria-modal="true" aria-label="Outpass QR Scanner">
+    <div class="qr-modal-dialog">
+      <!-- Header -->
+      <div class="qr-modal-header">
+        <div class="qr-modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          Verify Outpass QR
+        </div>
+        <div class="qr-header-actions">
+          <button type="button" class="qr-action-btn" id="btnToggleTorch" style="display:none;" title="Toggle flashlight">
+            🔦 Torch
+          </button>
+          <button type="button" class="qr-action-btn" id="btnSwitchCamera" style="display:none;" title="Switch camera">
+            🔄 Switch
+          </button>
+          <button type="button" class="qr-close-btn" id="btnCloseScanner" aria-label="Close scanner">&times;</button>
+        </div>
+      </div>
+
+      <!-- In-Scanner Error / Alert Notice -->
+      <div class="qr-scanner-alert error" id="qrScannerAlert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="qrScannerAlertMsg">Invalid outpass QR</span>
+      </div>
+
+      <!-- Viewfinder -->
+      <div class="qr-viewfinder-container">
+        <div id="qrReader"></div>
+        <div class="qr-reticle-overlay">
+          <div class="qr-corner qr-corner-tl"></div>
+          <div class="qr-corner qr-corner-tr"></div>
+          <div class="qr-corner qr-corner-bl"></div>
+          <div class="qr-corner qr-corner-br"></div>
+          <div class="qr-scan-line"></div>
+        </div>
+      </div>
+
+      <!-- Helper Text -->
+      <div class="qr-helper-text">
+        Point the camera at the student's outpass QR
+      </div>
+
+      <!-- Footer / Manual Switch Button -->
+      <div class="qr-modal-footer">
+        <span style="font-size:0.8rem;color:#64748b;">Press Esc to cancel</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnEnterManualInside">
+          Enter code manually
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js?v=6"></script>
   <script src="/js/ui.js?v=6"></script>
   <script>
     (async () => {
@@ -45,80 +537,547 @@
       document.getElementById('welcomeUser').textContent = `Welcome, Officer ${user.name}`;
       UI.renderLayout(user, 'dashboard');
 
-      async function verifyOutpass() {
-        const q = document.getElementById('scanQueryInput').value.trim();
-        if (!q) {
-          UI.showToast('Please enter an Outpass ID or Register Number', 'error');
-          return;
+      // Scanner State
+      let html5Qr = null;
+      let activeStream = null;
+      let availableCameras = [];
+      let currentCameraIndex = 0;
+      let isTorchOn = false;
+      let lastScanText = '';
+      let lastScanTime = 0;
+
+      const scannerModal = document.getElementById('qrScannerModal');
+      const scannerAlert = document.getElementById('qrScannerAlert');
+      const scannerAlertMsg = document.getElementById('qrScannerAlertMsg');
+      const btnToggleTorch = document.getElementById('btnToggleTorch');
+      const btnSwitchCamera = document.getElementById('btnSwitchCamera');
+      const scanResultContainer = document.getElementById('scanResultContainer');
+      const scanQueryInput = document.getElementById('scanQueryInput');
+
+      // Helper to extract query ID or Register Number from QR tokens / URLs / JSON
+      function extractOutpassQuery(raw) {
+        if (!raw) return '';
+        raw = String(raw).trim();
+        // Check JSON format: e.g. {"outpassId":3} or {"id":3} or {"regNo":"REG..."}
+        if (raw.startsWith('{') && raw.endsWith('}')) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.outpassId) return String(parsed.outpassId);
+            if (parsed.id) return String(parsed.id);
+            if (parsed.registerNumber) return String(parsed.registerNumber);
+            if (parsed.regNo) return String(parsed.regNo);
+          } catch (e) {}
         }
-        const res = await fetch(`/api/security/outpasses/verify?query=${encodeURIComponent(q)}`, { credentials: 'same-origin' });
-        const container = document.getElementById('scanResultContainer');
-        container.innerHTML = '';
-        container.style.display = 'block';
-
-        const data = await res.json();
-        if (!res.ok) {
-          container.appendChild(UI.createElement('div', {
-            style: 'background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:1rem;border-radius:var(--radius-md);font-weight:600;'
-          }, data.message || 'Outpass not found'));
-          return;
+        // Check URL format: e.g. http://.../outpass?id=3 or /verify?query=REG202605
+        if (raw.startsWith('http://') || raw.startsWith('https://')) {
+          try {
+            const u = new URL(raw);
+            if (u.searchParams.get('query')) return u.searchParams.get('query');
+            if (u.searchParams.get('id')) return u.searchParams.get('id');
+            if (u.searchParams.get('outpassId')) return u.searchParams.get('outpassId');
+            const segs = u.pathname.split('/').filter(Boolean);
+            const last = segs[segs.length - 1];
+            if (last && (/\d+/.test(last) || /^REG/i.test(last))) return last;
+          } catch (e) {}
         }
-
-        if (data.outpassLocked) {
-          container.appendChild(UI.createElement('div', { className: 'lock-alert-banner' },
-            UI.createElement('span', { style: 'font-size:1.75rem;' }, '🚫'),
-            UI.createElement('div', {},
-              UI.createElement('div', { style: 'font-weight:700;font-size:var(--font-size-h3);' }, 'OUTPASS LOCKED - MISSED ATTENDANCE'),
-              UI.createElement('div', { style: 'font-size:var(--font-size-secondary);margin-top:0.25rem;' }, data.lockReason || data.gateMessage)
-            )
-          ));
-        } else {
-          container.appendChild(UI.createElement('div', {
-            style: data.exitAllowed
-              ? 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-weight:700;'
-              : 'background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-weight:700;'
-          }, data.gateMessage));
-        }
-
-        const details = UI.createElement('div', {
-          style: 'background:var(--card-bg);padding:1.25rem;border-radius:var(--radius-md);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;font-size:var(--font-size-table);'
-        },
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Student: '), `${data.studentName} (`, UI.createElement('span', { className: 'reg-no-code' }, data.registerNumber), ')'),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Room / Dept: '), `Room ${data.roomNumber} — ${data.department}`),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Outpass #: '), UI.createElement('span', { className: 'outpass-id' }, `#${data.outpassId}`), ` (${data.passType})`),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Status: '), data.outpassStatus),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Departure: '), UI.formatDateTime(data.departureDateTime)),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Return: '), UI.formatDateTime(data.returnDateTime)),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Destination: '), data.destination || '—'),
-          UI.createElement('div', {}, UI.createElement('strong', {}, 'Reason: '), data.reason)
-        );
-        container.appendChild(details);
-
-        const actions = UI.createElement('div', { style: 'margin-top:1rem;display:flex;justify-content:flex-end;' });
-        const btnExit = UI.createElement('button', {
-          className: 'btn btn-primary',
-          onclick: async () => {
-            const exitRes = await fetch(`/api/security/outpasses/${data.outpassId}/exit`, {
-              method: 'POST', credentials: 'same-origin'
-            });
-            const exitData = await exitRes.json();
-            if (!exitRes.ok) {
-              UI.showToast(exitData.message || 'Exit blocked', 'error');
-            } else {
-              UI.showToast(`Student ${data.registerNumber} marked OUT`, 'success');
-              await verifyOutpass();
-            }
-          }
-        }, data.outpassLocked ? 'Exit Blocked (Outpass Locked)' : 'Mark Exit (Out)');
-        btnExit.disabled = !data.exitAllowed;
-        actions.appendChild(btnExit);
-        container.appendChild(actions);
+        // Remove standard prefixes: OP-, OP#, OUTPASS:, etc.
+        const prefixMatch = raw.match(/^(?:outpass|otp|op)[:#\-\s]*([0-9a-zA-Z]+)$/i);
+        if (prefixMatch) return prefixMatch[1];
+        return raw.replace(/^#/, '');
       }
 
-      document.getElementById('btnVerifyOutpass').addEventListener('click', verifyOutpass);
-      document.getElementById('scanQueryInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') verifyOutpass();
+      function showScannerAlert(msg, isWarning = false) {
+        scannerAlertMsg.textContent = msg;
+        scannerAlert.className = isWarning ? 'qr-scanner-alert warning active' : 'qr-scanner-alert error active';
+      }
+
+      function hideScannerAlert() {
+        scannerAlert.className = 'qr-scanner-alert error';
+      }
+
+      // Stop and completely release camera tracks
+      async function stopCamera() {
+        try {
+          if (html5Qr) {
+            try {
+              await html5Qr.stop();
+            } catch (e) {}
+            try {
+              html5Qr.clear();
+            } catch (e) {}
+            html5Qr = null;
+          }
+        } catch (e) {}
+
+        // Release all video tracks so browser camera light turns OFF immediately
+        if (activeStream) {
+          try {
+            activeStream.getTracks().forEach(track => {
+              try { track.stop(); } catch (err) {}
+            });
+          } catch (e) {}
+          activeStream = null;
+        }
+
+        // Also query any video elements in container and stop their srcObject
+        const videoEl = document.querySelector('#qrReader video');
+        if (videoEl && videoEl.srcObject) {
+          try {
+            videoEl.srcObject.getTracks().forEach(t => t.stop());
+            videoEl.srcObject = null;
+          } catch (e) {}
+        }
+
+        isTorchOn = false;
+        btnToggleTorch.classList.remove('active');
+        btnToggleTorch.style.display = 'none';
+        btnSwitchCamera.style.display = 'none';
+        hideScannerAlert();
+        scannerModal.classList.remove('active');
+      }
+
+      // Open the Camera QR Scanner
+      async function openCameraScanner() {
+        // Stop any running camera first
+        await stopCamera();
+
+        // Check secure context
+        if (window.isSecureContext === false && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+          UI.showToast('Camera requires HTTPS or localhost. Please enter outpass code manually.', 'error');
+          scanQueryInput.focus();
+          return;
+        }
+
+        if (typeof Html5Qrcode === 'undefined') {
+          UI.showToast('QR Camera library unavailable; please enter code manually.', 'error');
+          scanQueryInput.focus();
+          return;
+        }
+
+        scannerModal.classList.add('active');
+        hideScannerAlert();
+
+        html5Qr = new Html5Qrcode('qrReader');
+
+        // Check available camera devices
+        try {
+          availableCameras = await Html5Qrcode.getCameras();
+          if (availableCameras && availableCameras.length > 1) {
+            btnSwitchCamera.style.display = 'inline-flex';
+          } else {
+            btnSwitchCamera.style.display = 'none';
+          }
+        } catch (e) {
+          availableCameras = [];
+        }
+
+        // Configuration preferring rear camera
+        const qrConfig = {
+          fps: 15,
+          qrbox: { width: 240, height: 240 },
+          aspectRatio: 1.0
+        };
+
+        const cameraChoice = (availableCameras.length > 0 && availableCameras[currentCameraIndex])
+          ? { deviceId: { exact: availableCameras[currentCameraIndex].id } }
+          : { facingMode: 'environment' };
+
+        try {
+          await html5Qr.start(
+            cameraChoice,
+            qrConfig,
+            async (decodedText) => {
+              // Ignore duplicate reads within 2 seconds
+              const now = Date.now();
+              if (now - lastScanTime < 2000 && lastScanText === decodedText) {
+                return;
+              }
+              lastScanTime = now;
+              lastScanText = decodedText;
+
+              // Vibrate phone briefly on success
+              if (navigator.vibrate) {
+                try { navigator.vibrate(100); } catch (e) {}
+              }
+
+              const query = extractOutpassQuery(decodedText);
+              if (!query) {
+                showScannerAlert('Invalid outpass QR');
+                return;
+              }
+
+              // Stop camera and verify
+              await stopCamera();
+              scanQueryInput.value = query;
+              await performVerification(query);
+            },
+            (errorMessage) => {
+              // Frame parse miss — normal scanning cycle, do nothing
+            }
+          );
+
+          // Track capture and inspect torch capability
+          try {
+            const videoEl = document.querySelector('#qrReader video');
+            if (videoEl && videoEl.srcObject) {
+              activeStream = videoEl.srcObject;
+              const track = activeStream.getVideoTracks()[0];
+              if (track && track.getCapabilities && track.getCapabilities().torch) {
+                btnToggleTorch.style.display = 'inline-flex';
+              }
+            }
+          } catch (e) {}
+
+        } catch (err) {
+          const errStr = String(err).toLowerCase();
+          if (errStr.includes('notallowederror') || errStr.includes('permission')) {
+            showScannerAlert('Camera access is blocked. Allow camera permission in your browser settings, or enter the code manually.');
+          } else if (errStr.includes('notfounderror') || errStr.includes('devicesnotfound') || errStr.includes('notreadableerror')) {
+            showScannerAlert('No camera found or the camera is in use by another application. Enter the code manually.');
+          } else {
+            showScannerAlert('Camera error: ' + (err.message || err));
+          }
+        }
+      }
+
+      // Switch Camera handler
+      btnSwitchCamera.addEventListener('click', async () => {
+        if (availableCameras.length <= 1) return;
+        currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+        await openCameraScanner();
       });
+
+      // Toggle Torch handler
+      btnToggleTorch.addEventListener('click', async () => {
+        if (!activeStream) return;
+        const track = activeStream.getVideoTracks()[0];
+        if (!track || !track.applyConstraints) return;
+        try {
+          isTorchOn = !isTorchOn;
+          await track.applyConstraints({
+            advanced: [{ torch: isTorchOn }]
+          });
+          btnToggleTorch.classList.toggle('active', isTorchOn);
+        } catch (e) {
+          UI.showToast('Torch control not supported on this device', 'info');
+        }
+      });
+
+      // Close scanner events
+      document.getElementById('btnCloseScanner').addEventListener('click', stopCamera);
+      document.getElementById('btnEnterManualInside').addEventListener('click', () => {
+        stopCamera();
+        scanQueryInput.focus();
+      });
+
+      // Close on Esc key
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && scannerModal.classList.contains('active')) {
+          stopCamera();
+        }
+      });
+
+      // Release camera tracks on pagehide/beforeunload
+      window.addEventListener('pagehide', stopCamera);
+      window.addEventListener('beforeunload', stopCamera);
+
+      // Perform Verification API call
+      async function performVerification(queryArg) {
+        const query = (queryArg || scanQueryInput.value).trim();
+        if (!query) {
+          UI.showToast('Please enter an Outpass ID or Register Number', 'error');
+          scanQueryInput.focus();
+          return;
+        }
+
+        scanResultContainer.style.display = 'block';
+        scanResultContainer.innerHTML = `
+          <div class="result-card" style="text-align:center;padding:2.5rem 1rem;">
+            <div class="spinner" style="width:32px;height:32px;margin:0 auto 1rem auto;"></div>
+            <p style="color:var(--text-secondary);font-size:var(--font-size-body);margin:0;">Verifying Outpass credentials with gate registry...</p>
+          </div>
+        `;
+
+        try {
+          const res = await fetch(`/api/security/outpasses/verify?query=${encodeURIComponent(query)}`, {
+            credentials: 'same-origin'
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            scanResultContainer.innerHTML = `
+              <div class="result-card" style="border-left:4px solid var(--text-danger);">
+                <div style="display:flex;align-items:center;gap:0.75rem;color:var(--text-danger);font-weight:700;font-size:1.05rem;margin-bottom:0.5rem;">
+                  <span style="font-size:1.5rem;">⚠️</span>
+                  <span>Outpass Verification Failed</span>
+                </div>
+                <p style="color:var(--text-secondary);margin:0 0 1rem 0;">${data.message || 'No approved outpass found matching query: ' + query}</p>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('btnOpenScanner').click()">
+                  📷 Try Scanning Again
+                </button>
+              </div>
+            `;
+            return;
+          }
+
+          renderVerificationResult(data);
+
+        } catch (err) {
+          scanResultContainer.innerHTML = `
+            <div class="result-card" style="border-left:4px solid var(--text-danger);">
+              <p style="color:var(--text-danger);font-weight:600;margin:0 0 0.5rem 0;">Connection error while verifying outpass.</p>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('btnOpenScanner').click()">Retry</button>
+            </div>
+          `;
+        }
+      }
+
+      // Render the complete Verification Result Screen
+      function renderVerificationResult(data) {
+        scanResultContainer.innerHTML = '';
+        const card = UI.createElement('div', { className: 'result-card' });
+
+        // 1. Status & Gate Banner
+        if (data.outpassLocked) {
+          const lockBanner = UI.createElement('div', { className: 'lock-alert-banner' },
+            UI.createElement('span', { style: 'font-size:2rem;line-height:1;' }, '🚫'),
+            UI.createElement('div', { style: 'flex:1;' },
+              UI.createElement('div', { style: 'font-weight:700;font-size:1.15rem;letter-spacing:-0.01em;' }, 'OUTPASS LOCKED - MISSED ATTENDANCE'),
+              UI.createElement('div', { style: 'font-size:var(--font-size-secondary);margin-top:0.35rem;line-height:1.4;' }, 
+                data.lockReason || 'Student has missed mandatory night roll call attendance. Exit is blocked. Contact warden office.'
+              )
+            )
+          );
+          card.appendChild(lockBanner);
+        } else if (data.exitAllowed) {
+          const okBanner = UI.createElement('div', {
+            style: 'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:1rem 1.25rem;border-radius:var(--radius-md);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.75rem;font-weight:700;'
+          },
+            UI.createElement('span', { style: 'font-size:1.35rem;' }, '✅'),
+            UI.createElement('span', {}, data.gateMessage || 'Valid Approved Outpass. Exit permitted.')
+          );
+          card.appendChild(okBanner);
+        } else if (data.outpassStatus === 'OUT') {
+          const outBanner = UI.createElement('div', {
+            style: 'background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;padding:1rem 1.25rem;border-radius:var(--radius-md);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.75rem;font-weight:700;'
+          },
+            UI.createElement('span', { style: 'font-size:1.35rem;' }, 'ℹ️'),
+            UI.createElement('span', {}, 'Student is currently OUT. Ready for Entry check-in.')
+          );
+          card.appendChild(outBanner);
+        } else if (data.outpassStatus === 'RETURNED') {
+          const retBanner = UI.createElement('div', {
+            style: 'background:#f1f5f9;border:1px solid #cbd5e1;color:#475569;padding:1rem 1.25rem;border-radius:var(--radius-md);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.75rem;font-weight:700;'
+          },
+            UI.createElement('span', { style: 'font-size:1.35rem;' }, '✔️'),
+            UI.createElement('span', {}, 'Student has already returned and checked in at gate.')
+          );
+          card.appendChild(retBanner);
+        } else {
+          const warnBanner = UI.createElement('div', {
+            style: 'background:#fffbeb;border:1px solid #fde68a;color:#b45309;padding:1rem 1.25rem;border-radius:var(--radius-md);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.75rem;font-weight:700;'
+          },
+            UI.createElement('span', { style: 'font-size:1.35rem;' }, '⚠️'),
+            UI.createElement('span', {}, data.gateMessage || `Outpass status is ${data.outpassStatus}. Exit not permitted.`)
+          );
+          card.appendChild(warnBanner);
+        }
+
+        // 2. Student Profile Section with Photo
+        const profileHeader = UI.createElement('div', { className: 'student-profile-header' });
+        
+        // Student Photo
+        const photoImg = UI.createElement('img', {
+          className: 'student-photo-avatar',
+          src: `/api/student/photo/${data.studentId}`,
+          alt: `Photo of ${data.studentName}`
+        });
+        photoImg.onerror = () => { photoImg.src = '/img/psgitech_logo.png'; };
+        profileHeader.appendChild(photoImg);
+
+        // Student Info
+        const metaWrap = UI.createElement('div', { className: 'student-meta-info' });
+        const nameHeading = UI.createElement('div', { className: 'student-name-lg' }, data.studentName);
+        const tagsRow = UI.createElement('div', { className: 'student-tags-row' },
+          UI.createElement('span', { className: 'reg-no-code' }, data.registerNumber),
+          UI.createElement('span', {}, `Room ${data.roomNumber}`),
+          UI.createElement('span', {}, `•`),
+          UI.createElement('span', {}, data.department)
+        );
+        metaWrap.appendChild(nameHeading);
+        metaWrap.appendChild(tagsRow);
+        profileHeader.appendChild(metaWrap);
+
+        card.appendChild(profileHeader);
+
+        // 3. Outpass Details Grid
+        const grid = UI.createElement('div', { className: 'details-grid-custom' });
+
+        function addDetail(label, valueNode) {
+          const item = UI.createElement('div', { className: 'detail-item' },
+            UI.createElement('span', { className: 'detail-label' }, label),
+            typeof valueNode === 'string' ? UI.createElement('span', { className: 'detail-value' }, valueNode) : valueNode
+          );
+          grid.appendChild(item);
+        }
+
+        addDetail('Outpass Number', UI.createElement('span', { className: 'detail-value' },
+          UI.createElement('span', { className: 'outpass-id' }, `#${data.outpassId}`),
+          ` (${data.passType.replace('_', ' ')})`
+        ));
+
+        const statusBadge = UI.createElement('span', {
+          className: `status-badge ${data.outpassStatus === 'APPROVED' ? 'badge-active' : data.outpassStatus === 'OUT' ? 'badge-pending' : 'badge-closed'}`
+        }, data.outpassStatus);
+        addDetail('Outpass Status', statusBadge);
+
+        addDetail('Departure Window', UI.formatDateTime(data.departureDateTime));
+        addDetail('Expected Return', UI.formatDateTime(data.returnDateTime));
+        addDetail('Destination', data.destination || '—');
+        addDetail('Reason for Leave', data.reason);
+
+        if (data.outpassLocked && data.lockedAt) {
+          addDetail('Locked Since', UI.formatDateTime(data.lockedAt));
+        }
+
+        card.appendChild(grid);
+
+        // 4. Guard Actions & Remarks Bar
+        const actionsBar = UI.createElement('div', { className: 'guard-actions-bar' });
+
+        const remarksWrap = UI.createElement('div', {},
+          UI.createElement('label', {
+            className: 'form-label',
+            for: 'guardRemarksInput',
+            style: 'font-size:0.82rem;'
+          }, 'Guard Notes / Remarks (Optional)'),
+          UI.createElement('input', {
+            type: 'text',
+            id: 'guardRemarksInput',
+            className: 'form-control',
+            placeholder: 'e.g. Identity verified, parent accompanied, baggage checked...'
+          })
+        );
+        actionsBar.appendChild(remarksWrap);
+
+        const buttonsGroup = UI.createElement('div', { className: 'guard-buttons-group' });
+
+        // Mark Exit Button
+        const btnMarkExit = UI.createElement('button', {
+          type: 'button',
+          className: 'btn btn-primary',
+          id: 'btnActionMarkExit',
+          onclick: async () => {
+            const remarks = document.getElementById('guardRemarksInput').value.trim();
+            btnMarkExit.disabled = true;
+            btnMarkExit.textContent = 'Recording Exit...';
+            try {
+              const res = await fetch(`/api/security/outpasses/${data.outpassId}/exit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ remarks })
+              });
+              const resData = await res.json();
+              if (!res.ok) {
+                UI.showToast(resData.message || 'Exit blocked', 'error');
+                btnMarkExit.disabled = false;
+                btnMarkExit.textContent = 'Mark Exit (Out)';
+              } else {
+                UI.showToast(`Exit recorded! Student ${data.registerNumber} marked OUT.`, 'success');
+                renderVerificationResult(resData);
+              }
+            } catch (e) {
+              UI.showToast('Network error while recording exit', 'error');
+              btnMarkExit.disabled = false;
+              btnMarkExit.textContent = 'Mark Exit (Out)';
+            }
+          }
+        }, data.outpassLocked ? 'Exit Blocked (Locked)' : 'Mark Exit (Out)');
+
+        // Enable exit only if approved and not locked
+        btnMarkExit.disabled = !data.exitAllowed || data.outpassLocked || data.outpassStatus !== 'APPROVED';
+        buttonsGroup.appendChild(btnMarkExit);
+
+        // Mark Entry Button
+        const btnMarkEntry = UI.createElement('button', {
+          type: 'button',
+          className: 'btn btn-success',
+          id: 'btnActionMarkEntry',
+          style: 'background-color:#15803d;border-color:#15803d;',
+          onclick: async () => {
+            const remarks = document.getElementById('guardRemarksInput').value.trim();
+            btnMarkEntry.disabled = true;
+            btnMarkEntry.textContent = 'Recording Entry...';
+            try {
+              const res = await fetch(`/api/security/outpasses/${data.outpassId}/entry`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ remarks })
+              });
+              const resData = await res.json();
+              if (!res.ok) {
+                UI.showToast(resData.message || 'Entry recording failed', 'error');
+                btnMarkEntry.disabled = false;
+                btnMarkEntry.textContent = 'Mark Entry (In)';
+              } else {
+                UI.showToast(`Entry recorded! Student ${data.registerNumber} checked in.`, 'success');
+                renderVerificationResult(resData);
+              }
+            } catch (e) {
+              UI.showToast('Network error while recording entry', 'error');
+              btnMarkEntry.disabled = false;
+              btnMarkEntry.textContent = 'Mark Entry (In)';
+            }
+          }
+        }, 'Mark Entry (In)');
+
+        // Enable entry only if currently OUT
+        btnMarkEntry.disabled = (data.outpassStatus !== 'OUT');
+        buttonsGroup.appendChild(btnMarkEntry);
+
+        // Scan Next Button
+        const btnScanNext = UI.createElement('button', {
+          type: 'button',
+          className: 'btn btn-secondary',
+          id: 'btnActionScanNext',
+          onclick: () => {
+            openCameraScanner();
+          }
+        }, '📷 Scan Next Outpass');
+        buttonsGroup.appendChild(btnScanNext);
+
+        actionsBar.appendChild(buttonsGroup);
+        card.appendChild(actionsBar);
+
+        scanResultContainer.appendChild(card);
+      }
+
+      // Event Listeners for Opening Scanner and Manual Search
+      document.getElementById('btnOpenScanner').addEventListener('click', () => {
+        openCameraScanner();
+      });
+
+      document.getElementById('btnManualVerify').addEventListener('click', () => {
+        performVerification();
+      });
+
+      scanQueryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          performVerification();
+        }
+      });
+
+      // Auto-open scanner if URL has ?tab=verify or ?action=scan
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('tab') === 'verify' || urlParams.get('action') === 'scan') {
+        openCameraScanner();
+      } else if (urlParams.get('query')) {
+        scanQueryInput.value = urlParams.get('query');
+        performVerification(urlParams.get('query'));
+      }
     })();
   </script>
 </body>
