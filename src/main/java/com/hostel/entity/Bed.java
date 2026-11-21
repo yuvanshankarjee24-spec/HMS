@@ -21,6 +21,12 @@ public class Bed {
     @Column(name = "bed_number", nullable = false)
     private int bedNumber;
 
+    @Column(name = "bed_label", length = 10)
+    private String bedLabel;
+
+    @Column(name = "status", nullable = false, length = 30)
+    private String status = "available";
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", unique = true)
     private Student student;
@@ -43,6 +49,12 @@ public class Bed {
 
     public int getBedNumber() { return bedNumber; }
     public void setBedNumber(int bedNumber) { this.bedNumber = bedNumber; }
+
+    public String getBedLabel() { return bedLabel != null ? bedLabel : String.valueOf(bedNumber); }
+    public void setBedLabel(String bedLabel) { this.bedLabel = bedLabel; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }

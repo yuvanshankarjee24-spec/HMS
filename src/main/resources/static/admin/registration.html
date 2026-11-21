@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Registration - Smart Hostel Admin</title>
+  <link rel="stylesheet" href="/css/common.css?v=6">
+  <style>
+    .reg-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid var(--border-subtle, #DCE5F3);
+      margin-bottom: 2rem;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary, #4B5B7A);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      color: var(--brand-blue, #1457D9);
+      border-bottom-color: var(--brand-blue, #1457D9);
+      font-weight: 600;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    .form-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--brand-navy, #0B1B45);
+      margin: 1.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border-subtle, #DCE5F3);
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+    }
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 768px) {
+      .form-grid-2, .form-grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .live-field-error {
+      font-size: 12px;
+      color: #dc3545;
+      margin-top: 4px;
+      display: none;
+    }
+    .live-field-error.active {
+      display: block;
+    }
+    .sample-download-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #F4F7FC;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #DCE5F3;
+    }
+    .result-alert {
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .result-alert.success {
+      background: #E1F4EA;
+      color: #1E7B4F;
+      border: 1px solid #A3E0C0;
+      display: block;
+    }
+    .result-alert.error {
+      background: #FDE4E4;
+      color: #B42318;
+      border: 1px solid #F8B4B4;
+      display: block;
+    }
+    .error-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .error-table th, .error-table td {
+      border: 1px solid #DCE5F3;
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    .error-table th {
+      background: #F4F7FC;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-layout" class="app-container">
+    <main class="main-content">
+      <div class="page-body">
+
+        <div class="reg-container">
+          <div class="card-header" style="margin-bottom: 1.5rem;">
+            <div>
+              <h1 class="page-title">User Registration Portal</h1>
+              <p class="page-subtitle">Register students and staff with mandatory 12-digit roll numbers (7155XXXXXXXX). Temporary passwords match the roll number.</p>
+            </div>
+          </div>
+
+          <div id="statusAlert" class="result-alert"></div>
+
+          <!-- Tab Navigation -->
+          <div class="tab-nav">
+            <button type="button" class="tab-btn active" onclick="switchTab('studentTab', this)">🎓 Register Student</button>
+            <button type="button" class="tab-btn" onclick="switchTab('staffTab', this)">👔 Register Staff</button>
+            <button type="button" class="tab-btn" onclick="switchTab('bulkTab', this)">📁 Bulk Registration (CSV)</button>
+          </div>
+
+          <!-- TAB 1: Student Registration Form -->
+          <div id="studentTab" class="tab-pane active">
+            <form id="studentRegisterForm" class="card" style="padding: 2rem;">
+              <div class="form-section-title" style="margin-top: 0;">Academic & Login Credentials</div>
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studRoll">Roll Number (12 Digits) *</label>
+                  <input type="text" id="studRoll" class="form-control" required maxlength="12" inputmode="numeric" placeholder="715521104001">
+                  <span id="studRollErr" class="live-field-error">Must be exactly 12 digits starting with 7155</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studFullName">Full Name *</label>
+                  <input type="text" id="studFullName" class="form-control" required placeholder="Aarav Sharma">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studEmail">College Email *</label>
+                  <input type="email" id="studEmail" class="form-control" required placeholder="aarav.cs21@college.edu">
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studPhone">Phone Number (10 Digits) *</label>
+                  <input type="tel" id="studPhone" class="form-control" required maxlength="10" placeholder="9876543210">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studDept">Department *</label>
+                  <select id="studDept" class="form-control" required>
+                    <option value="">Select Department</option>
+                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Artificial Intelligence & Data Science">Artificial Intelligence & Data Science</option>
+                    <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                    <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studYear">Year of Study *</label>
+                  <select id="studYear" class="form-control" required>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studGender">Gender</label>
+                  <select id="studGender" class="form-control">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studDob">Date of Birth</label>
+                  <input type="date" id="studDob" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studBlood">Blood Group</label>
+                  <select id="studBlood" class="form-control">
+                    <option value="">Select Blood Group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studProgram">Program / Course</label>
+                  <input type="text" id="studProgram" class="form-control" placeholder="B.E. Computer Science">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studSection">Section</label>
+                  <input type="text" id="studSection" class="form-control" placeholder="A">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studAdmissionYear">Admission Year</label>
+                  <input type="number" id="studAdmissionYear" class="form-control" placeholder="2026">
+                </div>
+              </div>
+
+              <div class="form-section-title">Hostel & Room (Optional - can be allocated later)</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="studHostel">Hostel Block</label>
+                  <select id="studHostel" class="form-control">
+                    <option value="">No Hostel Allocated</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studRoom">Room ID</label>
+                  <input type="number" id="studRoom" class="form-control" placeholder="Optional Room ID">
+                </div>
+              </div>
+
+              <div class="form-section-title">Permanent Home Address</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="studAddr1">Address Line 1</label>
+                  <input type="text" id="studAddr1" class="form-control" placeholder="Door No, Street Name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studAddr2">Address Line 2</label>
+                  <input type="text" id="studAddr2" class="form-control" placeholder="Locality, Landmark">
+                </div>
+              </div>
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studCity">City</label>
+                  <input type="text" id="studCity" class="form-control" placeholder="Coimbatore">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studDistrict">District</label>
+                  <input type="text" id="studDistrict" class="form-control" placeholder="Coimbatore">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studState">State</label>
+                  <input type="text" id="studState" class="form-control" placeholder="Tamil Nadu">
+                </div>
+              </div>
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studPincode">Pincode (6 Digits)</label>
+                  <input type="text" id="studPincode" class="form-control" maxlength="6" placeholder="641062">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studNationality">Nationality</label>
+                  <input type="text" id="studNationality" class="form-control" value="Indian">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studAadhaar">Aadhaar Number (Stored Encrypted)</label>
+                  <input type="text" id="studAadhaar" class="form-control" maxlength="14" placeholder="XXXX-XXXX-XXXX">
+                </div>
+              </div>
+
+              <div class="form-section-title">Parent & Guardian Contacts</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="studFatherName">Father's Name</label>
+                  <input type="text" id="studFatherName" class="form-control" placeholder="Father's full name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studFatherPhone">Father's Phone</label>
+                  <input type="tel" id="studFatherPhone" class="form-control" maxlength="10" placeholder="Father's phone">
+                </div>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="studMotherName">Mother's Name</label>
+                  <input type="text" id="studMotherName" class="form-control" placeholder="Mother's full name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studMotherPhone">Mother's Phone</label>
+                  <input type="tel" id="studMotherPhone" class="form-control" maxlength="10" placeholder="Mother's phone">
+                </div>
+              </div>
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="studGuardianName">Local Guardian Name</label>
+                  <input type="text" id="studGuardianName" class="form-control" placeholder="Guardian name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studGuardianPhone">Local Guardian Phone</label>
+                  <input type="tel" id="studGuardianPhone" class="form-control" maxlength="10" placeholder="Guardian phone">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studGuardianRelation">Relation</label>
+                  <input type="text" id="studGuardianRelation" class="form-control" placeholder="Uncle, Aunt, etc.">
+                </div>
+              </div>
+
+              <div class="form-section-title">Emergency & Medical Information</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="studEmergency">Emergency Contact *</label>
+                  <input type="tel" id="studEmergency" class="form-control" placeholder="Emergency phone number">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studPrevInst">Previous Institution</label>
+                  <input type="text" id="studPrevInst" class="form-control" placeholder="Higher Secondary School">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="studMedical">Medical Conditions or Allergies (Optional)</label>
+                <textarea id="studMedical" class="form-control" rows="2" placeholder="List any known allergies or medical requirements"></textarea>
+              </div>
+
+              <div class="form-section-title">Documents & Photos (Optional)</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="studPhoto">Profile Photo (JPG/PNG, Max 2 MB)</label>
+                  <input type="file" id="studPhoto" class="form-control" accept="image/jpeg,image/png,image/webp">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="studIdProof">Guardian ID Proof (PDF/JPG/PNG, Max 4 MB)</label>
+                  <input type="file" id="studIdProof" class="form-control" accept="application/pdf,image/jpeg,image/png">
+                </div>
+              </div>
+
+              <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                <button type="submit" id="studSubmitBtn" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                  Register Student Account
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB 2: Staff Registration Form -->
+          <div id="staffTab" class="tab-pane">
+            <form id="staffRegisterForm" class="card" style="padding: 2rem;">
+              <div class="form-section-title" style="margin-top: 0;">Staff Credentials & Employment</div>
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="staffRoll">Roll Number / Employee ID (12 Digits) *</label>
+                  <input type="text" id="staffRoll" class="form-control" required maxlength="12" inputmode="numeric" placeholder="715521104101">
+                  <span id="staffRollErr" class="live-field-error">Must be exactly 12 digits starting with 7155</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffFullName">Full Name *</label>
+                  <input type="text" id="staffFullName" class="form-control" required placeholder="Prof. Ramesh Kulkarni">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffEmail">Official Email *</label>
+                  <input type="email" id="staffEmail" class="form-control" required placeholder="ramesh@hostel.edu">
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="staffPhone">Phone Number (10 Digits) *</label>
+                  <input type="tel" id="staffPhone" class="form-control" required maxlength="10" placeholder="9840112233">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffDept">Department</label>
+                  <input type="text" id="staffDept" class="form-control" placeholder="Hostel Administration">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffDesignation">Designation *</label>
+                  <input type="text" id="staffDesignation" class="form-control" required placeholder="Deputy Warden">
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="staffRole">Role / Staff Type *</label>
+                  <select id="staffRole" class="form-control" required>
+                    <option value="WARDEN">Hostel Warden</option>
+                    <option value="SECURITY">Security Guard</option>
+                    <option value="CLEANING_WORKER">Cleaning / Sanitation Worker</option>
+                    <option value="MAINTENANCE_STAFF">Maintenance / Electrician</option>
+                    <option value="MESS_STAFF">Mess Staff / Chef</option>
+                    <option value="VENDING_MANAGER">Vending Manager</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffGender">Gender</label>
+                  <select id="staffGender" class="form-control">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffDob">Date of Birth</label>
+                  <input type="date" id="staffDob" class="form-control">
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="staffJoiningDate">Joining Date</label>
+                  <input type="date" id="staffJoiningDate" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffEmergency">Emergency Contact</label>
+                  <input type="tel" id="staffEmergency" class="form-control" placeholder="Emergency phone">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="staffAddress">Residential Address</label>
+                <textarea id="staffAddress" class="form-control" rows="2" placeholder="Full residential address"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="staffPhoto">Profile Photo (JPG/PNG, Max 2 MB)</label>
+                <input type="file" id="staffPhoto" class="form-control" accept="image/jpeg,image/png">
+              </div>
+
+              <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                <button type="submit" id="staffSubmitBtn" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                  Register Staff Account
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB 3: Bulk Upload -->
+          <div id="bulkTab" class="tab-pane">
+            <div class="card" style="padding: 2rem;">
+              <div class="sample-download-bar">
+                <div>
+                  <h3 style="font-size: 15px; margin-bottom: 4px;">Download Sample CSV Templates</h3>
+                  <p style="font-size: 13px; color: var(--text-secondary);">Use our pre-formatted templates to ensure all headers and validations match.</p>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                  <a href="/api/admin/registration/sample-csv?type=student" class="btn btn-secondary btn-sm" download>📥 Student Template</a>
+                  <a href="/api/admin/registration/sample-csv?type=staff" class="btn btn-secondary btn-sm" download>📥 Staff Template</a>
+                </div>
+              </div>
+
+              <form id="bulkUploadForm">
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label class="form-label" for="bulkType">Account Type *</label>
+                    <select id="bulkType" class="form-control" required>
+                      <option value="STUDENT">Students (Default: 12-digit roll numbers)</option>
+                      <option value="STAFF">Staff & Wardens</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="bulkFile">Upload CSV / Excel File *</label>
+                    <input type="file" id="bulkFile" class="form-control" accept=".csv" required>
+                  </div>
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                  <button type="submit" id="bulkSubmitBtn" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                    Upload & Validate Batch
+                  </button>
+                </div>
+              </form>
+
+              <div id="bulkResultsArea" style="margin-top: 2rem; display: none;">
+                <h3 style="font-size: 16px; margin-bottom: 0.5rem;">Batch Processing Report</h3>
+                <div id="bulkSummaryText" style="font-size: 14px; margin-bottom: 1rem;"></div>
+                <div id="bulkErrorsContainer"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/auth.js?v=6"></script>
+  <script src="/js/ui.js?v=6"></script>
+  <script>
+    let currentUser = null;
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+      document.getElementById('statusAlert').style.display = 'none';
+    }
+
+    function showAlert(msg, isSuccess) {
+      const alert = document.getElementById('statusAlert');
+      alert.className = 'result-alert ' + (isSuccess ? 'success' : 'error');
+      alert.textContent = msg;
+      alert.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Load Hostels for dropdown
+    async function loadHostels() {
+      try {
+        const res = await fetch('/api/admin/registration/hostels');
+        if (res.ok) {
+          const list = await res.json();
+          const sel = document.getElementById('studHostel');
+          list.forEach(h => {
+            const opt = document.createElement('option');
+            opt.value = h.id;
+            opt.textContent = h.name + ' (' + h.code + ')';
+            sel.appendChild(opt);
+          });
+        }
+      } catch (e) {}
+    }
+
+    // Live Roll Number Validation
+    function bindRollValidation(inputId, errId) {
+      const input = document.getElementById(inputId);
+      const err = document.getElementById(errId);
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9]/g, '');
+        if (input.value.length > 0 && !input.value.startsWith('7155'.substring(0, Math.min(input.value.length, 4)))) {
+          err.classList.add('active');
+        } else if (input.value.length === 12 && /^7155\d{8}$/.test(input.value)) {
+          err.classList.remove('active');
+        } else {
+          err.classList.remove('active');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      currentUser = await Auth.requireAuth();
+      if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'WARDEN')) {
+        alert('Access restricted to Administrators and Wardens.');
+        window.location.replace('/login.html');
+        return;
+      }
+
+      UI.renderLayout(currentUser, 'registration');
+      loadHostels();
+      bindRollValidation('studRoll', 'studRollErr');
+      bindRollValidation('staffRoll', 'staffRollErr');
+
+      // Student Form Submit
+      document.getElementById('studentRegisterForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const roll = document.getElementById('studRoll').value.trim();
+        if (!/^7155\d{8}$/.test(roll)) {
+          showAlert('Please enter a valid 12-digit roll number starting with 7155.', false);
+          return;
+        }
+
+        const data = {
+          rollNumber: roll,
+          fullName: document.getElementById('studFullName').value.trim(),
+          email: document.getElementById('studEmail').value.trim(),
+          phone: document.getElementById('studPhone').value.trim(),
+          department: document.getElementById('studDept').value,
+          year: parseInt(document.getElementById('studYear').value) || 1,
+          gender: document.getElementById('studGender').value,
+          dateOfBirth: document.getElementById('studDob').value || null,
+          bloodGroup: document.getElementById('studBlood').value || null,
+          programCourse: document.getElementById('studProgram').value.trim() || null,
+          section: document.getElementById('studSection').value.trim() || null,
+          admissionYear: parseInt(document.getElementById('studAdmissionYear').value) || null,
+          hostelId: document.getElementById('studHostel').value ? parseInt(document.getElementById('studHostel').value) : null,
+          roomId: document.getElementById('studRoom').value ? parseInt(document.getElementById('studRoom').value) : null,
+          addressLine1: document.getElementById('studAddr1').value.trim() || null,
+          addressLine2: document.getElementById('studAddr2').value.trim() || null,
+          city: document.getElementById('studCity').value.trim() || null,
+          district: document.getElementById('studDistrict').value.trim() || null,
+          state: document.getElementById('studState').value.trim() || null,
+          pincode: document.getElementById('studPincode').value.trim() || null,
+          nationality: document.getElementById('studNationality').value.trim() || 'Indian',
+          aadhaarNumber: document.getElementById('studAadhaar').value.trim() || null,
+          fatherName: document.getElementById('studFatherName').value.trim() || null,
+          fatherPhone: document.getElementById('studFatherPhone').value.trim() || null,
+          motherName: document.getElementById('studMotherName').value.trim() || null,
+          motherPhone: document.getElementById('studMotherPhone').value.trim() || null,
+          guardianName: document.getElementById('studGuardianName').value.trim() || null,
+          guardianPhone: document.getElementById('studGuardianPhone').value.trim() || null,
+          guardianRelation: document.getElementById('studGuardianRelation').value.trim() || null,
+          emergencyContact: document.getElementById('studEmergency').value.trim() || null,
+          previousInstitution: document.getElementById('studPrevInst').value.trim() || null,
+          medicalConditions: document.getElementById('studMedical').value.trim() || null
+        };
+
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(data));
+        const photoFile = document.getElementById('studPhoto').files[0];
+        if (photoFile) formData.append('photo', photoFile);
+        const idProofFile = document.getElementById('studIdProof').files[0];
+        if (idProofFile) formData.append('idProof', idProofFile);
+
+        const btn = document.getElementById('studSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Registering...';
+
+        try {
+          const res = await fetch('/api/admin/registration/student', {
+            method: 'POST',
+            body: formData
+          });
+          const resData = await res.json();
+          if (res.ok) {
+            showAlert(`Student ${resData.fullName} (${resData.rollNumber}) registered successfully! Temporary password is set to roll number.`, true);
+            document.getElementById('studentRegisterForm').reset();
+          } else {
+            showAlert(resData.message || 'Registration failed.', false);
+          }
+        } catch (err) {
+          showAlert('Network error: unable to register student.', false);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Register Student Account';
+        }
+      });
+
+      // Staff Form Submit
+      document.getElementById('staffRegisterForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const roll = document.getElementById('staffRoll').value.trim();
+        if (!/^7155\d{8}$/.test(roll)) {
+          showAlert('Please enter a valid 12-digit roll number starting with 7155.', false);
+          return;
+        }
+
+        const data = {
+          rollNumber: roll,
+          fullName: document.getElementById('staffFullName').value.trim(),
+          email: document.getElementById('staffEmail').value.trim(),
+          phone: document.getElementById('staffPhone').value.trim(),
+          department: document.getElementById('staffDept').value.trim() || null,
+          designation: document.getElementById('staffDesignation').value.trim(),
+          role: document.getElementById('staffRole').value,
+          gender: document.getElementById('staffGender').value,
+          dateOfBirth: document.getElementById('staffDob').value || null,
+          joiningDate: document.getElementById('staffJoiningDate').value || null,
+          emergencyContact: document.getElementById('staffEmergency').value.trim() || null,
+          address: document.getElementById('staffAddress').value.trim() || null
+        };
+
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(data));
+        const photoFile = document.getElementById('staffPhoto').files[0];
+        if (photoFile) formData.append('photo', photoFile);
+
+        const btn = document.getElementById('staffSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Registering...';
+
+        try {
+          const res = await fetch('/api/admin/registration/staff', {
+            method: 'POST',
+            body: formData
+          });
+          const resData = await res.json();
+          if (res.ok) {
+            showAlert(`Staff ${resData.fullName} (${resData.rollNumber}) registered successfully! Temporary password is set to roll number.`, true);
+            document.getElementById('staffRegisterForm').reset();
+          } else {
+            showAlert(resData.message || 'Registration failed.', false);
+          }
+        } catch (err) {
+          showAlert('Network error: unable to register staff.', false);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Register Staff Account';
+        }
+      });
+
+      // Bulk Upload Submit
+      document.getElementById('bulkUploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('bulkFile');
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showAlert('Please select a file to upload', false);
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('type', document.getElementById('bulkType').value);
+
+        const btn = document.getElementById('bulkSubmitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Processing Batch...';
+
+        try {
+          const res = await fetch('/api/admin/registration/bulk', {
+            method: 'POST',
+            body: formData
+          });
+          const report = await res.json();
+          if (res.ok) {
+            showAlert(report.message, report.failedCount === 0);
+            const area = document.getElementById('bulkResultsArea');
+            area.style.display = 'block';
+            document.getElementById('bulkSummaryText').innerHTML = 
+              `<strong>Processed:</strong> ${report.totalRows} rows | <span style="color:#1E7B4F;">${report.successCount} Successful</span> | <span style="color:#B42318;">${report.failedCount} Failed</span>`;
+            
+            const errDiv = document.getElementById('bulkErrorsContainer');
+            if (report.errors && report.errors.length > 0) {
+              let html = '<table class="error-table"><thead><tr><th>Row</th><th>Roll Number</th><th>Reason</th></tr></thead><tbody>';
+              report.errors.forEach(err => {
+                html += `<tr><td>${err.rowNumber}</td><td>${err.rollNumber}</td><td style="color:#B42318;">${err.reason}</td></tr>`;
+              });
+              html += '</tbody></table>';
+              errDiv.innerHTML = html;
+            } else {
+              errDiv.innerHTML = '<p style="color:#1E7B4F; font-size:14px;">No errors found. All rows registered successfully.</p>';
+            }
+          } else {
+            showAlert(report.message || 'Bulk upload failed', false);
+          }
+        } catch (err) {
+          showAlert('Error processing batch upload.', false);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Upload & Validate Batch';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

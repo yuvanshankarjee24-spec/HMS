@@ -23,6 +23,8 @@ public class WardenService {
     private final StudentRepository studentRepository;
     private final RoomRequestRepository roomRequestRepository;
     private final AllocationHistoryRepository allocationHistoryRepository;
+    private final RoomAllocationRepository roomAllocationRepository;
+    private final RoomAllocationService roomAllocationService;
     private final AuditService auditService;
 
     public WardenService(RoomRepository roomRepository,
@@ -30,12 +32,16 @@ public class WardenService {
                          StudentRepository studentRepository,
                          RoomRequestRepository roomRequestRepository,
                          AllocationHistoryRepository allocationHistoryRepository,
+                         RoomAllocationRepository roomAllocationRepository,
+                         RoomAllocationService roomAllocationService,
                          AuditService auditService) {
         this.roomRepository = roomRepository;
         this.bedRepository = bedRepository;
         this.studentRepository = studentRepository;
         this.roomRequestRepository = roomRequestRepository;
         this.allocationHistoryRepository = allocationHistoryRepository;
+        this.roomAllocationRepository = roomAllocationRepository;
+        this.roomAllocationService = roomAllocationService;
         this.auditService = auditService;
     }
 
@@ -212,19 +218,15 @@ public class WardenService {
             throw new ConflictException("Student is already allocated to a bed.");
         }
 
-        Bed targetBed;
+        Room targetRoom;
+        String bedLabel = null;
 
         if (approveDto != null && approveDto.bedId() != null) {
             // Lock target bed row
-            targetBed = bedRepository.findByIdWithLock(approveDto.bedId())
+            Bed b = bedRepository.findByIdWithLock(approveDto.bedId())
                     .orElseThrow(() -> new ResourceNotFoundException("Bed not found"));
-
-            if (targetBed.getStudent() != null) {
-                throw new ConflictException("Bed " + targetBed.getBedNumber() + " in room " + targetBed.getRoom().getRoomNumber() + " is already occupied by another student.");
-            }
-            if (targetBed.getRoom().getStatus() != Room.Status.ACTIVE) {
-                throw new BadRequestException("Room is currently under maintenance");
-            }
+            targetRoom = b.getRoom();
+            bedLabel = b.getBedLabel();
         } else {
             // Auto-pick first free bed: preferred room first, then any room
             List<Bed> candidates = List.of();
@@ -240,44 +242,20 @@ public class WardenService {
                 throw new ConflictException("No free beds are currently available in the hostel.");
             }
 
-            targetBed = candidates.get(0);
+            targetRoom = candidates.get(0).getRoom();
+            bedLabel = candidates.get(0).getBedLabel();
         }
 
-        // Double check student assignment with lock in effect
-        if (targetBed.getStudent() != null) {
-            throw new ConflictException("Bed was taken by another allocation.");
-        }
-
-        // Assign bed and sync canonical student room/hostel FKs
-        targetBed.setStudent(student);
-        bedRepository.save(targetBed);
-
-        student.setRoom(targetBed.getRoom());
-        if (targetBed.getRoom() != null && targetBed.getRoom().getHostel() != null) {
-            student.setHostel(targetBed.getRoom().getHostel());
-        }
-        studentRepository.save(student);
+        RoomAllocation allocation = roomAllocationService.allocate(student.getId(), targetRoom.getId(), bedLabel, "Approved room request #" + requestId, actorUser);
 
         // Update request
         request.setStatus(RoomRequest.Status.APPROVED);
         request.setDecidedBy(actorUser);
-        request.setDecisionNote("Approved into Room " + targetBed.getRoom().getRoomNumber() + ", Bed " + targetBed.getBedNumber());
+        request.setDecisionNote("Approved into Room " + allocation.getRoom().getRoomNumber() + ", Bed " + allocation.getBed().getBedLabel());
         request.setDecidedAt(LocalDateTime.now());
         roomRequestRepository.save(request);
 
-        // Allocation history
-        AllocationHistory history = new AllocationHistory(student, targetBed, AllocationHistory.Action.ALLOCATED, actorUser);
-        allocationHistoryRepository.save(history);
-
-        // Audit log
-        auditService.log(
-                actorUser,
-                "APPROVE_ROOM_REQUEST",
-                "Student=" + student.getRegisterNumber() + " -> Room " + targetBed.getRoom().getRoomNumber() + " Bed " + targetBed.getBedNumber(),
-                "SUCCESS"
-        );
-
-        return targetBed;
+        return allocation.getBed();
     }
 
     @Transactional
@@ -305,26 +283,6 @@ public class WardenService {
 
     @Transactional
     public void vacateStudent(Long studentId, User actorUser) {
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
-
-        Bed bed = bedRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new BadRequestException("Student is not currently allocated to any bed"));
-
-        bed.setStudent(null);
-        bedRepository.save(bed);
-
-        student.setRoom(null);
-        studentRepository.save(student);
-
-        AllocationHistory history = new AllocationHistory(student, bed, AllocationHistory.Action.VACATED, actorUser);
-        allocationHistoryRepository.save(history);
-
-        auditService.log(
-                actorUser,
-                "VACATE_STUDENT",
-                "Student=" + student.getRegisterNumber() + " vacated from Room " + bed.getRoom().getRoomNumber() + " Bed " + bed.getBedNumber(),
-                "SUCCESS"
-        );
+        roomAllocationService.vacate(studentId, "Vacated by warden", actorUser);
     }
 }

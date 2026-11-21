@@ -32,15 +32,20 @@ public class AuditService {
             if (actorUser != null && actorUser.getId() != null) {
                 managedUser = entityManager.find(User.class, actorUser.getId());
             }
-            AuditLog auditLog = new AuditLog(managedUser, action, target, result);
-            auditLog.setModule(module != null ? module : inferModule(action));
+            AuditLog auditLog = new AuditLog(managedUser, truncate(action, 100), truncate(target, 255), truncate(result != null ? result : "SUCCESS", 50));
+            auditLog.setModule(truncate(module != null ? module : inferModule(action), 50));
             auditLog.setReferenceId(referenceId);
-            auditLog.setOldValue(oldValue);
-            auditLog.setNewValue(newValue);
+            auditLog.setOldValue(truncate(oldValue, 500));
+            auditLog.setNewValue(truncate(newValue, 500));
             auditLogRepository.save(auditLog);
         } catch (Exception e) {
             System.err.println("Failed to write audit log: " + e.getMessage());
         }
+    }
+
+    private String truncate(String val, int maxLen) {
+        if (val == null) return null;
+        return val.length() <= maxLen ? val : val.substring(0, maxLen);
     }
 
     private String inferModule(String action) {

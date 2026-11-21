@@ -92,6 +92,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/student/photo/**").hasAnyRole("STUDENT", "WARDEN", "ADMIN", "SECURITY")
                         // Student only
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
+                        // Registration portal
+                        .requestMatchers("/api/admin/registration/**").hasAnyRole("ADMIN", "WARDEN")
                         // Warden and Admin
                         .requestMatchers("/api/warden/**").hasAnyRole("WARDEN", "ADMIN")
                         // Admin only

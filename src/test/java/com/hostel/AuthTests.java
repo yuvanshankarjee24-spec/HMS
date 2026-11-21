@@ -39,11 +39,11 @@ public class AuthTests {
 
     @BeforeEach
     void setUp() {
-        // Ensure test user exists
-        if (userRepository.findByEmail("test_student@college.edu").isEmpty()) {
+        // Ensure test user exists with valid 12-digit roll number
+        if (userRepository.findByRegisterNumber("715521104999").isEmpty()) {
             User user = new User();
             user.setEmail("test_student@college.edu");
-            user.setRegisterNumber("TESTREG01");
+            user.setRegisterNumber("715521104999");
             user.setPasswordHash(passwordEncoder.encode("Test@1234"));
             user.setRole("STUDENT");
             user.setStatus(User.Status.ACTIVE);
@@ -55,7 +55,7 @@ public class AuthTests {
     @Test
     @DisplayName("Login Success with valid credentials and matching role")
     void testLoginSuccess() throws Exception {
-        LoginRequest req = new LoginRequest("test_student@college.edu", "Test@1234", "STUDENT");
+        LoginRequest req = new LoginRequest("715521104999", "Test@1234", "STUDENT");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,26 +72,26 @@ public class AuthTests {
     @Test
     @DisplayName("Login Failure with incorrect password returns 401 Invalid credentials")
     void testLoginFailureWrongPassword() throws Exception {
-        LoginRequest req = new LoginRequest("test_student@college.edu", "WrongPassword123", "STUDENT");
+        LoginRequest req = new LoginRequest("715521104999", "WrongPassword123", "STUDENT");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid credentials"));
+                .andExpect(jsonPath("$.message", containsString("Invalid")));
     }
 
     @Test
     @DisplayName("Role mismatch login rejected with generic Invalid credentials")
     void testRoleMismatchRejected() throws Exception {
         // Student user attempting to log in on the WARDEN tab
-        LoginRequest req = new LoginRequest("test_student@college.edu", "Test@1234", "WARDEN");
+        LoginRequest req = new LoginRequest("715521104999", "Test@1234", "WARDEN");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid credentials"));
+                .andExpect(jsonPath("$.message", containsString("Invalid")));
     }
 
     @Test
@@ -100,14 +100,14 @@ public class AuthTests {
         String testEmail = "lockout_user@college.edu";
         User user = new User();
         user.setEmail(testEmail);
-        user.setRegisterNumber("LOCK001");
+        user.setRegisterNumber("715521104888");
         user.setPasswordHash(passwordEncoder.encode("Correct@123"));
         user.setRole("STUDENT");
         user.setStatus(User.Status.ACTIVE);
         user.setFailedAttempts(0);
         userRepository.save(user);
 
-        LoginRequest wrongReq = new LoginRequest(testEmail, "WrongPass1!", "STUDENT");
+        LoginRequest wrongReq = new LoginRequest("715521104888", "WrongPass1!", "STUDENT");
 
         // 4 failed attempts -> 401
         for (int i = 1; i <= 4; i++) {

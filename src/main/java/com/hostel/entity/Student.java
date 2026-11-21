@@ -1,6 +1,7 @@
 package com.hostel.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -52,6 +53,78 @@ public class Student {
 
     @Column(name = "guardian_relation", length = 50)
     private String guardianRelation;
+
+    @Column(length = 20)
+    private String gender;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "blood_group", length = 10)
+    private String bloodGroup;
+
+    @Column(name = "program_course", length = 100)
+    private String programCourse;
+
+    @Column(length = 10)
+    private String section;
+
+    @Column(name = "admission_year")
+    private Integer admissionYear;
+
+    @Column(name = "address_line1")
+    private String addressLine1;
+
+    @Column(name = "address_line2")
+    private String addressLine2;
+
+    @Column(length = 100)
+    private String city;
+
+    @Column(length = 100)
+    private String district;
+
+    @Column(length = 100)
+    private String state;
+
+    @Column(length = 10)
+    private String pincode;
+
+    @Column(length = 50)
+    private String nationality = "Indian";
+
+    @Column(length = 50)
+    private String religion;
+
+    @Column(length = 50)
+    private String community;
+
+    @Column(name = "aadhaar_encrypted")
+    private String aadhaarEncrypted;
+
+    @Column(name = "father_name", length = 150)
+    private String fatherName;
+
+    @Column(name = "father_phone", length = 20)
+    private String fatherPhone;
+
+    @Column(name = "mother_name", length = 150)
+    private String motherName;
+
+    @Column(name = "mother_phone", length = 20)
+    private String motherPhone;
+
+    @Column(name = "emergency_contact", length = 20)
+    private String emergencyContact;
+
+    @Column(name = "medical_conditions", columnDefinition = "TEXT")
+    private String medicalConditions;
+
+    @Column(name = "previous_institution")
+    private String previousInstitution;
+
+    @Column(name = "guardian_id_proof_path")
+    private String guardianIdProofPath;
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
@@ -151,4 +224,76 @@ public class Student {
 
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    public String getBloodGroup() { return bloodGroup; }
+    public void setBloodGroup(String bloodGroup) { this.bloodGroup = bloodGroup; }
+
+    public String getProgramCourse() { return programCourse; }
+    public void setProgramCourse(String programCourse) { this.programCourse = programCourse; }
+
+    public String getSection() { return section; }
+    public void setSection(String section) { this.section = section; }
+
+    public Integer getAdmissionYear() { return admissionYear; }
+    public void setAdmissionYear(Integer admissionYear) { this.admissionYear = admissionYear; }
+
+    public String getAddressLine1() { return addressLine1; }
+    public void setAddressLine1(String addressLine1) { this.addressLine1 = addressLine1; }
+
+    public String getAddressLine2() { return addressLine2; }
+    public void setAddressLine2(String addressLine2) { this.addressLine2 = addressLine2; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getDistrict() { return district; }
+    public void setDistrict(String district) { this.district = district; }
+
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+
+    public String getPincode() { return pincode; }
+    public void setPincode(String pincode) { this.pincode = pincode; }
+
+    public String getNationality() { return nationality; }
+    public void setNationality(String nationality) { this.nationality = nationality; }
+
+    public String getReligion() { return religion; }
+    public void setReligion(String religion) { this.religion = religion; }
+
+    public String getCommunity() { return community; }
+    public void setCommunity(String community) { this.community = community; }
+
+    public String getAadhaarEncrypted() { return aadhaarEncrypted; }
+    public void setAadhaarEncrypted(String aadhaarEncrypted) { this.aadhaarEncrypted = aadhaarEncrypted; }
+
+    public String getFatherName() { return fatherName; }
+    public void setFatherName(String fatherName) { this.fatherName = fatherName; }
+
+    public String getFatherPhone() { return fatherPhone; }
+    public void setFatherPhone(String fatherPhone) { this.fatherPhone = fatherPhone; }
+
+    public String getMotherName() { return motherName; }
+    public void setMotherName(String motherName) { this.motherName = motherName; }
+
+    public String getMotherPhone() { return motherPhone; }
+    public void setMotherPhone(String motherPhone) { this.motherPhone = motherPhone; }
+
+    public String getEmergencyContact() { return emergencyContact; }
+    public void setEmergencyContact(String emergencyContact) { this.emergencyContact = emergencyContact; }
+
+    public String getMedicalConditions() { return medicalConditions; }
+    public void setMedicalConditions(String medicalConditions) { this.medicalConditions = medicalConditions; }
+
+    public String getPreviousInstitution() { return previousInstitution; }
+    public void setPreviousInstitution(String previousInstitution) { this.previousInstitution = previousInstitution; }
+
+    public String getGuardianIdProofPath() { return guardianIdProofPath; }
+    public void setGuardianIdProofPath(String guardianIdProofPath) { this.guardianIdProofPath = guardianIdProofPath; }
 }

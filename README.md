@@ -63,36 +63,21 @@ A full-stack, enterprise-grade web application built for college hostel administ
 
 ---
 
-## 🔑 Demo Accounts & Credentials
+## 🔑 Initial Administrator & Authentication Architecture
 
-> **Default Password for ALL Accounts:** `Hostel@123`
+> **Security Notice:** All temporary, demo, and dummy accounts have been completely purged. Public self-registration is disabled.
 
-### Administrative & Staff Accounts
+### 1. Initial Administrator Setup (.env)
+On first deployment or after database initialization, exactly **one** administrator is bootstrapped from `.env`:
+- `ADMIN_USERNAME`: Defaults to `admin` (or configured admin email/username)
+- `ADMIN_PASSWORD`: Configured in `.env` (never hardcoded)
+- **First Login Security:** The administrator is required to set a new password upon first login (`must_change_password = true`).
 
-| Role | Person / Title | Login Identifier / Email | Role Tab to Select |
-|---|---|---|---|
-| **ADMIN** | Dr. Rajesh Kumar (Chief Admin) | `admin@hostel.edu` | **Admin** |
-| **WARDEN** | Prof. Suresh Iyer (Chief Warden) | `warden@hostel.edu` | **Warden** |
-| **SECURITY** | Ramesh Patil (Chief Guard) | `security@hostel.edu` | **Staff** |
-| **CLEANING_WORKER** | Lakshmi Devi (Sanitation Lead) | `cleaner@hostel.edu` | **Staff** |
-| **MAINTENANCE_STAFF**| Ganesh Sharma (Lead Electrician) | `maintenance@hostel.edu` | **Staff** |
-| **MESS_STAFF** | Murugan Velu (Head Chef) | `mess@hostel.edu` | **Staff** |
-| **VENDING_MANAGER** | Priya Nair (Vending Admin) | `vending@hostel.edu` | **Staff** |
-
-### Student Demo Accounts
-
-| Reg Number | Student Name | Department | Year | Initial Allocation State |
-|---|---|---|---|---|
-| `REG202601` | Aarav Sharma | Computer Science | 2 | **Allocated** (Room 101, Bed 1) |
-| `REG202602` | Ananya Patel | Electronics & Comm | 2 | **Allocated** (Room 101, Bed 2) |
-| `REG202603` | Rohan Verma | Information Tech | 3 | **Allocated** (Room 101, Bed 3) |
-| `REG202604` | Sneha Reddy | Mechanical Engg | 3 | **Allocated** (Room 101, Bed 4) |
-| `REG202605` | Vikram Singh | Civil Engg | 4 | **Allocated** (Room 102, Bed 1) |
-| `REG202606` | Pooja Joshi | Electrical Engg | 4 | **Allocated** (Room 102, Bed 2) |
-| `REG202607` | Rahul Nair | Chemical Engg | 1 | **Allocated** (Room 103, Bed 1) |
-| `REG202608` | Sanya Kapoor | Biotechnology | 1 | **Request Pending** (Requested Room 102) |
-| **`REG202609`** | **Arjun Menon** | **AI & Data Science** | **1** | **NOT ALLOCATED** *(Ideal for Live Demo)* |
-| **`REG202610`** | **Meera Iyer** | **Cyber Security** | **1** | **NOT ALLOCATED** *(Secondary Demo)* |
+### 2. User Accounts & Roll Number Standard
+- **Username Format:** Every student and staff account uses a mandatory **12-digit roll number** starting with `7155` (regex: `^7155\d{8}$`, e.g., `715521104001`).
+- **Registration Authority:** Accounts can only be registered by an **Administrator** (or Warden for hostel students) via the **User Registration Portal** (`/admin/registration.html`) or batch CSV upload.
+- **Temporary Password:** When an account is registered, its temporary password is set to its 12-digit roll number.
+- **First Login & Expiration:** Users must set a new strong password on first login before accessing any portal features. Unused temporary passwords expire after 7 days.
 
 ---
 

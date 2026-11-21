@@ -57,6 +57,9 @@ public class User {
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    @Column(name = "temp_password_created_at")
+    private LocalDateTime tempPasswordCreatedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -103,4 +106,7 @@ public class User {
 
     public LocalDateTime getDeletedAt() { return deletedAt; }
     public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+
+    public LocalDateTime getTempPasswordCreatedAt() { return tempPasswordCreatedAt; }
+    public void setTempPasswordCreatedAt(LocalDateTime tempPasswordCreatedAt) { this.tempPasswordCreatedAt = tempPasswordCreatedAt; }
 }

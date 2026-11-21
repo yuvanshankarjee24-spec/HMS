@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -363,7 +364,9 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     /* Divider */
@@ -428,6 +431,7 @@
       .login-card-container {
         max-width: 720px;
       }
+
       .login-form-panel {
         padding: 2rem 2rem;
       }
@@ -437,45 +441,55 @@
       body {
         padding: 1rem 0.75rem;
       }
+
       .login-card-container {
         grid-template-columns: 1fr;
         max-width: 440px;
         min-height: auto;
         border-radius: 18px;
       }
+
       .login-hero-panel {
         display: block;
         height: 160px;
         min-height: 160px;
         padding: 0.75rem 0.75rem 0 0.75rem;
       }
+
       .hero-image-wrapper {
         border-radius: 14px;
         height: 160px;
       }
+
       .hero-image-wrapper img {
         border-radius: 14px;
         object-position: center 32%;
       }
+
       .login-form-panel {
         padding: 1.5rem 1.5rem 1.75rem 1.5rem;
       }
+
       .form-header-bar {
         justify-content: flex-start;
         margin-bottom: 1rem;
       }
+
       .header-logo {
         width: 85px;
       }
+
       .form-content-wrap {
         max-width: 100%;
       }
     }
 
-    @media (max-width: 480px), (max-height: 650px) {
+    @media (max-width: 480px),
+    (max-height: 650px) {
       .login-hero-panel {
         display: none;
       }
+
       .login-card-container {
         border-radius: 16px;
       }
@@ -485,27 +499,27 @@
       .login-form-panel {
         padding: 1.75rem 1.25rem;
       }
+
       .login-title {
         font-size: 24px;
       }
+
       .pill-input {
-        font-size: 16px; /* Prevents auto-zoom on mobile iOS */
+        font-size: 16px;
+        /* Prevents auto-zoom on mobile iOS */
       }
     }
   </style>
 </head>
+
 <body>
 
   <div class="login-card-container">
     <!-- Left Column: Hero Image Panel -->
     <div class="login-hero-panel">
       <div class="hero-image-wrapper">
-        <img 
-          src="/img/login-hero.jpg" 
-          alt="Student relaxing on a bean bag using a phone" 
-          loading="eager" 
-          decoding="async"
-        >
+        <img src="/img/login-hero.jpg" alt="Student relaxing on a bean bag using a phone" loading="eager"
+          decoding="async">
       </div>
     </div>
 
@@ -527,10 +541,11 @@
         <!-- Inline Error Banner with Zero Layout Shift -->
         <div class="error-container" id="errorContainer" aria-live="polite">
           <div class="error-text" id="errorText">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <span id="errorMessage">Invalid username or password</span>
           </div>
@@ -542,15 +557,8 @@
           <div class="form-group">
             <label class="form-label" for="identifierInput">Username</label>
             <div class="input-wrap">
-              <input 
-                type="text" 
-                id="identifierInput" 
-                class="pill-input" 
-                placeholder="Enter Username" 
-                required 
-                autofocus 
-                autocomplete="username"
-              >
+              <input type="text" id="identifierInput" class="pill-input" placeholder="Enter Username" required autofocus
+                autocomplete="username">
             </div>
           </div>
 
@@ -558,24 +566,14 @@
           <div class="form-group">
             <label class="form-label" for="passwordInput">Password</label>
             <div class="input-wrap">
-              <input 
-                type="password" 
-                id="passwordInput" 
-                class="pill-input has-toggle" 
-                placeholder="Enter your password" 
-                required 
-                autocomplete="current-password"
-              >
-              <button 
-                type="button" 
-                id="togglePasswordBtn" 
-                class="password-toggle-btn" 
-                aria-label="Toggle password visibility"
-                title="Toggle password visibility"
-              >
-                <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
+              <input type="password" id="passwordInput" class="pill-input has-toggle" placeholder="Enter your password"
+                required autocomplete="current-password">
+              <button type="button" id="togglePasswordBtn" class="password-toggle-btn"
+                aria-label="Toggle password visibility" title="Toggle password visibility">
+                <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
                 </svg>
               </button>
             </div>
@@ -596,21 +594,6 @@
             <span id="btnSpinner" class="btn-spinner" style="display: none;"></span>
           </button>
         </form>
-
-        <!-- Thin Grey Divider -->
-        <hr class="login-divider">
-
-        <!-- Collapsible Dev Credentials for local environment -->
-        <details class="dev-credentials-details" id="devCredentialsBox" style="display: none;">
-          <summary class="dev-credentials-summary">Dev credentials</summary>
-          <div class="dev-credentials-list">
-            <button type="button" class="dev-cred-btn" onclick="fillDevCredentials('student', 'REG202609', 'Hostel@123')">🎓 Student: REG202609</button>
-            <button type="button" class="dev-cred-btn" onclick="fillDevCredentials('warden', 'warden@hostel.edu', 'Hostel@123')">🏢 Warden: warden@hostel.edu</button>
-            <button type="button" class="dev-cred-btn" onclick="fillDevCredentials('admin', 'admin@hostel.edu', 'Hostel@123')">⚙️ Admin: admin@hostel.edu</button>
-            <button type="button" class="dev-cred-btn" onclick="fillDevCredentials('security', 'security@hostel.edu', 'Hostel@123')">🛡️ Security: security@hostel.edu</button>
-            <button type="button" class="dev-cred-btn" onclick="fillDevCredentials('worker', 'electrician.worker@hostel.edu', 'Hostel@123')">🔧 Worker: electrician.worker</button>
-          </div>
-        </details>
       </div>
 
       <!-- Blank placeholder for bottom balance -->
@@ -656,7 +639,7 @@
       if (!roleParam) {
         try {
           roleParam = localStorage.getItem('hms_selected_role');
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (roleParam) {
@@ -670,9 +653,24 @@
       roleSubtitleText.textContent = roleInfo.label;
       document.title = roleInfo.label + ' - Smart Hostel Management';
 
+      const isRollNumberRole = (currentRoleKey === 'student' || currentRoleKey === 'staff');
+      if (isRollNumberRole) {
+        identifierInput.inputMode = 'numeric';
+        identifierInput.maxLength = 12;
+        identifierInput.placeholder = '12-digit roll number (7155...)';
+        const lbl = document.querySelector('label[for="identifierInput"]');
+        if (lbl) lbl.textContent = 'Roll Number (Username)';
+      } else {
+        identifierInput.inputMode = 'text';
+        identifierInput.removeAttribute('maxLength');
+        identifierInput.placeholder = 'Enter Admin username or email';
+        const lbl = document.querySelector('label[for="identifierInput"]');
+        if (lbl) lbl.textContent = 'Username';
+      }
+
       try {
         localStorage.setItem('hms_selected_role', currentRoleKey);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Toggle Button Enabled State when both inputs have text
@@ -683,7 +681,20 @@
     }
 
     identifierInput.addEventListener('input', () => {
-      hideError();
+      const isRollNumberRole = (currentRoleKey === 'student' || currentRoleKey === 'staff');
+      if (isRollNumberRole) {
+        identifierInput.value = identifierInput.value.replace(/[^0-9]/g, '');
+        const val = identifierInput.value;
+        if (val.length > 0 && !val.startsWith('7155'.substring(0, Math.min(val.length, 4)))) {
+          showError('Enter a 12-digit roll number starting with 7155');
+        } else if (val.length === 12 && /^7155\d{8}$/.test(val)) {
+          hideError();
+        } else {
+          hideError();
+        }
+      } else {
+        hideError();
+      }
       updateButtonState();
     });
 
@@ -736,23 +747,6 @@
       }
     });
 
-    // Dev Credentials helper
-    function fillDevCredentials(roleKey, identifier, password) {
-      currentRoleKey = roleKey;
-      const roleInfo = ROLES[currentRoleKey];
-      roleSubtitleText.textContent = roleInfo.label;
-      document.title = roleInfo.label + ' - Smart Hostel Management';
-      try {
-        localStorage.setItem('hms_selected_role', currentRoleKey);
-      } catch (e) {}
-
-      identifierInput.value = identifier;
-      passwordInput.value = password;
-      hideError();
-      updateButtonState();
-      identifierInput.focus();
-    }
-
     // Form Submission
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -766,6 +760,12 @@
         return;
       }
 
+      const isRollNumberRole = (currentRoleKey === 'student' || currentRoleKey === 'staff');
+      if (isRollNumberRole && !/^7155\d{8}$/.test(identifier)) {
+        showError('Enter a 12-digit roll number starting with 7155');
+        return;
+      }
+
       // Handle Remember Me
       try {
         if (rememberMeCheckbox.checked) {
@@ -773,7 +773,7 @@
         } else {
           localStorage.removeItem('hms_remember_user');
         }
-      } catch (e) {}
+      } catch (e) { }
 
       submitBtn.disabled = true;
       btnText.style.display = 'none';
@@ -827,18 +827,9 @@
           identifierInput.value = savedUser;
           rememberMeCheckbox.checked = true;
         }
-      } catch (e) {}
+      } catch (e) { }
 
       updateButtonState();
-
-      // Show Dev credentials only in local/development environment
-      const isDev = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1' ||
-                    window.location.port !== '';
-      const devBox = document.getElementById('devCredentialsBox');
-      if (devBox && isDev) {
-        devBox.style.display = 'block';
-      }
 
       // Auto redirect if already logged in
       (async () => {
@@ -851,9 +842,10 @@
               Auth.redirectToDashboard(me.role);
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       })();
     });
   </script>
 </body>
+
 </html>

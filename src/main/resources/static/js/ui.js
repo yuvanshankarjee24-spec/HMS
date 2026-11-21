@@ -142,6 +142,7 @@ const UI = {
         break;
       case 'students':
       case 'users':
+      case 'registration':
         paths = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>';
         break;
       case 'change-password':
@@ -236,6 +237,7 @@ const UI = {
         { key: 'maintenance', label: 'Maintenance', href: '/warden/maintenance.html' },
         { key: 'circulars', label: 'Circulars & Events', href: '/warden/circulars.html' },
         { key: 'students', label: 'Students', href: '/warden/students.html' },
+        { key: 'registration', label: 'Register Student', href: '/admin/registration.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],
       'ADMIN': [
@@ -247,6 +249,7 @@ const UI = {
         { key: 'admin-parcels', label: 'Parcels & Reports', href: '/admin/parcels.html' },
         { key: 'admin-maintenance', label: 'Maintenance & Reports', href: '/admin/maintenance.html' },
         { key: 'workers', label: 'Maintenance & Workers', href: '/warden/maintenance.html?tab=workers' },
+        { key: 'registration', label: 'User Registration', href: '/admin/registration.html' },
         { key: 'users', label: 'User Directory', href: '/admin/users.html' },
         { key: 'change-password', label: 'Change Password', href: '/change-password.html' }
       ],

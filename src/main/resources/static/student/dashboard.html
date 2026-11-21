@@ -575,7 +575,10 @@
         roomBadgePill.className = 'room-badge-pill pill-allocated';
         roomBadgePill.style.background = '';
         roomBadgePill.style.color = '';
-        roomBedText.textContent = `Room ${profile.roomNumber} - Bed #${profile.bedNumber}`;
+        const bedStr = profile.bedNumber ? `Bed #${profile.bedNumber}` : '';
+        const floorStr = profile.floor ? `Floor ${profile.floor}` : '';
+        const hostelStr = profile.hostelBlock || 'PSG iTech Hostel';
+        roomBedText.textContent = `Room ${profile.roomNumber} (${bedStr}) · ${floorStr} · ${hostelStr}`;
         if (openRequestModalBtn) {
           openRequestModalBtn.disabled = true;
           openRequestModalBtn.title = 'You are already allocated to a room';
@@ -597,7 +600,7 @@
         roomBadgePill.className = 'room-badge-pill pill-not-allocated';
         roomBadgePill.style.background = '';
         roomBadgePill.style.color = '';
-        roomBedText.textContent = 'Not Allocated';
+        roomBedText.textContent = 'Not allocated';
         if (openRequestModalBtn) {
           openRequestModalBtn.disabled = false;
         }
@@ -1095,7 +1098,7 @@
                   </div>
                   <div>
                     <label class="form-label" for="bookFriendsInput">Friend Register Numbers (${data.groupSize - 1} required)</label>
-                    <input type="text" id="bookFriendsInput" class="form-control" value="${data.friendRegisterNumbers ? data.friendRegisterNumbers.join(', ') : ''}" placeholder="e.g. REG202609">
+                    <input type="text" id="bookFriendsInput" class="form-control" value="${data.friendRegisterNumbers ? data.friendRegisterNumbers.join(', ') : ''}" placeholder="e.g. 715521104002">
                     <small style="color:var(--text-muted); font-size:0.75rem;">Pre-filled from Excel allocation sheet. Comma-separated.</small>
                   </div>
                 </div>

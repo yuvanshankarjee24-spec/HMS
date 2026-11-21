@@ -452,7 +452,7 @@
               id="scanQueryInput" 
               class="form-control" 
               style="flex:1;min-width:260px;" 
-              placeholder="Enter Outpass ID (e.g. 3) or Student Register No (e.g. REG202605)..."
+              placeholder="Enter Outpass ID (e.g. 3) or Student Roll No (e.g. 715521104001)..."
               autocomplete="off"
             >
             <button type="button" class="btn btn-secondary" id="btnManualVerify">
@@ -568,7 +568,7 @@
             if (parsed.regNo) return String(parsed.regNo);
           } catch (e) {}
         }
-        // Check URL format: e.g. http://.../outpass?id=3 or /verify?query=REG202605
+        // Check URL format: e.g. http://.../outpass?id=3 or /verify?query=715521104001
         if (raw.startsWith('http://') || raw.startsWith('https://')) {
           try {
             const u = new URL(raw);

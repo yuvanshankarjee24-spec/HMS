@@ -4,6 +4,7 @@ import com.hostel.dto.AdminDtos.*;
 import com.hostel.entity.*;
 import com.hostel.exception.CustomExceptions.*;
 import com.hostel.repository.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +26,9 @@ public class AdminService {
     private final HostelRepository hostelRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+
+    @Value("${app.security.force-password-change-on-first-login:${FORCE_PASSWORD_CHANGE_ON_FIRST_LOGIN:true}}")
+    private boolean forcePasswordChangeOnFirstLogin;
 
     private static final List<String> VALID_STAFF_ROLES = Arrays.asList(
             "WARDEN", "SECURITY", "WORKER", "CLEANING_WORKER", "MAINTENANCE_STAFF", "MESS_STAFF", "VENDING_MANAGER"
@@ -58,7 +62,7 @@ public class AdminService {
             throw new BadRequestException("Student with register number " + regNo + " already exists");
         }
 
-        String tempPassword = "Temp@" + UUID.randomUUID().toString().substring(0, 6) + "1";
+        String tempPassword = regNo;
 
         User user = new User();
         user.setEmail(email);
@@ -69,7 +73,8 @@ public class AdminService {
         user.setRole("STUDENT");
         user.setStatus(User.Status.ACTIVE);
         user.setActive(true);
-        user.setMustChangePassword(true);
+        user.setMustChangePassword(forcePasswordChangeOnFirstLogin);
+        user.setTempPasswordCreatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
 
         Student student = new Student();
@@ -243,10 +248,16 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String tempPassword = "Reset@" + UUID.randomUUID().toString().substring(0, 6) + "1";
+        String resetPassword;
+        if (user.getRegisterNumber() != null && !user.getRegisterNumber().isBlank()) {
+            resetPassword = user.getRegisterNumber();
+        } else {
+            resetPassword = "Reset@" + UUID.randomUUID().toString().substring(0, 6) + "1";
+        }
 
-        user.setPasswordHash(passwordEncoder.encode(tempPassword));
-        user.setMustChangePassword(true);
+        user.setPasswordHash(passwordEncoder.encode(resetPassword));
+        user.setMustChangePassword(forcePasswordChangeOnFirstLogin);
+        user.setTempPasswordCreatedAt(LocalDateTime.now());
         user.setFailedAttempts(0);
         user.setLockedUntil(null);
         if (user.getStatus() == User.Status.LOCKED) {
@@ -255,6 +266,6 @@ public class AdminService {
         userRepository.save(user);
 
         auditService.log(actorUser, "RESET_PASSWORD", "UserId=" + userId, "SUCCESS");
-        return tempPassword;
+        return resetPassword;
     }
 }

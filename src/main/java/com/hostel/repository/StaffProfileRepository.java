@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface StaffProfileRepository extends JpaRepository<StaffProfile, Long> {
     Optional<StaffProfile> findByUserId(Long userId);
+    Optional<StaffProfile> findByRollNumber(String rollNumber);
+    boolean existsByRollNumber(String rollNumber);
 }

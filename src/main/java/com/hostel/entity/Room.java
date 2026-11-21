@@ -40,6 +40,9 @@ public class Room {
     @JoinColumn(name = "hostel_id")
     private Hostel hostel;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -79,4 +82,7 @@ public class Room {
 
     public Hostel getHostel() { return hostel; }
     public void setHostel(Hostel hostel) { this.hostel = hostel; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 }

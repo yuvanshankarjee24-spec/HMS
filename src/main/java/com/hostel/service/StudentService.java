@@ -62,11 +62,13 @@ public class StudentService {
             roomNumber = bedOpt.get().getRoom().getRoomNumber();
             bedNumber = bedOpt.get().getBedNumber();
             floor = bedOpt.get().getRoom().getFloor();
-            hostelBlock = "Floor " + floor;
+            hostelBlock = bedOpt.get().getRoom().getHostel() != null ? bedOpt.get().getRoom().getHostel().getName() : "PSG iTech Hostel";
         } else if (roomRequestRepository.existsByStudentIdAndStatus(student.getId(), RoomRequest.Status.PENDING)) {
             allocationStatus = "REQUEST PENDING";
+            hostelBlock = "Not allocated";
         } else {
             allocationStatus = "NOT ALLOCATED";
+            hostelBlock = "Not allocated";
         }
 
         String photoUrl = student.getPhotoPath() != null ? "/api/student/photo" : null;

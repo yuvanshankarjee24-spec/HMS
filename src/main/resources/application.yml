@@ -44,6 +44,26 @@ spring:
       max-request-size: 10MB
 
 app:
+  admin:
+    seed:
+      username: ${ADMIN_USERNAME:1234567890}
+      password: ${ADMIN_PASSWORD:1234567890}
+  security:
+    force-password-change-on-first-login: ${FORCE_PASSWORD_CHANGE_ON_FIRST_LOGIN:true}
+  room-seed:
+    hostel-code: PSG_ITECH
+    hostel-name: "PSG iTech Hostel"
+    hostel-address: "PSG iTech Campus, Neelambur, Coimbatore"
+    start-room-number: 101
+    end-room-number: 200
+    capacity-per-room: 4
+    rooms-per-floor: 25
+    total-bed-capacity: 400
+    bed-labels:
+      - A
+      - B
+      - C
+      - D
   jwt:
     secret: ${JWT_SECRET:devFallbackJwtSecretMustBeChangedInProductionEnvironment2026!}
     expiration-ms: 86400000 # 24 hours
