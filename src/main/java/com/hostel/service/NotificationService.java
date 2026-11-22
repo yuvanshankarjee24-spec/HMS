@@ -73,6 +73,7 @@ public class NotificationService {
             case "PARCELS" -> isWarden ? "/warden/parcels.html?tab=register" : "/student/my-parcels.html";
             case "CIRCULARS" -> isWarden ? "/warden/circulars.html" : "/student/circulars.html";
             case "MESS" -> isWarden ? "/warden/mess.html?tab=tokens" : "/student/mess-tokens.html?tab=my-tokens";
+            case "ROOM_REQUEST", "ROOMS" -> "ADMIN".equalsIgnoreCase(role) ? "/admin/room-allotment?tab=requests" : (isWarden ? "/warden/students.html" : "/student/dashboard.html#requests");
             default -> isWarden ? "/warden/dashboard" : "/student/dashboard.html";
         };
     }

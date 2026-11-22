@@ -90,7 +90,7 @@ public class StudentTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", containsString("already allocated to a room and bed")));
+                .andExpect(jsonPath("$.message", containsString("Use Change Room Request instead")));
     }
 
     @Test

@@ -109,6 +109,9 @@ const UI = {
       case 'admin-dashboard':
         paths = '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>';
         break;
+      case 'admin-room-allotment':
+        paths = '<path d="M3 21h18M3 7v14M21 7v14M7 21V11a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v10M10 15h4"/>';
+        break;
       case 'outpasses':
       case 'verify-outpass':
         paths = '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>';
@@ -243,6 +246,7 @@ const UI = {
       'ADMIN': [
         { key: 'warden-overview', label: 'Hostel Overview', href: '/warden/dashboard.html' },
         { key: 'admin-dashboard', label: 'Admin Dashboard', href: '/admin/dashboard.html' },
+        { key: 'admin-room-allotment', label: 'Room Allotment', href: '/admin/room-allotment' },
         { key: 'admin-circulars', label: 'Circulars & Events', href: '/admin/circulars.html' },
         { key: 'admin-mess', label: 'Mess Reports', href: '/admin/mess.html' },
         { key: 'admin-attendance', label: 'Digital Attendance', href: '/admin/attendance.html' },
@@ -287,11 +291,36 @@ const UI = {
     items.forEach(item => {
       const icon = this._getSidebarIcon(item.key);
       const labelSpan = this.createElement('span', {}, item.label);
+      const linkChildren = [icon, labelSpan];
+
+      if (item.key === 'admin-room-allotment') {
+        const badge = this.createElement('span', {
+          className: 'nav-badge',
+          id: 'sidebarRoomPendingBadge',
+          style: 'margin-left: auto; background: #f59e0b; color: white; border-radius: 9999px; padding: 0.15rem 0.5rem; font-size: 0.75rem; font-weight: 700; display: none;'
+        }, '0');
+        linkChildren.push(badge);
+
+        // Fetch pending count asynchronously
+        fetch('/api/admin/rooms/summary')
+          .then(res => res.ok ? res.json() : null)
+          .then(s => {
+            if (s && s.pendingRequests > 0) {
+              const b = document.getElementById('sidebarRoomPendingBadge');
+              if (b) {
+                b.textContent = s.pendingRequests;
+                b.style.display = 'inline-block';
+              }
+            }
+          })
+          .catch(() => {});
+      }
+
       const link = this.createElement('a', {
         className: 'sidebar-link',
         href: item.href,
         dataset: { navKey: item.key }
-      }, icon, labelSpan);
+      }, ...linkChildren);
 
       link.addEventListener('click', () => {
         const sb = document.getElementById('sidebar');

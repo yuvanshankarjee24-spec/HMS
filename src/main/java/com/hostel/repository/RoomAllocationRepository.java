@@ -29,4 +29,17 @@ public interface RoomAllocationRepository extends JpaRepository<RoomAllocation, 
 
     @Query("SELECT ra FROM RoomAllocation ra JOIN FETCH ra.room r JOIN FETCH ra.bed b WHERE ra.student.id = :studentId AND ra.status = 'active'")
     Optional<RoomAllocation> findActiveAllocationForStudent(@Param("studentId") Long studentId);
+
+    @Query("SELECT ra FROM RoomAllocation ra " +
+           "JOIN FETCH ra.student s " +
+           "JOIN FETCH ra.room r " +
+           "JOIN FETCH ra.bed b " +
+           "JOIN FETCH ra.allocatedBy u " +
+           "WHERE (:query IS NULL OR :query = '' " +
+           "       OR LOWER(s.registerNumber) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "       OR LOWER(s.fullName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "       OR LOWER(r.roomNumber) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "AND (:status IS NULL OR :status = '' OR LOWER(ra.status) = LOWER(:status)) " +
+           "ORDER BY ra.allocatedAt DESC")
+    List<RoomAllocation> searchAllocationHistory(@Param("query") String query, @Param("status") String status);
 }

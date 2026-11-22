@@ -108,20 +108,7 @@ public class WardenController {
             reqStatus = RoomRequest.Status.valueOf(status.trim().toUpperCase());
         }
         List<RoomRequest> list = wardenService.getRoomRequests(reqStatus);
-        List<RoomRequestResponse> dtos = list.stream().map(r -> new RoomRequestResponse(
-                r.getId(),
-                r.getStudent().getId(),
-                r.getStudent().getFullName(),
-                r.getStudent().getRegisterNumber(),
-                r.getPreferredRoom() != null ? r.getPreferredRoom().getId() : null,
-                r.getPreferredRoom() != null ? r.getPreferredRoom().getRoomNumber() : null,
-                r.getPreferredFloor(),
-                r.getNote(),
-                r.getStatus().name(),
-                r.getDecisionNote(),
-                r.getCreatedAt(),
-                r.getDecidedAt()
-        )).collect(Collectors.toList());
+        List<RoomRequestResponse> dtos = list.stream().map(RoomRequestResponse::fromEntity).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 

@@ -40,6 +40,25 @@ public class RoomAllocationDtos {
         long fullyOccupiedRooms
     ) {}
 
+    public record AdminRoomSummary(
+        long totalRooms,
+        long totalBeds,
+        long occupiedBeds,
+        long availableBeds,
+        long fullyOccupiedRooms,
+        long pendingRequests,
+        long studentsWithoutRoom
+    ) {}
+
+    public record FloorStatsItem(
+        int floor,
+        int totalRooms,
+        int totalBeds,
+        int occupiedBeds,
+        int availableBeds,
+        double occupancyPercentage
+    ) {}
+
     public record BedOccupancyItem(
         Long id,
         int bedNumber,
@@ -48,7 +67,10 @@ public class RoomAllocationDtos {
         Long studentId,
         String studentName,
         String rollNumber,
-        String department
+        String department,
+        Integer year,
+        String gender,
+        String photoPath
     ) {}
 
     public record RoomOccupancyItem(
@@ -77,6 +99,53 @@ public class RoomAllocationDtos {
         String message
     ) {}
 
+    public record BulkValidationRow(
+        int rowNumber,
+        String rollNumber,
+        String studentName,
+        String roomNumber,
+        String bedLabel,
+        String status, // "VALID" or "INVALID"
+        String message
+    ) {}
+
+    public record BulkValidationResponse(
+        int totalRows,
+        int validCount,
+        int errorCount,
+        List<BulkValidationRow> rows
+    ) {}
+
+    public record StudentSearchResult(
+        Long id,
+        String rollNumber,
+        String fullName,
+        String department,
+        int year,
+        String gender,
+        String phone,
+        String photoPath,
+        String currentRoomNumber,
+        String currentBedLabel,
+        boolean isAllotted
+    ) {}
+
+    public record AllocationHistoryItem(
+        Long id,
+        Long studentId,
+        String rollNumber,
+        String studentName,
+        String department,
+        String roomNumber,
+        String bedLabel,
+        String action, // "ALLOCATED", "TRANSFERRED", "VACATED"
+        String allocatedBy,
+        LocalDateTime timestamp,
+        LocalDateTime vacatedAt,
+        String status,
+        String remarks
+    ) {}
+
     public record StudentAllocationDetail(
         Long studentId,
         String rollNumber,
@@ -87,5 +156,17 @@ public class RoomAllocationDtos {
         String hostelName,
         String status,
         LocalDateTime allocatedAt
+    ) {}
+
+    public record BulkApproveRequestsRequest(
+        List<Long> requestIds,
+        String remarks
+    ) {}
+
+    public record BulkApproveResponse(
+        int totalRequested,
+        int approvedCount,
+        int failedCount,
+        List<String> messages
     ) {}
 }

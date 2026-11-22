@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "room_requests")
+@Table(name = "room_requests", indexes = {
+    @Index(name = "idx_requests_student_status", columnList = "student_id, status"),
+    @Index(name = "idx_requests_status", columnList = "status"),
+    @Index(name = "idx_rr_request_code", columnList = "request_code")
+})
 public class RoomRequest {
 
     public enum Status {
@@ -20,6 +24,9 @@ public class RoomRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "request_code", length = 50)
+    private String requestCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
@@ -31,12 +38,26 @@ public class RoomRequest {
     @Column(name = "preferred_floor")
     private Integer preferredFloor;
 
+    @Column(name = "preferred_room_type", length = 50)
+    private String preferredRoomType;
+
+    @Column(name = "preferred_roommates", length = 255)
+    private String preferredRoommates;
+
     @Column(columnDefinition = "TEXT")
     private String note;
 
     @Convert(converter = StatusConverter.class)
     @Column(nullable = false)
     private Status status = Status.PENDING;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "allotted_room_id")
+    private Room allottedRoom;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "allotted_bed_id")
+    private Bed allottedBed;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "decided_by")
@@ -56,6 +77,16 @@ public class RoomRequest {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
+    public String getRequestCode() {
+        if (requestCode != null && !requestCode.isBlank()) {
+            return requestCode;
+        }
+        int yr = createdAt != null ? createdAt.getYear() : 2026;
+        long num = id != null ? id : 1L;
+        return String.format("RRQ-%d-%04d", yr, num);
+    }
+    public void setRequestCode(String requestCode) { this.requestCode = requestCode; }
+
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
 
@@ -65,11 +96,23 @@ public class RoomRequest {
     public Integer getPreferredFloor() { return preferredFloor; }
     public void setPreferredFloor(Integer preferredFloor) { this.preferredFloor = preferredFloor; }
 
+    public String getPreferredRoomType() { return preferredRoomType; }
+    public void setPreferredRoomType(String preferredRoomType) { this.preferredRoomType = preferredRoomType; }
+
+    public String getPreferredRoommates() { return preferredRoommates; }
+    public void setPreferredRoommates(String preferredRoommates) { this.preferredRoommates = preferredRoommates; }
+
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
 
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+
+    public Room getAllottedRoom() { return allottedRoom; }
+    public void setAllottedRoom(Room allottedRoom) { this.allottedRoom = allottedRoom; }
+
+    public Bed getAllottedBed() { return allottedBed; }
+    public void setAllottedBed(Bed allottedBed) { this.allottedBed = allottedBed; }
 
     public User getDecidedBy() { return decidedBy; }
     public void setDecidedBy(User decidedBy) { this.decidedBy = decidedBy; }

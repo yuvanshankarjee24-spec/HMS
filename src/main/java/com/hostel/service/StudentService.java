@@ -25,6 +25,8 @@ public class StudentService {
     private final BedRepository bedRepository;
     private final RoomRepository roomRepository;
     private final RoomRequestRepository roomRequestRepository;
+    private final RoomRequestStatusHistoryRepository roomRequestStatusHistoryRepository;
+    private final NotificationService notificationService;
     private final AuditService auditService;
 
     @Value("${app.upload.dir:./storage/photos}")
@@ -34,11 +36,15 @@ public class StudentService {
                           BedRepository bedRepository,
                           RoomRepository roomRepository,
                           RoomRequestRepository roomRequestRepository,
+                          RoomRequestStatusHistoryRepository roomRequestStatusHistoryRepository,
+                          NotificationService notificationService,
                           AuditService auditService) {
         this.studentRepository = studentRepository;
         this.bedRepository = bedRepository;
         this.roomRepository = roomRepository;
         this.roomRequestRepository = roomRequestRepository;
+        this.roomRequestStatusHistoryRepository = roomRequestStatusHistoryRepository;
+        this.notificationService = notificationService;
         this.auditService = auditService;
     }
 
@@ -189,13 +195,24 @@ public class StudentService {
         Student student = getStudentByUser(user);
 
         // Reject if student already has a bed
-        if (bedRepository.findByStudentId(student.getId()).isPresent()) {
-            throw new BadRequestException("You are already allocated to a room and bed.");
+        Optional<Bed> existingBed = bedRepository.findByStudentId(student.getId());
+        if (existingBed.isPresent()) {
+            Bed b = existingBed.get();
+            throw new BadRequestException("You already have Room " + b.getRoom().getRoomNumber() + ", Bed " + b.getBedLabel() + ". Use Change Room Request instead.");
         }
 
         // Reject if student already has a pending request
-        if (roomRequestRepository.existsByStudentIdAndStatus(student.getId(), RoomRequest.Status.PENDING)) {
-            throw new BadRequestException("You already have a pending room request.");
+        Optional<RoomRequest> pendingOpt = roomRequestRepository.findByStudentIdAndStatus(student.getId(), RoomRequest.Status.PENDING);
+        if (pendingOpt.isPresent()) {
+            throw new BadRequestException("You already have a pending room request (" + pendingOpt.get().getRequestCode() + "). Please wait for Admin decision or cancel it to submit a new one.");
+        }
+
+        // Validate roommate preferences: at most 3
+        if (requestDto.preferredRoommates() != null && !requestDto.preferredRoommates().isBlank()) {
+            String[] mates = requestDto.preferredRoommates().split("[,;\\s]+");
+            if (mates.length > 3) {
+                throw new BadRequestException("You can specify at most 3 preferred roommates.");
+            }
         }
 
         Room preferredRoom = null;
@@ -208,13 +225,33 @@ public class StudentService {
         roomRequest.setStudent(student);
         roomRequest.setPreferredRoom(preferredRoom);
         roomRequest.setPreferredFloor(requestDto.preferredFloor());
+        roomRequest.setPreferredRoomType(requestDto.preferredRoomType() != null ? requestDto.preferredRoomType().trim() : null);
+        roomRequest.setPreferredRoommates(requestDto.preferredRoommates() != null ? requestDto.preferredRoommates().trim() : null);
         roomRequest.setNote(requestDto.note() != null ? requestDto.note().trim() : null);
         roomRequest.setStatus(RoomRequest.Status.PENDING);
         roomRequest.setCreatedAt(LocalDateTime.now());
 
+        long nextNum = roomRequestRepository.count() + 1;
+        roomRequest.setRequestCode(String.format("RRQ-%d-%04d", LocalDateTime.now().getYear(), nextNum));
+
         RoomRequest saved = roomRequestRepository.save(roomRequest);
 
-        auditService.log(user, "CREATE_ROOM_REQUEST", "RequestId=" + saved.getId(), "SUCCESS");
+        // Record status history
+        roomRequestStatusHistoryRepository.save(new RoomRequestStatusHistory(
+                saved, null, "PENDING", user, "Room request submitted by student"
+        ));
+
+        // Audit Log
+        auditService.log(user, "ROOM_REQUESTS", "SUBMIT_REQUEST", saved.getId(), null, "PENDING", student.getRegisterNumber(), "SUCCESS");
+
+        // Notify Admins
+        notificationService.notifyRole(
+                "ADMIN",
+                "New Room Request",
+                "Student " + student.getFullName() + " (" + student.getRegisterNumber() + ") submitted room request " + saved.getRequestCode(),
+                "ROOM_REQUEST",
+                saved.getId()
+        );
 
         return toRequestResponse(saved);
     }
@@ -244,23 +281,36 @@ public class StudentService {
 
         request.setStatus(RoomRequest.Status.CANCELLED);
         request.setDecidedAt(LocalDateTime.now());
+        request.setDecisionNote("Cancelled by student");
         roomRequestRepository.save(request);
 
-        auditService.log(user, "CANCEL_ROOM_REQUEST", "RequestId=" + requestId, "SUCCESS");
+        roomRequestStatusHistoryRepository.save(new RoomRequestStatusHistory(
+                request, "PENDING", "CANCELLED", user, "Cancelled by student"
+        ));
+
+        auditService.log(user, "ROOM_REQUESTS", "CANCEL_REQUEST", requestId, "PENDING", "CANCELLED", student.getRegisterNumber(), "SUCCESS");
     }
 
     private RoomRequestResponse toRequestResponse(RoomRequest r) {
         return new RoomRequestResponse(
                 r.getId(),
+                r.getRequestCode(),
                 r.getStudent().getId(),
                 r.getStudent().getFullName(),
                 r.getStudent().getRegisterNumber(),
+                r.getStudent().getDepartment(),
+                r.getStudent().getYear(),
+                r.getStudent().getGender(),
                 r.getPreferredRoom() != null ? r.getPreferredRoom().getId() : null,
                 r.getPreferredRoom() != null ? r.getPreferredRoom().getRoomNumber() : null,
                 r.getPreferredFloor(),
+                r.getPreferredRoomType(),
+                r.getPreferredRoommates(),
                 r.getNote(),
                 r.getStatus().name(),
                 r.getDecisionNote(),
+                r.getAllottedRoom() != null ? r.getAllottedRoom().getRoomNumber() : null,
+                r.getAllottedBed() != null ? r.getAllottedBed().getBedLabel() : null,
                 r.getCreatedAt(),
                 r.getDecidedAt()
         );

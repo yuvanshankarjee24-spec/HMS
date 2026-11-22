@@ -221,18 +221,19 @@
               <thead>
                 <tr>
                   <th>Request ID</th>
-                  <th>Preferred Room</th>
-                  <th>Preferred Floor</th>
-                  <th>Note</th>
+                  <th>Preferences</th>
+                  <th>Preferred Roommates</th>
+                  <th>Reason / Note</th>
                   <th>Status</th>
-                  <th>Decision Note</th>
+                  <th>Admin Remarks</th>
+                  <th>Allotted Room & Bed</th>
                   <th>Requested Date</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody id="requestTableBody">
                 <tr>
-                  <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading requests...</td>
+                  <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading requests...</td>
                 </tr>
               </tbody>
             </table>
@@ -433,33 +434,49 @@
   <div class="modal-overlay" id="requestModal">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 class="modal-title">Submit Room Request</h3>
+        <h3 class="modal-title">Submit Room Request to Admin</h3>
         <button class="modal-close" onclick="UI.closeModal('requestModal')">&times;</button>
       </div>
       <div class="modal-body">
+        <div id="roomRequestAlertBox" style="display:none; margin-bottom: 1rem; padding: 0.85rem; border-radius: 6px; font-size: 0.85rem; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;"></div>
         <form id="roomRequestForm">
           <div class="form-group">
             <label class="form-label" for="selectPreferredRoom">Preferred Room (Optional)</label>
             <select id="selectPreferredRoom" class="form-control">
               <option value="">-- No preference / Any room with available space --</option>
             </select>
-            <small style="color: var(--text-muted); font-size: 0.8rem;">Select from rooms currently having free
-              beds</small>
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Select from rooms currently having free beds</small>
+          </div>
+
+          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div>
+              <label class="form-label" for="inputPreferredFloor">Preferred Floor (Optional)</label>
+              <select id="inputPreferredFloor" class="form-control">
+                <option value="">-- Any Floor --</option>
+                <option value="1">Floor 1 (Rooms 101-125)</option>
+                <option value="2">Floor 2 (Rooms 126-150)</option>
+                <option value="3">Floor 3 (Rooms 151-175)</option>
+                <option value="4">Floor 4 (Rooms 176-200)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="inputPreferredRoomType">Preferred Room Type</label>
+              <select id="inputPreferredRoomType" class="form-control">
+                <option value="Standard 4-Bed">Standard 4-Bed Shared</option>
+                <option value="Ground Floor Priority">Ground Floor Priority</option>
+                <option value="Quiet Study Wing">Quiet Study Wing</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="inputPreferredFloor">Preferred Floor (Optional)</label>
-            <select id="inputPreferredFloor" class="form-control">
-              <option value="">-- No preference --</option>
-              <option value="1">Floor 1</option>
-              <option value="2">Floor 2</option>
-              <option value="3">Floor 3</option>
-              <option value="4">Floor 4</option>
-            </select>
+            <label class="form-label" for="inputPreferredRoommates">Preferred Roommate Roll Numbers (Optional, up to 3)</label>
+            <input type="text" id="inputPreferredRoommates" class="form-control" placeholder="e.g. 715521104002, 715521104003">
+            <small style="color: var(--text-muted); font-size: 0.8rem;">Enter 12-digit roll numbers separated by commas</small>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="inputNote">Special Notes / Medical Requirements</label>
+            <label class="form-label" for="inputNote">Reason / Remarks / Medical Requirements</label>
             <textarea id="inputNote" class="form-control" rows="3"
               placeholder="e.g. Near restroom, ground floor preference for accessibility, quiet room study..."></textarea>
           </div>
@@ -625,7 +642,7 @@
       if (requests.length === 0) {
         const tr = document.createElement('tr');
         const td = document.createElement('td');
-        td.colSpan = 8;
+        td.colSpan = 9;
         td.style.padding = '2.5rem 1rem';
         td.style.textAlign = 'center';
         td.innerHTML = `
@@ -635,7 +652,7 @@
               <polyline points="12 6 12 12 16 14"/>
             </svg>
             <div style="font-weight: 700; font-size: 15px; color: var(--navy-900);">No room requests yet</div>
-            <div style="font-size: 13.5px; color: var(--text-secondary);">When you request a room, the history and approval status will appear here.</div>
+            <div style="font-size: 13.5px; color: var(--text-secondary);">When you request a room, the history, request ID and approval status will appear here.</div>
           </div>
         `;
         tr.appendChild(td);
@@ -646,22 +663,26 @@
       requests.forEach(req => {
         const tr = document.createElement('tr');
 
-        // Request ID
+        // Request Code / ID
         const tdId = document.createElement('td');
         tdId.setAttribute('data-label', 'Request ID');
-        tdId.textContent = '#' + req.id;
+        tdId.innerHTML = `<strong>${req.requestCode || ('#' + req.id)}</strong>`;
 
-        // Preferred Room
-        const tdRoom = document.createElement('td');
-        tdRoom.setAttribute('data-label', 'Preferred Room');
-        tdRoom.textContent = req.preferredRoomNumber ? `Room ${req.preferredRoomNumber}` : 'Any Room';
+        // Preferences
+        const tdPrefs = document.createElement('td');
+        tdPrefs.setAttribute('data-label', 'Preferences');
+        const prefParts = [];
+        if (req.preferredRoomNumber) prefParts.push(`Room ${req.preferredRoomNumber}`);
+        if (req.preferredFloor) prefParts.push(`Floor ${req.preferredFloor}`);
+        if (req.preferredRoomType) prefParts.push(req.preferredRoomType);
+        tdPrefs.textContent = prefParts.length > 0 ? prefParts.join(' · ') : 'Any Available';
 
-        // Preferred Floor
-        const tdFloor = document.createElement('td');
-        tdFloor.setAttribute('data-label', 'Preferred Floor');
-        tdFloor.textContent = req.preferredFloor ? `Floor ${req.preferredFloor}` : '-';
+        // Preferred Roommates
+        const tdRoommates = document.createElement('td');
+        tdRoommates.setAttribute('data-label', 'Roommates');
+        tdRoommates.textContent = req.preferredRoommates || '-';
 
-        // Note
+        // Reason / Note
         const tdNote = document.createElement('td');
         tdNote.setAttribute('data-label', 'Note');
         tdNote.textContent = req.note || '-';
@@ -677,10 +698,21 @@
         else spanStatus.className = 'status-badge badge-cancelled';
         tdStatus.appendChild(spanStatus);
 
-        // Decision Note
+        // Decision Note / Admin Remarks
         const tdDecision = document.createElement('td');
-        tdDecision.setAttribute('data-label', 'Decision Note');
+        tdDecision.setAttribute('data-label', 'Admin Remarks');
         tdDecision.textContent = req.decisionNote || '-';
+
+        // Allotted Room & Bed
+        const tdAllotted = document.createElement('td');
+        tdAllotted.setAttribute('data-label', 'Allotted Room');
+        if (req.status === 'APPROVED' && req.allottedRoomNumber) {
+          tdAllotted.innerHTML = `<span class="badge badge-success" style="font-weight: 700; color: #166534; background: #dcfce7; padding: 0.2rem 0.5rem; border-radius: 4px;">Room ${req.allottedRoomNumber}${req.allottedBedLabel ? ', Bed ' + req.allottedBedLabel : ''}</span>`;
+        } else if (req.status === 'APPROVED') {
+          tdAllotted.textContent = 'Allotted';
+        } else {
+          tdAllotted.textContent = '-';
+        }
 
         // Date
         const tdDate = document.createElement('td');
@@ -697,7 +729,7 @@
           btnCancel.onclick = async () => {
             const confirmed = await UI.showConfirm({
               title: 'Cancel Room Request',
-              message: 'Are you sure you want to cancel this pending room request?'
+              message: `Are you sure you want to cancel request ${req.requestCode || ('#' + req.id)}?`
             });
             if (confirmed) {
               await cancelRequest(req.id);
@@ -708,7 +740,7 @@
           tdAction.textContent = '-';
         }
 
-        tr.append(tdId, tdRoom, tdFloor, tdNote, tdStatus, tdDecision, tdDate, tdAction);
+        tr.append(tdId, tdPrefs, tdRoommates, tdNote, tdStatus, tdDecision, tdAllotted, tdDate, tdAction);
         tbody.appendChild(tr);
       });
     }
@@ -718,7 +750,8 @@
         const res = await fetch(`/api/student/room-requests/${requestId}`, {
           method: 'DELETE'
         });
-        if (!res.ok) throw new Error('Could not cancel request');
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.message || 'Could not cancel request');
         UI.showToast('Room request cancelled', 'info');
         loadStudentData();
       } catch (err) {
@@ -729,7 +762,7 @@
     // Available rooms loader for modal
     async function loadAvailableRoomsForModal() {
       try {
-        const res = { ok: true, json: async () => [] };
+        const res = await fetch('/api/student/rooms/available');
         if (!res.ok) throw new Error('Failed to load available rooms');
         const rooms = await res.json();
         const select = document.getElementById('selectPreferredRoom');
@@ -750,6 +783,8 @@
     document.getElementById('btnSubmitRequest').addEventListener('click', async () => {
       const preferredRoomId = document.getElementById('selectPreferredRoom').value || null;
       const preferredFloor = document.getElementById('inputPreferredFloor').value || null;
+      const preferredRoomType = document.getElementById('inputPreferredRoomType').value || null;
+      const preferredRoommates = document.getElementById('inputPreferredRoommates').value.trim() || null;
       const note = document.getElementById('inputNote').value.trim();
 
       const btn = document.getElementById('btnSubmitRequest');
@@ -763,6 +798,8 @@
           body: JSON.stringify({
             preferredRoomId: preferredRoomId ? parseInt(preferredRoomId) : null,
             preferredFloor: preferredFloor ? parseInt(preferredFloor) : null,
+            preferredRoomType,
+            preferredRoommates,
             note: note || null
           })
         });
@@ -775,7 +812,7 @@
           return;
         }
 
-        UI.showToast('Room request submitted successfully!', 'success');
+        UI.showToast('Room request submitted successfully! (' + (data.requestCode || '#' + data.id) + ')', 'success');
         UI.closeModal('requestModal');
         document.getElementById('roomRequestForm').reset();
         btn.disabled = false;
@@ -789,7 +826,30 @@
     });
 
     document.getElementById('openRequestModalBtn').addEventListener('click', () => {
-      loadAvailableRoomsForModal();
+      const alertBox = document.getElementById('roomRequestAlertBox');
+      const submitBtn = document.getElementById('btnSubmitRequest');
+      const form = document.getElementById('roomRequestForm');
+
+      if (currentStudent && currentStudent.allocationStatus === 'ALLOCATED') {
+        const bedStr = currentStudent.bedLabel ? `Bed ${currentStudent.bedLabel}` : '';
+        alertBox.innerHTML = `<strong>Active Allotment:</strong> You already have Room ${currentStudent.roomNumber}, ${bedStr}. Use Change Room Request instead.`;
+        alertBox.style.display = 'block';
+        submitBtn.disabled = true;
+        form.style.opacity = '0.5';
+        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+      } else if (currentStudent && currentStudent.allocationStatus === 'REQUEST PENDING') {
+        alertBox.innerHTML = `<strong>Pending Request:</strong> You already have a pending room request. Please wait for Admin decision or cancel it in Request History below before submitting a new one.`;
+        alertBox.style.display = 'block';
+        submitBtn.disabled = true;
+        form.style.opacity = '0.5';
+        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+      } else {
+        alertBox.style.display = 'none';
+        submitBtn.disabled = false;
+        form.style.opacity = '1';
+        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+        loadAvailableRoomsForModal();
+      }
       UI.openModal('requestModal');
     });
 

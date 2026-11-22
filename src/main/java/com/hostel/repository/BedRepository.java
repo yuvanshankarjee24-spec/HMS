@@ -24,11 +24,11 @@ public interface BedRepository extends JpaRepository<Bed, Long> {
 
     long countByStudentIsNotNull();
 
-    @Query("SELECT COUNT(b) FROM Bed b WHERE b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND b.room.status = com.hostel.entity.Room.Status.ACTIVE")
+    @Query("SELECT COUNT(b) FROM Bed b WHERE b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND (b.status IS NULL OR LOWER(b.status) != 'maintenance') AND b.room.status = com.hostel.entity.Room.Status.ACTIVE")
     long countAvailableBeds();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT COUNT(b) FROM Bed b WHERE b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND b.room.status = com.hostel.entity.Room.Status.ACTIVE")
+    @Query("SELECT COUNT(b) FROM Bed b WHERE b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND (b.status IS NULL OR LOWER(b.status) != 'maintenance') AND b.room.status = com.hostel.entity.Room.Status.ACTIVE")
     long countAvailableBedsWithLock();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -40,16 +40,16 @@ public interface BedRepository extends JpaRepository<Bed, Long> {
     Optional<Bed> findByRoomIdAndBedLabelWithLock(@Param("roomId") Long roomId, @Param("bedLabel") String bedLabel);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT b FROM Bed b WHERE b.room.id = :roomId AND (b.student IS NULL OR b.status = 'available') ORDER BY b.bedNumber ASC")
+    @Query("SELECT b FROM Bed b WHERE b.room.id = :roomId AND b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND (b.status IS NULL OR LOWER(b.status) != 'maintenance') ORDER BY b.bedNumber ASC")
     List<Bed> findAvailableBedsInRoomWithLock(@Param("roomId") Long roomId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT b FROM Bed b JOIN b.room r WHERE r.status = com.hostel.entity.Room.Status.ACTIVE AND (b.student IS NULL OR b.status = 'available') ORDER BY r.roomNumber ASC, b.bedNumber ASC")
+    @Query("SELECT b FROM Bed b JOIN b.room r WHERE r.status = com.hostel.entity.Room.Status.ACTIVE AND b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND (b.status IS NULL OR LOWER(b.status) != 'maintenance') ORDER BY r.roomNumber ASC, b.bedNumber ASC")
     List<Bed> findAllAvailableBedsWithLock();
 
-    @Query("SELECT b FROM Bed b WHERE b.room.id = :roomId AND (b.student IS NULL OR b.status = 'available') ORDER BY b.bedNumber ASC")
+    @Query("SELECT b FROM Bed b WHERE b.room.id = :roomId AND b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND (b.status IS NULL OR LOWER(b.status) != 'maintenance') ORDER BY b.bedNumber ASC")
     List<Bed> findAvailableBedsInRoom(@Param("roomId") Long roomId);
 
-    @Query("SELECT b FROM Bed b JOIN FETCH b.room WHERE (b.student IS NULL OR b.status = 'available') AND b.room.status = com.hostel.entity.Room.Status.ACTIVE ORDER BY b.room.roomNumber ASC, b.bedNumber ASC")
+    @Query("SELECT b FROM Bed b JOIN FETCH b.room WHERE b.student IS NULL AND (b.status = 'available' OR b.status IS NULL) AND (b.status IS NULL OR LOWER(b.status) != 'maintenance') AND b.room.status = com.hostel.entity.Room.Status.ACTIVE ORDER BY b.room.roomNumber ASC, b.bedNumber ASC")
     List<Bed> findAllAvailableBeds();
 }
