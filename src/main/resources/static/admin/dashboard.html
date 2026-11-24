@@ -15,12 +15,8 @@
         <!-- Welcome Banner -->
         <div class="welcome-card">
           <div class="welcome-text">
-            <h1>Hostel System Administration</h1>
+            <h1 id="welcomeUser">Hostel System Administration</h1>
             <p>User provisioning, account security, and hostel-wide operations.</p>
-          </div>
-          <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-secondary btn-sm" onclick="openAddStaffModal()">+ Add Staff Account</button>
-            <button class="btn btn-primary btn-sm" onclick="openAddStudentModal()">+ Add Student Account</button>
           </div>
         </div>
 
@@ -142,6 +138,7 @@
     (async () => {
       const user = await Auth.requireAuth(['ADMIN']);
       if (!user) return;
+      document.getElementById('welcomeUser').textContent = `Welcome, ${user.name || 'Admin'}`;
       UI.renderLayout(user, 'admin-dashboard');
       loadStats();
     })();

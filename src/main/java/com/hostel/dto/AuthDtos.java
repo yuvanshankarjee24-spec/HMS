@@ -39,8 +39,7 @@ public class AuthDtos {
         String oldPassword,
 
         @NotBlank(message = "New password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters long")
-        @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d).+$", message = "Password must contain at least one letter and one number")
+        @Size(min = 6, message = "Password must be at least 6 characters long")
         String newPassword
     ) {}
 }

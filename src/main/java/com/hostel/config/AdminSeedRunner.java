@@ -42,32 +42,44 @@ public class AdminSeedRunner implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         String username = (adminUsername != null && !adminUsername.isBlank()) ? adminUsername.trim() : "1234567890";
+        String password = (adminPassword != null && !adminPassword.isBlank()) ? adminPassword.trim() : "1234567890";
         String email = username.contains("@") ? username : (username + "@hostel.edu");
 
-        List<User> activeAdmins = userRepository.findByRoleAndStatus("ADMIN", User.Status.ACTIVE);
+        // Query any existing admin accounts regardless of status (ACTIVE, LOCKED, DISABLED)
+        List<User> existingAdmins = userRepository.findByRole("ADMIN");
         User admin;
 
-        if (!activeAdmins.isEmpty()) {
-            admin = activeAdmins.get(0);
+        if (!existingAdmins.isEmpty()) {
+            admin = existingAdmins.get(0);
             log.info("AdminSeedRunner: Found existing administrator ID {}. Updating credentials from .env...", admin.getId());
+            // Clean up any duplicate admin accounts if they exist, guaranteeing a single administrator
+            for (int i = 1; i < existingAdmins.size(); i++) {
+                User dup = existingAdmins.get(i);
+                log.warn("AdminSeedRunner: Removing duplicate administrator ID {}", dup.getId());
+                userRepository.delete(dup);
+            }
         } else {
-            admin = new User();
-            admin.setRole("ADMIN");
-            admin.setName("Hostel Administrator");
-            log.info("AdminSeedRunner: No administrator found. Creating single administrator from .env...");
+            // Also check by username or email in case role was modified
+            admin = userRepository.findByIdentifier(username).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setName("Hostel Administrator");
+                log.info("AdminSeedRunner: No administrator found. Creating single administrator from .env...");
+                return newUser;
+            });
         }
 
+        admin.setRole("ADMIN");
         admin.setEmail(email);
         admin.setRegisterNumber(username);
         admin.setStatus(User.Status.ACTIVE);
         admin.setActive(true);
-        admin.setPasswordHash(passwordEncoder.encode(adminPassword));
-        admin.setMustChangePassword(true);
+        admin.setPasswordHash(passwordEncoder.encode(password));
+        admin.setMustChangePassword(false);
         admin.setFailedAttempts(0);
         admin.setLockedUntil(null);
         admin.setTempPasswordCreatedAt(null);
 
         userRepository.save(admin);
-        log.info("AdminSeedRunner: Administrator '{}' successfully configured with forced password change on first login.", username);
+        log.info("AdminSeedRunner: Administrator '{}' successfully seeded/updated and unlocked with BCrypt hash.", username);
     }
 }

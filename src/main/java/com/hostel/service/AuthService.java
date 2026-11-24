@@ -185,8 +185,14 @@ public class AuthService {
             throw new BadRequestException("New password cannot be the same as the old password");
         }
 
-        if (user.getRegisterNumber() != null && request.newPassword().trim().equalsIgnoreCase(user.getRegisterNumber().trim())) {
-            throw new BadRequestException("New password cannot be the same as your roll number");
+        // Admin is exempt from roll number match and letter/number rule
+        if (!"ADMIN".equalsIgnoreCase(user.getRole())) {
+            if (request.newPassword().length() < 8 || !request.newPassword().matches(".*[a-zA-Z].*") || !request.newPassword().matches(".*\\d.*")) {
+                throw new BadRequestException("Password must be at least 8 characters with both letters and numbers");
+            }
+            if (user.getRegisterNumber() != null && request.newPassword().trim().equalsIgnoreCase(user.getRegisterNumber().trim())) {
+                throw new BadRequestException("New password cannot be the same as your roll number");
+            }
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));

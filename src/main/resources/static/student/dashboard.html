@@ -130,25 +130,6 @@
             <h1 id="welcomeTitle">Welcome, Student</h1>
             <p>View your room allocation status, submit requests, and manage hostel services.</p>
           </div>
-          <div class="welcome-grid-actions" id="quickRequestContainer">
-            <a href="/student/outpasses.html" class="btn-pill-outline">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                <polyline points="10 17 15 12 10 7" />
-                <line x1="15" y1="12" x2="3" y2="12" />
-              </svg>
-              Apply Outpass
-            </a>
-            <a href="/student/mess-tokens.html" class="btn-pill-outline">Mess Tokens</a>
-            <a href="/student/maintenance.html?tab=raise" class="btn-pill-outline">+ Maintenance Request</a>
-            <button id="openRequestModalBtn" class="btn btn-primary">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              + Request Room
-            </button>
-          </div>
         </div>
 
         <!-- Student Profile & Allocation Card -->
@@ -179,6 +160,7 @@
               <div class="room-badge-pill pill-not-allocated" id="roomBadgePill">
                 <span id="roomBedText">Not Allocated</span>
               </div>
+              <div id="roomActionSlot" style="margin-top: 0.5rem;"></div>
             </div>
           </div>
 
@@ -584,7 +566,7 @@
 
       const roomBadgePill = document.getElementById('roomBadgePill');
       const roomBedText = document.getElementById('roomBedText');
-      const openRequestModalBtn = document.getElementById('openRequestModalBtn');
+      const roomActionSlot = document.getElementById('roomActionSlot');
 
       if (profile.allocationStatus === 'ALLOCATED') {
         statusBadge.className = 'status-badge badge-allocated';
@@ -596,10 +578,7 @@
         const floorStr = profile.floor ? `Floor ${profile.floor}` : '';
         const hostelStr = profile.hostelBlock || 'PSG iTech Hostel';
         roomBedText.textContent = `Room ${profile.roomNumber} (${bedStr}) · ${floorStr} · ${hostelStr}`;
-        if (openRequestModalBtn) {
-          openRequestModalBtn.disabled = true;
-          openRequestModalBtn.title = 'You are already allocated to a room';
-        }
+        if (roomActionSlot) roomActionSlot.innerHTML = '';
       } else if (profile.allocationStatus === 'REQUEST PENDING') {
         statusBadge.className = 'status-badge badge-pending';
         statusBadge.textContent = 'REQUEST PENDING';
@@ -607,9 +586,8 @@
         roomBadgePill.style.background = '';
         roomBadgePill.style.color = '';
         roomBedText.textContent = 'Request Pending Approval';
-        if (openRequestModalBtn) {
-          openRequestModalBtn.disabled = true;
-          openRequestModalBtn.title = 'You already have a pending request';
+        if (roomActionSlot) {
+          roomActionSlot.innerHTML = `<a href="#requestTable" class="btn-link" style="color:var(--blue-600);font-weight:600;font-size:13.5px;text-decoration:underline;">Request Status &darr;</a>`;
         }
       } else {
         statusBadge.className = 'status-badge badge-not-allocated';
@@ -618,8 +596,10 @@
         roomBadgePill.style.background = '';
         roomBadgePill.style.color = '';
         roomBedText.textContent = 'Not allocated';
-        if (openRequestModalBtn) {
-          openRequestModalBtn.disabled = false;
+        if (roomActionSlot) {
+          roomActionSlot.innerHTML = `<button type="button" id="openRequestModalBtn" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:0.4rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>Request Room</button>`;
+          const btn = document.getElementById('openRequestModalBtn');
+          if (btn) btn.onclick = handleOpenRequestModal;
         }
       }
     }
@@ -825,7 +805,7 @@
       }
     });
 
-    document.getElementById('openRequestModalBtn').addEventListener('click', () => {
+    function handleOpenRequestModal() {
       const alertBox = document.getElementById('roomRequestAlertBox');
       const submitBtn = document.getElementById('btnSubmitRequest');
       const form = document.getElementById('roomRequestForm');
@@ -851,7 +831,7 @@
         loadAvailableRoomsForModal();
       }
       UI.openModal('requestModal');
-    });
+    }
 
     // ==========================================
     // Student Outpass Logic

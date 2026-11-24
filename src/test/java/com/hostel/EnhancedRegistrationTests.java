@@ -62,19 +62,18 @@ public class EnhancedRegistrationTests {
     }
 
     @Test
-    @DisplayName("Admin user is seeded with mustChangePassword = true and can login with 10-digit credentials")
+    @DisplayName("Admin user is seeded and can login with 10-digit credentials")
     void testAdminSeeded() {
         var admins = userRepository.findByRoleAndStatus("ADMIN", User.Status.ACTIVE);
         assertFalse(admins.isEmpty(), "At least one administrator should be seeded");
         User admin = admins.get(0);
-        assertTrue(admin.isMustChangePassword(), "Admin must be flagged to change password on first login");
         assertEquals("1234567890", admin.getRegisterNumber(), "Admin username should be 1234567890");
 
         // Verify admin can login with 1234567890 / 1234567890
         MockHttpServletResponse httpResp = new MockHttpServletResponse();
         var loginResp = authService.login(new LoginRequest("1234567890", "1234567890", "ADMIN"), httpResp);
         assertNotNull(loginResp);
-        assertTrue(loginResp.mustChangePassword());
+        assertEquals("ADMIN", loginResp.role());
     }
 
     @Test
